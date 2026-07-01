@@ -16,8 +16,10 @@ import {
   Briefcase,
   ShieldCheck,
   Plus,
+  Send,
   SlidersHorizontal,
 } from "lucide-react";
+
 
 import {
   Sidebar,
@@ -66,8 +68,10 @@ const NAV: Record<AppRole, NavGroup[]> = {
       label: "System",
       items: [
         { title: "Admin Settings", url: "/admin/settings", icon: Settings },
+        { title: "Email Preview", url: "/admin/email-preview", icon: Send },
         { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
       ],
+
     },
   ],
   promoter: [
