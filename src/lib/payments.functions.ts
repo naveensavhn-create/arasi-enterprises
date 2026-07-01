@@ -322,3 +322,268 @@ export const getInstallmentWebhookTimeline = createServerFn({ method: "GET" })
     };
   });
 
+/* ---------- Payment reconciliation with Razorpay ---------- */
+
+export type ReconciliationRow = {
+  id: string;
+  payment_id: string;
+  stored_status: string;
+  provider_status: string | null;
+  provider_amount: number | null;
+  provider_method: string | null;
+  provider_error: string | null;
+  mismatch: boolean;
+  note: string | null;
+  resolved_at: string | null;
+  created_at: string;
+  payment?: {
+    provider_order_id: string | null;
+    provider_payment_id: string | null;
+    amount: number;
+    currency: string;
+    customer_id: string;
+    membership_id: string;
+  } | null;
+};
+
+export type ReconciliationResult = {
+  checked: number;
+  matched: number;
+  mismatched: number;
+  skipped: number;
+  errors: number;
+  rows: ReconciliationRow[];
+};
+
+function mapProviderStatus(providerStatus: string | null | undefined): string | null {
+  if (!providerStatus) return null;
+  const s = providerStatus.toLowerCase();
+  if (s === "captured") return "paid";
+  if (s === "refunded") return "refunded";
+  if (s === "failed") return "failed";
+  if (s === "authorized") return "attempted";
+  if (s === "created") return "created";
+  return s;
+}
+
+async function fetchRazorpayPayment(paymentId: string, keyId: string, keySecret: string) {
+  const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+  const res = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, {
+    headers: { Authorization: `Basic ${auth}` },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Razorpay ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.json() as Promise<{
+    id: string;
+    status: string;
+    amount: number;
+    currency: string;
+    method: string | null;
+    error_code: string | null;
+    error_description: string | null;
+    order_id: string;
+  }>;
+}
+
+async function fetchRazorpayOrderPayments(orderId: string, keyId: string, keySecret: string) {
+  const auth = Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+  const res = await fetch(`https://api.razorpay.com/v1/orders/${orderId}/payments`, {
+    headers: { Authorization: `Basic ${auth}` },
+  });
+  if (!res.ok) return null;
+  const body = await res.json() as { items?: Array<{ id: string; status: string }> };
+  return body.items ?? [];
+}
+
+export const reconcilePayments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      status: z.string().optional(),
+      from: z.string().optional(),
+      to: z.string().optional(),
+      q: z.string().optional(),
+      limit: z.number().int().min(1).max(500).default(100),
+    }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<ReconciliationResult> => {
+    await assertAdmin(context);
+    const sb: any = context.supabase;
+    const n = normalizeFilters({
+      sortBy: "created_at",
+      sortDir: "desc",
+      status: data.status,
+      from: data.from,
+      to: data.to,
+      q: data.q,
+    });
+    const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
+
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) throw new Error("Razorpay is not configured");
+
+    let query = sb
+      .from("payments")
+      .select("id, status, amount, provider_order_id, provider_payment_id, customer_id, membership_id, currency")
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (n.status) query = query.eq("status", n.status);
+    if (n.fromISO) query = query.gte("created_at", n.fromISO);
+    if (n.toISO) query = query.lt("created_at", n.toISO);
+    if (n.q) {
+      const like = `%${n.q}%`;
+      const parts = [
+        `provider_order_id.ilike.${like}`,
+        `provider_payment_id.ilike.${like}`,
+      ];
+      if (customerIds?.length) parts.push(`customer_id.in.(${customerIds.join(",")})`);
+      if (membershipIds?.length) parts.push(`membership_id.in.(${membershipIds.join(",")})`);
+      query = query.or(parts.join(","));
+    }
+
+    const { data: payments, error } = await query;
+    if (error) throw new Error(error.message);
+
+    const toInsert: Array<Record<string, unknown>> = [];
+    let matched = 0, mismatched = 0, skipped = 0, errors = 0;
+
+    for (const p of (payments ?? []) as Array<any>) {
+      let providerPaymentId = p.provider_payment_id as string | null;
+
+      if (!providerPaymentId && p.provider_order_id) {
+        try {
+          const items = await fetchRazorpayOrderPayments(p.provider_order_id, keyId, keySecret);
+          if (items && items.length > 0) {
+            const captured = items.find((it) => it.status === "captured");
+            providerPaymentId = (captured ?? items[0]).id;
+          }
+        } catch {
+          /* fall through */
+        }
+      }
+
+      if (!providerPaymentId) {
+        skipped += 1;
+        continue;
+      }
+
+      try {
+        const remote = await fetchRazorpayPayment(providerPaymentId, keyId, keySecret);
+        const mappedRemote = mapProviderStatus(remote.status);
+        const isMismatch = mappedRemote !== null && mappedRemote !== p.status;
+        if (isMismatch) mismatched += 1; else matched += 1;
+
+        toInsert.push({
+          payment_id: p.id,
+          stored_status: p.status,
+          provider_status: remote.status,
+          provider_amount: remote.amount / 100,
+          provider_method: remote.method,
+          provider_error: remote.error_code
+            ? `${remote.error_code}: ${remote.error_description ?? ""}`
+            : null,
+          mismatch: isMismatch,
+          note: isMismatch
+            ? `Stored=${p.status} · Razorpay=${remote.status} (→${mappedRemote})`
+            : `In sync (${remote.status})`,
+          checked_by: context.userId,
+        });
+      } catch (e) {
+        errors += 1;
+        toInsert.push({
+          payment_id: p.id,
+          stored_status: p.status,
+          provider_status: null,
+          mismatch: false,
+          note: `Reconciliation error: ${e instanceof Error ? e.message : String(e)}`,
+          checked_by: context.userId,
+        });
+      }
+    }
+
+    let insertedRows: ReconciliationRow[] = [];
+    if (toInsert.length) {
+      const { data: inserted, error: iErr } = await sb
+        .from("payment_reconciliations")
+        .insert(toInsert)
+        .select("id, payment_id, stored_status, provider_status, provider_amount, provider_method, provider_error, mismatch, note, resolved_at, created_at");
+      if (iErr) throw new Error(iErr.message);
+      insertedRows = (inserted ?? []) as ReconciliationRow[];
+    }
+
+    return {
+      checked: (payments ?? []).length,
+      matched,
+      mismatched,
+      skipped,
+      errors,
+      rows: insertedRows,
+    };
+  });
+
+export const listOpenReconciliations = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ limit: z.number().int().min(1).max(500).default(100) }).parse(d ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<ReconciliationRow[]> => {
+    await assertAdmin(context);
+    const sb: any = context.supabase;
+    const { data: rows, error } = await sb
+      .from("payment_reconciliations")
+      .select(
+        `id, payment_id, stored_status, provider_status, provider_amount, provider_method,
+         provider_error, mismatch, note, resolved_at, created_at,
+         payment:payment_id ( provider_order_id, provider_payment_id, amount, currency, customer_id, membership_id )`,
+      )
+      .eq("mismatch", true)
+      .is("resolved_at", null)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as ReconciliationRow[];
+  });
+
+export const resolveReconciliation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      applyProviderStatus: z.boolean().default(false),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const sb: any = context.supabase;
+
+    if (data.applyProviderStatus) {
+      const { data: rec, error: rErr } = await sb
+        .from("payment_reconciliations")
+        .select("id, payment_id, provider_status")
+        .eq("id", data.id)
+        .single();
+      if (rErr) throw new Error(rErr.message);
+      const mapped = mapProviderStatus(rec.provider_status);
+      if (mapped) {
+        const patch: Record<string, unknown> = { status: mapped };
+        if (mapped === "paid") patch.paid_at = new Date().toISOString();
+        const { error: upErr } = await sb
+          .from("payments")
+          .update(patch)
+          .eq("id", rec.payment_id);
+        if (upErr) throw new Error(upErr.message);
+      }
+    }
+
+    const { error } = await sb
+      .from("payment_reconciliations")
+      .update({ resolved_at: new Date().toISOString(), resolved_by: context.userId })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
