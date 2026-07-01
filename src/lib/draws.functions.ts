@@ -132,7 +132,7 @@ export const listAllDrawWinners = createServerFn({ method: "GET" })
       .order("drawn_at", { ascending: false })
       .order("position", { ascending: true });
     if (error) throw new Error(error.message);
-    return (data ?? []) as Array<{
+    return ((data ?? []) as unknown) as Array<{
       id: string;
       draw_id: string;
       entry_id: string;
