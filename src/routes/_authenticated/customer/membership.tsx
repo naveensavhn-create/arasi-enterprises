@@ -259,3 +259,34 @@ function Stat({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    active: { label: "Active", cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
+    pending: { label: "Pending", cls: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
+    cancelled: { label: "Cancelled", cls: "bg-destructive/15 text-destructive border-destructive/30" },
+    completed: { label: "Completed", cls: "bg-primary/15 text-primary border-primary/30" },
+  };
+  const cfg = map[status] ?? { label: status, cls: "bg-muted text-muted-foreground" };
+  return <Badge variant="outline" className={`capitalize ${cfg.cls}`}>{cfg.label}</Badge>;
+}
+
+function InstallmentStatus({ status }: { status: string }) {
+  if (status === "paid")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-500">
+        <CheckCircle2 className="h-3 w-3" /> Paid
+      </span>
+    );
+  if (status === "overdue")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+        <AlertTriangle className="h-3 w-3" /> Overdue
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-500">
+      <Clock className="h-3 w-3" /> Pending
+    </span>
+  );
+}
