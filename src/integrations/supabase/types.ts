@@ -343,6 +343,50 @@ export type Database = {
         }
         Relationships: []
       }
+      razorpay_webhook_events: {
+        Row: {
+          event_id: string
+          event_type: string | null
+          id: string
+          order_id: string | null
+          payment_id: string | null
+          processed_at: string
+          raw: Json | null
+          received_at: string
+          status: string
+        }
+        Insert: {
+          event_id: string
+          event_type?: string | null
+          id?: string
+          order_id?: string | null
+          payment_id?: string | null
+          processed_at?: string
+          raw?: Json | null
+          received_at?: string
+          status?: string
+        }
+        Update: {
+          event_id?: string
+          event_type?: string | null
+          id?: string
+          order_id?: string | null
+          payment_id?: string | null
+          processed_at?: string
+          raw?: Json | null
+          received_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "razorpay_webhook_events_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_email_notifications: {
         Row: {
           audit_id: string | null
