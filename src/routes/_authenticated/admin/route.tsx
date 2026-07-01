@@ -29,5 +29,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
       </div>
     );
   },
+  // Any unknown child under /admin (e.g. a stray `/admin/admin` from a
+  // relative link) should quietly redirect to the shared dashboard instead
+  // of surfacing a route-match error.
+  notFoundComponent: () => {
+    throw redirect({ to: "/dashboard" });
+  },
   component: () => <Outlet />,
 });
+
