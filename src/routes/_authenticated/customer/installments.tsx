@@ -5,7 +5,7 @@ import { useSession } from "@/lib/auth";
 import { PayInstallmentButton } from "@/components/payments/PayInstallmentButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarClock, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/customer/installments")({
   head: () => ({ meta: [{ title: "Installments — Arasi Enterprises" }] }),
