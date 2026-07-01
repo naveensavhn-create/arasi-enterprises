@@ -26,9 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Package, Plus, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Package, Plus, Pencil, Trash2, History } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
