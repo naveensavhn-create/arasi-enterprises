@@ -10,9 +10,12 @@ const createDrawSchema = z.object({
   winnersCount: z.number().int().min(1).max(1000).default(1),
   opensAt: z.string().datetime().optional().nullable(),
   closesAt: z.string().datetime().optional().nullable(),
+  drawAt: z.string().datetime().optional().nullable(),
+  mode: z.enum(["manual", "automated"]).default("manual"),
   planId: z.string().uuid().optional().nullable(),
   requiresActiveMembership: z.boolean().default(true),
 });
+
 
 const idSchema = z.object({ id: z.string().uuid() });
 const pickSchema = z.object({ drawId: z.string().uuid(), seed: z.string().max(200).optional().nullable() });
