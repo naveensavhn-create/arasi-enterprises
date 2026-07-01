@@ -269,19 +269,17 @@ function AdminSettings() {
                   size="sm"
                   disabled={demote.isPending}
                   onClick={() => {
-                    if (
-                      confirm(
-                        isSelf
-                          ? "Remove admin from your own account? You'll lose access to admin tools."
-                          : `Revoke admin role from ${a.email ?? a.userId}?`,
-                      )
-                    ) {
-                      demote.mutate(a.userId);
-                    }
+                    const promptMsg = isSelf
+                      ? "Remove admin from your own account? You'll lose access to admin tools.\n\nReason (optional):"
+                      : `Revoke admin role from ${a.email ?? a.userId}?\n\nReason (optional):`;
+                    const reason = window.prompt(promptMsg);
+                    if (reason === null) return; // cancelled
+                    demote.mutate({ userId: a.userId, reason: reason.trim() || undefined });
                   }}
                 >
                   <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Revoke
                 </Button>
+
               </div>
             );
           })}
