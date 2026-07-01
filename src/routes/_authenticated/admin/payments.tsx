@@ -29,11 +29,9 @@ type Row = {
   customer_id: string;
   membership_id: string;
   installment_id: string | null;
-  memberships: {
-    membership_number: string | null;
-    profiles: { full_name: string | null; email: string | null } | null;
-  } | null;
+  memberships: { membership_number: string | null } | null;
   installments: { sequence: number; due_date: string } | null;
+  profile?: { full_name: string | null; email: string | null } | null;
 };
 
 const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"];
