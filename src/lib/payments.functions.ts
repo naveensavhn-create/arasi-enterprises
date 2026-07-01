@@ -613,6 +613,7 @@ export const reconcilePayments = createServerFn({ method: "POST" })
       from: data.from,
       to: data.to,
       q: data.q,
+      dateField: "created",
     });
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
 
