@@ -38,6 +38,17 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+        // Idempotency key: prefer Razorpay's delivery id header, then in-body id,
+        // finally a stable hash of the raw body so duplicates still collapse.
+        const headerEventId =
+          request.headers.get("x-razorpay-event-id") ??
+          request.headers.get("X-Razorpay-Event-Id");
+        const bodyEventId = (event as unknown as { id?: string }).id;
+        const eventId =
+          headerEventId ??
+          bodyEventId ??
+          `sha256:${createHmac("sha256", secret).update(body).digest("hex")}`;
+
         try {
           const eventType = event.event;
           const paymentEntity = event.payload?.payment?.entity;
