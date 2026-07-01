@@ -105,7 +105,7 @@ function AdminPaymentsPage() {
   const pageCount = Math.max(1, Math.ceil(total / search.pageSize));
 
   const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) => {
-    navigate({ search: (prev) => ({ ...prev, ...patch }) });
+    navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, ...patch }) });
   };
 
   const toggleSort = (col: SortCol) => {
