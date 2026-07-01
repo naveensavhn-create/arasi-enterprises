@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, Search, Download } from "lucide-react";
 import { useState, useMemo } from "react";
+import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 
 export const Route = createFileRoute("/_authenticated/admin/payments")({
   head: () => ({ meta: [{ title: "Payments — Admin" }] }),
