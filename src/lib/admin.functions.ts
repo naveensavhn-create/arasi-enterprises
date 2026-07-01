@@ -86,10 +86,18 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
     }
     if (!targetId) throw new Error(`No user found with email ${data.email}.`);
 
-    const { error: upsertError } = await supabaseAdmin
+    const { data: existing } = await supabaseAdmin
       .from("user_roles")
-      .upsert({ user_id: targetId, role: "admin" }, { onConflict: "user_id,role" });
-    if (upsertError) throw new Error(upsertError.message);
+      .select("id")
+      .eq("user_id", targetId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!existing) {
+      const { error: insertError } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: targetId, role: "admin" });
+      if (insertError) throw new Error(insertError.message);
+    }
 
     return { ok: true, userId: targetId };
   });
