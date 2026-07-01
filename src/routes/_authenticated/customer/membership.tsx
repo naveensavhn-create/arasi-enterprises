@@ -124,15 +124,13 @@ function CustomerMembershipPage() {
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-primary" />
                       <CardTitle className="text-lg">{plan?.name ?? "Membership"}</CardTitle>
-                      <Badge className="capitalize">{m.status}</Badge>
+                      <StatusBadge status={m.status} />
                     </div>
                     <p className="mt-1 font-mono text-xs text-muted-foreground">{m.membership_number}</p>
                   </div>
-                  <Button asChild size="sm" variant="outline">
-                    <Link to="/customer/installments">View installments</Link>
-                  </Button>
                 </div>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 {plan?.description && <p className="text-sm text-muted-foreground">{plan.description}</p>}
 
