@@ -2,20 +2,23 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldCheck, UserPlus, AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import { ShieldCheck, UserPlus, AlertTriangle, Loader2, Trash2, History } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useSession, useCurrentRole } from "@/lib/auth";
 import {
   claimFirstAdmin,
   getAdminBootstrapStatus,
   listAdmins,
+  listAdminAuditLog,
   promoteToAdminByEmail,
   setUserRole,
 } from "@/lib/admin.functions";
+
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   head: () => ({ meta: [{ title: "Admin Access — Arasi Enterprises" }] }),
@@ -29,9 +32,13 @@ function AdminSettings() {
   const bootstrapFn = useServerFn(getAdminBootstrapStatus);
   const claimFn = useServerFn(claimFirstAdmin);
   const listFn = useServerFn(listAdmins);
+  const auditFn = useServerFn(listAdminAuditLog);
   const promoteFn = useServerFn(promoteToAdminByEmail);
   const demoteFn = useServerFn(setUserRole);
   const queryClient = useQueryClient();
+
+  const [promoteReason, setPromoteReason] = useState("");
+
 
   const bootstrap = useQuery({
     queryKey: ["admin-bootstrap"],
@@ -41,6 +48,12 @@ function AdminSettings() {
   const admins = useQuery({
     queryKey: ["admin-list"],
     queryFn: () => listFn(),
+    enabled: role === "admin",
+  });
+
+  const audit = useQuery({
+    queryKey: ["admin-audit-log"],
+    queryFn: () => auditFn(),
     enabled: role === "admin",
   });
 
@@ -55,24 +68,29 @@ function AdminSettings() {
 
   const [email, setEmail] = useState("");
   const promote = useMutation({
-    mutationFn: (targetEmail: string) => promoteFn({ data: { email: targetEmail } }),
+    mutationFn: (vars: { email: string; reason?: string }) =>
+      promoteFn({ data: vars }),
     onSuccess: () => {
       toast.success(`Promoted ${email} to admin.`);
       setEmail("");
+      setPromoteReason("");
       queryClient.invalidateQueries({ queryKey: ["admin-list"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-audit-log"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const demote = useMutation({
-    mutationFn: (userId: string) =>
-      demoteFn({ data: { userId, role: "customer" as const } }),
+    mutationFn: (vars: { userId: string; reason?: string }) =>
+      demoteFn({ data: { userId: vars.userId, role: "customer", reason: vars.reason } }),
     onSuccess: () => {
       toast.success("Admin role revoked.");
       queryClient.invalidateQueries({ queryKey: ["admin-list"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-audit-log"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   if (roleLoading || bootstrap.isLoading) {
     return (
@@ -163,36 +181,51 @@ function AdminSettings() {
         </div>
 
         <form
-          className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end"
+          className="mt-5 space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
             const value = email.trim().toLowerCase();
             if (!value) return;
-            promote.mutate(value);
+            promote.mutate({ email: value, reason: promoteReason.trim() || undefined });
           }}
         >
-          <div className="flex-1">
-            <Label htmlFor="promote-email" className="text-xs">Email address</Label>
-            <Input
-              id="promote-email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="user@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Label htmlFor="promote-email" className="text-xs">Email address</Label>
+              <Input
+                id="promote-email"
+                type="email"
+                autoComplete="email"
+                required
+                placeholder="user@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={promote.isPending}
+              />
+            </div>
+            <Button type="submit" disabled={promote.isPending || !email.trim()}>
+              {promote.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Promoting…</>
+              ) : (
+                <>Grant admin</>
+              )}
+            </Button>
+          </div>
+          <div>
+            <Label htmlFor="promote-reason" className="text-xs">Reason (recorded in audit log)</Label>
+            <Textarea
+              id="promote-reason"
+              rows={2}
+              maxLength={500}
+              placeholder="e.g. Onboarding new operations lead"
+              value={promoteReason}
+              onChange={(e) => setPromoteReason(e.target.value)}
               disabled={promote.isPending}
             />
           </div>
-          <Button type="submit" disabled={promote.isPending || !email.trim()}>
-            {promote.isPending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Promoting…</>
-            ) : (
-              <>Grant admin</>
-            )}
-          </Button>
         </form>
       </div>
+
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
         <div className="flex items-center justify-between">
@@ -236,19 +269,17 @@ function AdminSettings() {
                   size="sm"
                   disabled={demote.isPending}
                   onClick={() => {
-                    if (
-                      confirm(
-                        isSelf
-                          ? "Remove admin from your own account? You'll lose access to admin tools."
-                          : `Revoke admin role from ${a.email ?? a.userId}?`,
-                      )
-                    ) {
-                      demote.mutate(a.userId);
-                    }
+                    const promptMsg = isSelf
+                      ? "Remove admin from your own account? You'll lose access to admin tools.\n\nReason (optional):"
+                      : `Revoke admin role from ${a.email ?? a.userId}?\n\nReason (optional):`;
+                    const reason = window.prompt(promptMsg);
+                    if (reason === null) return; // cancelled
+                    demote.mutate({ userId: a.userId, reason: reason.trim() || undefined });
                   }}
                 >
                   <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Revoke
                 </Button>
+
               </div>
             );
           })}
@@ -257,6 +288,80 @@ function AdminSettings() {
           )}
         </div>
       </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+        <div className="flex items-center gap-3">
+          <History className="h-5 w-5 text-primary" />
+          <div>
+            <h2 className="text-lg font-semibold">Role change audit log</h2>
+            <p className="text-xs text-muted-foreground">
+              Every promote and revoke is recorded here with actor, target, timestamp, and reason.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-lg border border-border">
+          {audit.isLoading && (
+            <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading audit log…
+            </div>
+          )}
+          {audit.data && audit.data.length === 0 && (
+            <div className="p-4 text-sm text-muted-foreground">No role changes recorded yet.</div>
+          )}
+          {audit.data && audit.data.length > 0 && (
+            <div className="max-h-[420px] overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">When</th>
+                    <th className="px-3 py-2 font-medium">Action</th>
+                    <th className="px-3 py-2 font-medium">Target</th>
+                    <th className="px-3 py-2 font-medium">Change</th>
+                    <th className="px-3 py-2 font-medium">Actor</th>
+                    <th className="px-3 py-2 font-medium">Reason</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {audit.data.map((row) => {
+                    const badge =
+                      row.action === "promote" || row.action === "bootstrap_claim"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : row.action === "revoke"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-primary/10 text-primary";
+                    return (
+                      <tr key={row.id} className="align-top">
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {new Date(row.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${badge}`}>
+                            {row.action.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs">
+                          <div className="font-medium">{row.target_email ?? row.target_user_id}</div>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {(row.role_before ?? "—")} → {(row.role_after ?? "—")}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {row.actor_email ?? row.actor_id}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {row.reason || <span className="italic opacity-60">—</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+
