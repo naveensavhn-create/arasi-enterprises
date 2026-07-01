@@ -40,31 +40,47 @@ async function writeAudit(
     reason: string | null;
     metadata?: Record<string, unknown>;
   },
-) {
-  await supabaseAdmin.from("admin_audit_log").insert({
-    actor_id: entry.actor_id,
-    actor_email: entry.actor_email,
-    target_user_id: entry.target_user_id,
-    target_email: entry.target_email,
-    action: entry.action,
-    role_before: entry.role_before,
-    role_after: entry.role_after,
-    reason: entry.reason,
-    metadata: (entry.metadata ?? {}) as never,
-  });
+): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("admin_audit_log")
+    .insert({
+      actor_id: entry.actor_id,
+      actor_email: entry.actor_email,
+      target_user_id: entry.target_user_id,
+      target_email: entry.target_email,
+      action: entry.action,
+      role_before: entry.role_before,
+      role_after: entry.role_after,
+      reason: entry.reason,
+      metadata: (entry.metadata ?? {}) as never,
+    })
+    .select("id")
+    .single();
+  return data?.id ?? null;
+}
+
+async function lookupProfile(
+  supabaseAdmin: SupabaseAdmin,
+  userId: string,
+): Promise<{ email: string | null; fullName: string | null }> {
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", userId)
+    .maybeSingle();
+  return {
+    email: data?.email ?? null,
+    fullName: data?.full_name ?? null,
+  };
 }
 
 async function lookupEmail(
   supabaseAdmin: SupabaseAdmin,
   userId: string,
 ): Promise<string | null> {
-  const { data } = await supabaseAdmin
-    .from("profiles")
-    .select("email")
-    .eq("id", userId)
-    .maybeSingle();
-  return data?.email ?? null;
+  return (await lookupProfile(supabaseAdmin, userId)).email;
 }
+
 
 async function currentRole(
   supabaseAdmin: SupabaseAdmin,
