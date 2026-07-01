@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
 import { PayInstallmentButton } from "@/components/payments/PayInstallmentButton";
+import { InstallmentTimelineDialog } from "@/components/payments/InstallmentTimelineDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CalendarClock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, CalendarClock, AlertTriangle, CheckCircle2, History } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/customer/installments")({
   head: () => ({ meta: [{ title: "Installments — Arasi Enterprises" }] }),
