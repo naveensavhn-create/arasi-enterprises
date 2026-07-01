@@ -105,8 +105,9 @@ function CustomerMembershipPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">My Membership</h1>
-        <p className="text-sm text-muted-foreground">Your enrolled plan and progress.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Membership Status</h1>
+        <p className="text-sm text-muted-foreground">Your plan, current state, and full installment schedule.</p>
+
       </div>
 
       <div className="grid gap-4">
