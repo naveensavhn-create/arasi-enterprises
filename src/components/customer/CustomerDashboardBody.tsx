@@ -116,7 +116,8 @@ export function CustomerDashboardBody() {
 
   if (!membership) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mx-auto max-w-3xl space-y-6 px-6 py-10">
+        <KycStatusCard />
         <Card>
           <CardContent className="space-y-3 p-8 text-center">
             <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
@@ -132,6 +133,7 @@ export function CustomerDashboardBody() {
       </div>
     );
   }
+
 
   const installments = installmentsQ.data ?? [];
   const paidCount = installments.filter((i) => i.status === "paid").length;
