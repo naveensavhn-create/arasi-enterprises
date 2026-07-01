@@ -4,14 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, CalendarClock, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { PayInstallmentButton } from "@/components/payments/PayInstallmentButton";
 
 export const Route = createFileRoute("/_authenticated/customer/membership")({
-  head: () => ({ meta: [{ title: "My Membership — Arasi" }] }),
+  head: () => ({ meta: [{ title: "Membership Status — Arasi" }] }),
   component: CustomerMembershipPage,
 });
+
+type Installment = {
+  id: string;
+  sequence: number;
+  due_date: string;
+  amount: number;
+  status: string;
+  paid_at: string | null;
+  membership_id: string;
+};
+
 
 type Row = {
   id: string;
@@ -28,19 +40,40 @@ type Row = {
 
 function CustomerMembershipPage() {
   const { session } = useSession();
+  const userId = session?.user.id;
+  const email = session?.user.email ?? undefined;
+  const phone = session?.user.phone ?? undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fullName = (session?.user.user_metadata as any)?.full_name as string | undefined;
+
   const { data, isLoading } = useQuery({
-    queryKey: ["my-memberships", session?.user.id],
-    enabled: !!session?.user.id,
+    queryKey: ["my-memberships", userId],
+    enabled: !!userId,
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("memberships")
         .select(
           "id, membership_number, status, start_date, end_date, advance_paid, total_amount, paid_amount, plan_id, membership_plans(name, description, monthly_installment, duration_months, benefits)"
         )
-        .eq("user_id", session!.user.id)
+        .eq("user_id", userId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Row[];
+    },
+  });
+
+  const { data: installments } = useQuery({
+    queryKey: ["my-installments-inline", userId],
+    enabled: !!userId,
+    refetchInterval: 8000,
+    queryFn: async (): Promise<Installment[]> => {
+      const { data, error } = await supabase
+        .from("installments")
+        .select("id, sequence, due_date, amount, status, paid_at, membership_id, memberships!inner(user_id)")
+        .eq("memberships.user_id", userId!)
+        .order("sequence", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as Installment[];
     },
   });
 
@@ -51,6 +84,7 @@ function CustomerMembershipPage() {
       </div>
     );
   }
+
 
   const rows = data ?? [];
 
@@ -71,8 +105,9 @@ function CustomerMembershipPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">My Membership</h1>
-        <p className="text-sm text-muted-foreground">Your enrolled plan and progress.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Membership Status</h1>
+        <p className="text-sm text-muted-foreground">Your plan, current state, and full installment schedule.</p>
+
       </div>
 
       <div className="grid gap-4">
@@ -89,15 +124,13 @@ function CustomerMembershipPage() {
                     <div className="flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-primary" />
                       <CardTitle className="text-lg">{plan?.name ?? "Membership"}</CardTitle>
-                      <Badge className="capitalize">{m.status}</Badge>
+                      <StatusBadge status={m.status} />
                     </div>
                     <p className="mt-1 font-mono text-xs text-muted-foreground">{m.membership_number}</p>
                   </div>
-                  <Button asChild size="sm" variant="outline">
-                    <Link to="/customer/installments">View installments</Link>
-                  </Button>
                 </div>
               </CardHeader>
+
               <CardContent className="space-y-4">
                 {plan?.description && <p className="text-sm text-muted-foreground">{plan.description}</p>}
 
@@ -140,8 +173,77 @@ function CustomerMembershipPage() {
                     </ul>
                   </div>
                 )}
+
+                {/* Installment schedule */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <CalendarClock className="h-3.5 w-3.5" /> Installment schedule
+                    </div>
+                    <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+                      <Link to="/customer/installments">Open full view</Link>
+                    </Button>
+                  </div>
+                  {(() => {
+                    const rows = (installments ?? []).filter((i) => i.membership_id === m.id);
+                    if (rows.length === 0) {
+                      return (
+                        <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+                          {m.status === "pending"
+                            ? "Schedule will appear once your advance payment is confirmed."
+                            : "No installments generated yet."}
+                        </p>
+                      );
+                    }
+                    return (
+                      <div className="overflow-hidden rounded-md border">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-muted/50 text-[10px] uppercase tracking-wider text-muted-foreground">
+                            <tr>
+                              <th className="px-2 py-2">#</th>
+                              <th className="px-2 py-2">Due</th>
+                              <th className="px-2 py-2">Amount</th>
+                              <th className="px-2 py-2">Status</th>
+                              <th className="px-2 py-2 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((r) => (
+                              <tr key={r.id} className="border-t">
+                                <td className="px-2 py-2 font-mono">{r.sequence}</td>
+                                <td className="px-2 py-2">{new Date(r.due_date).toLocaleDateString()}</td>
+                                <td className="px-2 py-2 font-medium">
+                                  ₹{Number(r.amount).toLocaleString("en-IN")}
+                                </td>
+                                <td className="px-2 py-2"><InstallmentStatus status={r.status} /></td>
+                                <td className="px-2 py-2 text-right">
+                                  {r.status !== "paid" ? (
+                                    <PayInstallmentButton
+                                      installmentId={r.id}
+                                      amount={Number(r.amount)}
+                                      sequence={r.sequence}
+                                      customerName={fullName}
+                                      customerEmail={email}
+                                      customerPhone={phone}
+                                    />
+
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {r.paid_at ? new Date(r.paid_at).toLocaleDateString() : "Paid"}
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
+                </div>
               </CardContent>
             </Card>
+
           );
         })}
       </div>
@@ -155,5 +257,36 @@ function Stat({ label, value }: { label: string; value: string }) {
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="mt-0.5 font-semibold">{value}</div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    active: { label: "Active", cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
+    pending: { label: "Pending", cls: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
+    cancelled: { label: "Cancelled", cls: "bg-destructive/15 text-destructive border-destructive/30" },
+    completed: { label: "Completed", cls: "bg-primary/15 text-primary border-primary/30" },
+  };
+  const cfg = map[status] ?? { label: status, cls: "bg-muted text-muted-foreground" };
+  return <Badge variant="outline" className={`capitalize ${cfg.cls}`}>{cfg.label}</Badge>;
+}
+
+function InstallmentStatus({ status }: { status: string }) {
+  if (status === "paid")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-500">
+        <CheckCircle2 className="h-3 w-3" /> Paid
+      </span>
+    );
+  if (status === "overdue")
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
+        <AlertTriangle className="h-3 w-3" /> Overdue
+      </span>
+    );
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-500">
+      <Clock className="h-3 w-3" /> Pending
+    </span>
   );
 }
