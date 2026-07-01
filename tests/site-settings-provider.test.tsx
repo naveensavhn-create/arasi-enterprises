@@ -102,7 +102,7 @@ describe("SiteSettingsProvider", () => {
     );
 
     // Wait for the query resolution
-    expect(await screen.findByText("ARASI Enterprises")).toBeTruthy();
+    expect(await screen.findByText("ARASI Test Suite Brand")).toBeTruthy();
     expect(screen.getByTestId("tagline").textContent).toBe(
       "Advance Booking & Monthly Installments",
     );
@@ -120,7 +120,7 @@ describe("SiteSettingsProvider", () => {
       </QueryClientProvider>,
     );
 
-    await screen.findByText("ARASI Enterprises");
+    await screen.findByText("ARASI Test Suite Brand");
     const root = document.documentElement;
     expect(root.style.getPropertyValue("--primary")).toBe("220 70% 25%");
     expect(root.style.getPropertyValue("--secondary")).toBe("45 80% 55%");
@@ -141,7 +141,7 @@ describe("SiteSettingsProvider", () => {
     );
 
     // Baseline
-    expect(await screen.findByText("ARASI Enterprises")).toBeTruthy();
+    expect(await screen.findByText("ARASI Test Suite Brand")).toBeTruthy();
     expect(document.documentElement.style.getPropertyValue("--primary")).toBe(
       "220 70% 25%",
     );
