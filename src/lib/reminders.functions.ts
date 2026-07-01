@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
+type SupabaseClientType = SupabaseClient<Database>;
 
 export interface DueInstallmentRow {
   installment_id: string;
@@ -17,10 +21,7 @@ export interface DueInstallmentRow {
   member_display_id: string | null;
 }
 
-async function assertAdmin(context: {
-  supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" }) => Promise<{ data: unknown; error: { message: string } | null }> };
-  userId: string;
-}) {
+async function assertAdmin(context: { supabase: SupabaseClientType; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
