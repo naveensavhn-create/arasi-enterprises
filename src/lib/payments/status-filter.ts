@@ -219,8 +219,24 @@ export function applyPaymentStatusEq<Q extends FilterableQuery<Q>>(
   if (Array.isArray(status)) {
     // Runtime belt-and-braces: filter out any value the compiler couldn't
     // catch (e.g. a caller passing `as any`). Keeps the emitted PostgREST
-    // filter valid even if type-safety is bypassed upstream.
+    // filter valid even if type-safety is bypassed upstream. Any dropped
+    // entry is logged so a silent mis-filter is impossible to miss in
+    // Worker logs — grep for `payment_status.apply`.
     const values = (status as readonly unknown[]).filter(isPaymentStatus);
+    if (values.length !== status.length) {
+      const dropped = (status as readonly unknown[]).filter(
+        (v) => !isPaymentStatus(v),
+      );
+      try {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[payment_status.apply] dropped invalid entries from status filter",
+          { raw: status, dropped, allowed: PAYMENT_STATUSES },
+        );
+      } catch {
+        /* logging must never throw */
+      }
+    }
     if (values.length === 0) return query;
     if (values.length === 1) {
       return query.filter(PAYMENT_STATUS_TEXT_COLUMN, "eq", values[0]);
@@ -231,6 +247,7 @@ export function applyPaymentStatusEq<Q extends FilterableQuery<Q>>(
       `(${values.join(",")})`,
     );
   }
+
   if (!isPaymentStatus(status)) return query;
   return query.filter(PAYMENT_STATUS_TEXT_COLUMN, "eq", status);
 }
