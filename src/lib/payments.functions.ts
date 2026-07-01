@@ -20,6 +20,9 @@ const baseFilterSchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   q: z.string().optional(),
+  orderId: z.string().optional(),
+  paymentId: z.string().optional(),
+  customer: z.string().optional(),
 });
 
 const pageSchema = baseFilterSchema.extend({
@@ -78,13 +81,29 @@ async function resolveSearchIds(sb: any, q: string | undefined) {
   };
 }
 
+async function resolveCustomerIdsExact(sb: any, customer: string | undefined) {
+  if (!customer) return undefined;
+  const like = `%${customer}%`;
+  const { data, error } = await sb
+    .from("profiles")
+    .select("id")
+    .or(`full_name.ilike.${like},email.ilike.${like}`)
+    .limit(500);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: any) => r.id) as string[];
+}
+
 function normalizeFilters(f: Filters) {
   const q = f.q?.trim() || undefined;
   const status = f.status && f.status !== "all" ? f.status : undefined;
   const fromISO = f.from ? new Date(f.from).toISOString() : undefined;
   const toISO = f.to ? new Date(new Date(f.to).getTime() + 86_400_000).toISOString() : undefined;
-  return { q, status, fromISO, toISO, sortBy: f.sortBy, sortDir: f.sortDir };
+  const orderId = f.orderId?.trim() || undefined;
+  const paymentId = f.paymentId?.trim() || undefined;
+  const customer = f.customer?.trim() || undefined;
+  return { q, status, fromISO, toISO, orderId, paymentId, customer, sortBy: f.sortBy, sortDir: f.sortDir };
 }
+
 
 async function fetchPaymentRows(
   sb: any,
