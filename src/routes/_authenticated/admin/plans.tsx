@@ -31,6 +31,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 import { deletePlanAudited } from "@/lib/plans.functions";
+import { BLOCKING_STATUSES, computePlanUsage, usageFor } from "@/lib/plans-precheck";
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
@@ -98,16 +99,12 @@ function AdminPlansPage() {
       const { data, error } = await supabase
         .from("memberships")
         .select("plan_id, status")
-        .in("status", ["pending", "active"]);
+        .in("status", [...BLOCKING_STATUSES]);
       if (error) throw error;
-      const counts: Record<string, number> = {};
-      for (const row of (data ?? []) as { plan_id: string | null }[]) {
-        if (row.plan_id) counts[row.plan_id] = (counts[row.plan_id] ?? 0) + 1;
-      }
-      return counts;
+      return computePlanUsage((data ?? []) as { plan_id: string | null; status: string | null }[]);
     },
   });
-  const usageFor = (id: string) => usage?.[id] ?? 0;
+  const usageForPlan = (id: string) => usageFor(usage, id);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -429,7 +426,7 @@ function AdminPlansPage() {
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
           {(() => {
-            const inUse = confirmDelete ? usageFor(confirmDelete.id) : 0;
+            const inUse = confirmDelete ? usageForPlan(confirmDelete.id) : 0;
             const blocked = inUse > 0;
             return (
               <>
