@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  buildPlanDeletionAuditEntry,
+  computeDeletionCounts,
+} from "@/lib/plan-deletion-audit";
 
 const deleteSchema = z.object({ planId: z.string().uuid() });
 
@@ -62,7 +66,9 @@ export const deletePlanAudited = createServerFn({ method: "POST" })
 
     // Enrollment counts by status
     const statuses = ["pending", "active", "cancelled", "completed"] as const;
-    const counts = { pending: 0, active: 0, cancelled: 0, completed: 0 };
+    const rawCounts: Record<(typeof statuses)[number], number> = {
+      pending: 0, active: 0, cancelled: 0, completed: 0,
+    };
     await Promise.all(
       statuses.map(async (s) => {
         const { count } = await supabaseAdmin
@@ -70,11 +76,10 @@ export const deletePlanAudited = createServerFn({ method: "POST" })
           .select("id", { count: "exact", head: true })
           .eq("plan_id", data.planId)
           .eq("status", s);
-        counts[s] = count ?? 0;
+        rawCounts[s] = count ?? 0;
       }),
     );
-    const blocking = counts.pending + counts.active;
-    const total = counts.pending + counts.active + counts.cancelled + counts.completed;
+    const counts = computeDeletionCounts(rawCounts);
 
     // Attempt delete — trigger may still raise if blocking > 0
     const { error: deleteErr } = await supabaseAdmin
@@ -82,48 +87,46 @@ export const deletePlanAudited = createServerFn({ method: "POST" })
       .delete()
       .eq("id", data.planId);
 
-    const blocked = !!deleteErr;
-    const action = blocked ? "plan_delete_blocked" : "plan_delete_success";
-    const metadata = {
-      plan_id: plan.id,
-      plan_name: plan.name,
-      plan_code: null,
-      plan_was_active: plan.is_active,
-      counts: { ...counts, blocking, total },
-      db_error: blocked
+    const entry = buildPlanDeletionAuditEntry({
+      actorId: context.userId,
+      actorEmail: actorProfile?.email ?? null,
+      plan: { id: plan.id, name: plan.name, is_active: plan.is_active },
+      counts,
+      deleteError: deleteErr
         ? {
-            message: deleteErr?.message ?? null,
+            message: deleteErr.message ?? null,
             code: (deleteErr as { code?: string } | null)?.code ?? null,
             details: (deleteErr as { details?: string } | null)?.details ?? null,
           }
         : null,
-    };
+    });
 
-    // Write audit — target_user_id is NOT NULL on this table; self-target the
-    // actor since plan events are not tied to a user.
+    // target_user_id is NOT NULL on this table; self-target the actor since
+    // plan events are not tied to a user.
     const { data: audit } = await supabaseAdmin
       .from("admin_audit_log")
       .insert({
-        actor_id: context.userId,
-        actor_email: actorProfile?.email ?? null,
-        target_user_id: context.userId,
-        target_email: actorProfile?.email ?? null,
-        action,
-        role_before: null,
-        role_after: null,
-        reason: null,
-        metadata: metadata as never,
+        actor_id: entry.actor_id,
+        actor_email: entry.actor_email,
+        target_user_id: entry.target_user_id,
+        target_email: entry.target_email,
+        action: entry.action,
+        role_before: entry.role_before,
+        role_after: entry.role_after,
+        reason: entry.reason,
+        metadata: entry.metadata as never,
       })
       .select("id")
       .single();
 
+    const blocked = entry.action === "plan_delete_blocked";
     return {
       success: !blocked,
       blocked,
       planId: plan.id,
       planName: plan.name,
       planCode: null,
-      counts: { ...counts, blocking, total },
+      counts,
       auditLogId: audit?.id ?? null,
       error: blocked ? (deleteErr?.message ?? "Delete blocked") : undefined,
     };
