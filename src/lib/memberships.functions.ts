@@ -62,6 +62,8 @@ export const listMembershipsAdmin = createServerFn({ method: "GET" })
       enriched = enriched.filter(
         (r: any) =>
           r.membership_number?.toLowerCase().includes(s) ||
+          r.member_display_id?.toLowerCase().includes(s) ||
+          r.coupon_no?.toLowerCase().includes(s) ||
           r.customer?.full_name?.toLowerCase().includes(s) ||
           r.customer?.email?.toLowerCase().includes(s) ||
           r.plan?.name?.toLowerCase().includes(s),
