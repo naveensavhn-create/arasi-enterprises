@@ -135,8 +135,12 @@ function AdminPaymentsPage() {
         },
       }),
     placeholderData: keepPreviousData,
-    // Polling fallback: refresh every 30s while realtime is off, 2m otherwise.
-    refetchInterval: liveConnected ? 120_000 : 30_000,
+    // Polling fallback interval is admin-configurable. Realtime pauses polling
+    // to a longer interval; when disconnected we honor the admin's setting
+    // (0 disables background polling entirely).
+    refetchInterval: liveConnected
+      ? (paymentsPollingMs === 0 ? false : Math.max(paymentsPollingMs, 120_000))
+      : (paymentsPollingMs === 0 ? false : paymentsPollingMs),
     refetchOnWindowFocus: true,
   });
 
