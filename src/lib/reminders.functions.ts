@@ -338,7 +338,7 @@ export const listReminderJobs = createServerFn({ method: "GET" })
       dead_letter_reason: r.dead_letter_reason,
       created_at: r.created_at,
       updated_at: r.updated_at,
-      metadata: (r.metadata ?? {}) as Record<string, unknown>,
+      metadata: (r.metadata ?? {}) as JsonValue,
       membership_number: r.memberships?.membership_number ?? null,
       member_display_id: r.memberships?.member_display_id ?? null,
       customer_name: r.memberships?.profiles?.full_name ?? null,
