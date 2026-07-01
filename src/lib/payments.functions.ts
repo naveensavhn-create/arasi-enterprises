@@ -172,13 +172,37 @@ async function fetchPaymentRows(
     for (const p of profs ?? []) profMap.set(p.id, p);
   }
 
+  // Latest reconciliation per payment (batched)
+  const paymentIds = (rows ?? []).map((r: any) => r.id).filter(Boolean);
+  const reconMap = new Map<string, AdminPaymentRow["reconciliation"]>();
+  if (paymentIds.length) {
+    const { data: recs, error: rErr } = await sb
+      .from("payment_reconciliations")
+      .select("payment_id, mismatch, provider_status, stored_status, resolved_at, created_at")
+      .in("payment_id", paymentIds)
+      .order("created_at", { ascending: false });
+    if (rErr) throw new Error(rErr.message);
+    for (const rec of recs ?? []) {
+      if (reconMap.has(rec.payment_id)) continue; // keep latest only
+      reconMap.set(rec.payment_id, {
+        last_checked_at: rec.created_at,
+        mismatch: !!rec.mismatch,
+        resolved_at: rec.resolved_at,
+        provider_status: rec.provider_status,
+        stored_status: rec.stored_status,
+      });
+    }
+  }
+
   return (rows ?? []).map((r: any) => ({
     ...r,
     profile: profMap.get(r.customer_id)
       ? { full_name: profMap.get(r.customer_id).full_name, email: profMap.get(r.customer_id).email }
       : null,
+    reconciliation: reconMap.get(r.id) ?? null,
   }));
 }
+
 
 export const listAdminPayments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
