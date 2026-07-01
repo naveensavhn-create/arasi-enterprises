@@ -89,7 +89,7 @@ function formatBytes(n: number | null): string {
 
 function filterSummary(f: ExportJob["filters"]): string[] {
   const chips: string[] = [];
-  if (f.status && f.status !== "all") chips.push(`Status: ${f.status}`);
+  if (f.status) chips.push(`Status: ${f.status}`);
   if (f.from || f.to)
     chips.push(`Date: ${f.from || "…"} → ${f.to || "…"} (${f.dateField})`);
   if (f.q) chips.push(`Search: ${f.q}`);
