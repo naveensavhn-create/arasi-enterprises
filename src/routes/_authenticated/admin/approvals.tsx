@@ -334,6 +334,10 @@ function ReviewDrawer({
                 <Row icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={row.phone} mono />
               </Section>
 
+              <Section title="Referring promoter">
+                <ReferrerEditor row={row} />
+              </Section>
+
               <Section title="Residential address">
                 <Row
                   icon={<MapPin className="h-3.5 w-3.5" />}
