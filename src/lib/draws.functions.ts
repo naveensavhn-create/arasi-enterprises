@@ -128,15 +128,85 @@ export const enterDraw = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => enterSchema.parse(i))
   .handler(async ({ data, context }) => {
+    const { data: draw, error: drawErr } = await context.supabase
+      .from("draws")
+      .select("id, status, opens_at, closes_at, requires_active_membership, plan_id")
+      .eq("id", data.drawId)
+      .maybeSingle();
+    if (drawErr) throw new Error(drawErr.message);
+    if (!draw) throw new Error("Draw not found");
+    if (!["scheduled", "open"].includes(draw.status)) throw new Error("Draw is not open for entries");
+    const now = Date.now();
+    if (draw.opens_at && new Date(draw.opens_at).getTime() > now) throw new Error("Draw hasn't opened yet");
+    if (draw.closes_at && new Date(draw.closes_at).getTime() < now) throw new Error("Draw entries have closed");
+
+    let membershipId = data.membershipId ?? null;
+    if (draw.requires_active_membership || membershipId) {
+      let q = context.supabase
+        .from("memberships")
+        .select("id, plan_id, status")
+        .eq("user_id", context.userId)
+        .eq("status", "active");
+      if (draw.plan_id) q = q.eq("plan_id", draw.plan_id);
+      const { data: mem, error: mErr } = await q.order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (mErr) throw new Error(mErr.message);
+      if (draw.requires_active_membership && !mem) {
+        throw new Error("You need an active membership to enter this draw");
+      }
+      membershipId = mem?.id ?? membershipId;
+    }
+
     const { data: row, error } = await context.supabase
       .from("draw_entries")
       .insert({
         draw_id: data.drawId,
         customer_id: context.userId,
-        membership_id: data.membershipId ?? null,
+        membership_id: membershipId,
       })
       .select("*")
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      if ((error as { code?: string }).code === "23505") throw new Error("You've already entered this draw");
+      throw new Error(error.message);
+    }
     return row;
+  });
+
+export const listOpenDrawsForCustomer = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: draws, error } = await context.supabase
+      .from("draws")
+      .select("id, name, description, prize, prize_value, status, opens_at, closes_at, winners_count, plan_id, requires_active_membership, drawn_at")
+      .in("status", ["scheduled", "open", "closed", "completed"])
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    const list = (draws ?? []) as Array<{ id: string; name: string; description: string | null; prize: string; prize_value: number | null; status: string; opens_at: string | null; closes_at: string | null; winners_count: number; plan_id: string | null; requires_active_membership: boolean; drawn_at: string | null }>;
+    const ids = list.map((d) => d.id);
+    const [entriesRes, winsRes] = await Promise.all([
+      ids.length
+        ? context.supabase
+            .from("draw_entries")
+            .select("id, draw_id, entry_number, eligible, disqualified_reason, created_at, membership_id")
+            .eq("customer_id", context.userId)
+            .in("draw_id", ids)
+        : Promise.resolve({ data: [], error: null }),
+      ids.length
+        ? context.supabase
+            .from("draw_winners")
+            .select("id, draw_id, position, prize, drawn_at")
+            .eq("customer_id", context.userId)
+            .in("draw_id", ids)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    type EntryRow = { id: string; draw_id: string; entry_number: number; eligible: boolean; disqualified_reason: string | null; created_at: string; membership_id: string | null };
+    type WinRow = { id: string; draw_id: string; position: number; prize: string; drawn_at: string };
+    const entryByDraw = new Map<string, EntryRow>(((entriesRes.data ?? []) as EntryRow[]).map((e) => [e.draw_id, e]));
+    const winByDraw = new Map<string, WinRow>(((winsRes.data ?? []) as WinRow[]).map((w) => [w.draw_id, w]));
+    return list.map((d) => ({
+      ...d,
+      myEntry: entryByDraw.get(d.id) ?? null,
+      myWin: winByDraw.get(d.id) ?? null,
+    }));
   });
