@@ -253,6 +253,34 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
                 <Field label="Payment ID" value={row.provider_payment_id ?? "—"} mono copyable={row.provider_payment_id ?? undefined} />
                 <Field label="Method" value={<span className="capitalize">{row.method ?? "—"}</span>} />
                 <Field label="Provider" value={<span className="capitalize">{row.provider}</span>} />
+                {eventsPage === 0 && events && events[0] && (
+                  <>
+                    <Separator className="my-2" />
+                    <Field
+                      label="Latest webhook"
+                      value={
+                        <span className="flex items-center gap-1.5">
+                          {events[0].status && (
+                            <Badge variant="outline" className="text-[10px] capitalize">{events[0].status}</Badge>
+                          )}
+                          <span className="text-[11px] text-muted-foreground">{events[0].event_type ?? "—"}</span>
+                        </span>
+                      }
+                    />
+                    <Field
+                      label="Webhook event ID"
+                      value={events[0].event_id}
+                      mono
+                      copyable={events[0].event_id}
+                    />
+                    <Field
+                      label="Webhook row ID"
+                      value={events[0].id}
+                      mono
+                      copyable={events[0].id}
+                    />
+                  </>
+                )}
                 {row.provider_payment_id && (
                   <div className="pt-2">
                     <Button
