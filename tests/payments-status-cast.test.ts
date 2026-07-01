@@ -27,7 +27,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { Client } from "pg";
-import { applyPaymentStatusEq } from "@/lib/payments.functions";
+import {
+  applyPaymentStatusEq,
+  applyPaymentStatusIn,
+  PAYMENT_STATUS_TEXT_COLUMN,
+} from "@/lib/payments/status-filter";
 
 // ---------------------------------------------------------------------------
 // 1. Helper contract
