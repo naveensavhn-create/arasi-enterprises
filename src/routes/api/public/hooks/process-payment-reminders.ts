@@ -175,12 +175,118 @@ async function dispatchEmail(args: {
   }
 }
 
+/**
+ * Send an SMS via MSG91's Flow API. Requires MSG91_AUTH_KEY, MSG91_SENDER_ID,
+ * and MSG91_REMINDER_TEMPLATE_ID (a DLT-approved flow template with
+ * `##name##`, `##amount##`, `##due##`, `##membership##` variables). If any
+ * credential is missing, the job is skipped with `no_sms_infra` so ops can
+ * see the gap in the audit log without dead-lettering.
+ */
+async function dispatchSms(args: {
+  to: string;
+  variables: Record<string, string>;
+  idempotencyKey: string;
+}): Promise<{
+  status: "sent" | "failed" | "skipped_no_sms_infra";
+  providerMessageId?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}> {
+  const authKey = process.env.MSG91_AUTH_KEY;
+  const templateId = process.env.MSG91_REMINDER_TEMPLATE_ID;
+  const senderId = process.env.MSG91_SENDER_ID;
+  if (!authKey || !templateId || !senderId) {
+    return {
+      status: "skipped_no_sms_infra",
+      errorCode: "no_sms_infra",
+      errorMessage:
+        "SMS provider not configured. Set MSG91_AUTH_KEY, MSG91_SENDER_ID, and MSG91_REMINDER_TEMPLATE_ID.",
+    };
+  }
+  // Normalize phone to E.164-ish digits; MSG91 expects country+number, no '+'.
+  const mobile = args.to.replace(/[^\d]/g, "");
+  if (!mobile || mobile.length < 10) {
+    return {
+      status: "failed",
+      errorCode: "invalid_recipient",
+      errorMessage: `Recipient phone "${args.to}" is not a valid number.`,
+    };
+  }
+  try {
+    const res = await fetch("https://control.msg91.com/api/v5/flow", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authkey: authKey,
+      },
+      body: JSON.stringify({
+        template_id: templateId,
+        sender: senderId,
+        short_url: "0",
+        recipients: [
+          {
+            mobiles: mobile,
+            ...args.variables,
+          },
+        ],
+      }),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      return {
+        status: "failed",
+        errorCode: `http_${res.status}`,
+        errorMessage: `MSG91 returned ${res.status}: ${text.slice(0, 500)}`,
+      };
+    }
+    const parsed = (() => {
+      try {
+        return JSON.parse(text) as {
+          type?: string;
+          message?: string;
+          request_id?: string;
+        };
+      } catch {
+        return {} as Record<string, string>;
+      }
+    })();
+    if (parsed.type && parsed.type !== "success") {
+      return {
+        status: "failed",
+        errorCode: "provider_error",
+        errorMessage: parsed.message ?? text.slice(0, 500),
+      };
+    }
+    return {
+      status: "sent",
+      providerMessageId: parsed.request_id ?? args.idempotencyKey,
+    };
+  } catch (err) {
+    return {
+      status: "failed",
+      errorCode: "network_error",
+      errorMessage: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+function formatDueDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 async function processJob(
   supabase: SupabaseClient<Database>,
   job: Job,
 ): Promise<{ jobId: string; outcome: string }> {
-  // Only email is wired today; SMS jobs get skipped with a clear reason.
-  if (job.channel !== "email") {
+  if (job.channel !== "email" && job.channel !== "sms") {
     await finalize(supabase, job.id, {
       status: "skipped",
       errorCode: "unsupported_channel",
@@ -189,12 +295,16 @@ async function processJob(
     return { jobId: job.id, outcome: "skipped_channel" };
   }
 
-  const recipient = job.recipient_email;
+  const recipient =
+    job.channel === "email" ? job.recipient_email : job.recipient_phone;
   if (!recipient) {
     await finalize(supabase, job.id, {
       status: "skipped",
       errorCode: "no_recipient",
-      errorMessage: "Recipient email is missing.",
+      errorMessage:
+        job.channel === "email"
+          ? "Recipient email is missing."
+          : "Recipient phone is missing.",
     });
     return { jobId: job.id, outcome: "skipped_no_recipient" };
   }
