@@ -133,9 +133,12 @@ function AdminSettings() {
   const auditFn = useServerFn(listAdminAuditLog);
   const promoteFn = useServerFn(promoteToAdminByEmail);
   const demoteFn = useServerFn(setUserRole);
+  const notificationsFn = useServerFn(listRoleEmailNotifications);
+  const testEmailFn = useServerFn(sendRoleChangeTestEmail);
   const queryClient = useQueryClient();
 
-  const [promoteReason, setPromoteReason] = useState("");
+  const [testKind, setTestKind] = useState<"promote" | "revoke">("promote");
+  const [testEmail, setTestEmail] = useState("");
   const [revokeTarget, setRevokeTarget] = useState<null | {
     userId: string;
     email: string | null;
