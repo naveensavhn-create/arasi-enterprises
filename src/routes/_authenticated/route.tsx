@@ -107,6 +107,7 @@ function AuthenticatedShell() {
               <GlobalSearch role={role} />
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <HeaderKycStatus />
               <div className="hidden max-w-[200px] text-right sm:block">
                 <div className="truncate text-sm font-medium leading-tight">
                   {user?.email ?? user?.phone}
@@ -118,6 +119,7 @@ function AuthenticatedShell() {
                 <span className="sr-only sm:hidden">Sign out</span>
               </Button>
             </div>
+
           </header>
           <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
             <Outlet />
