@@ -44,7 +44,7 @@ async function writeAudit(
     role_before: entry.role_before,
     role_after: entry.role_after,
     reason: entry.reason,
-    metadata: entry.metadata ?? {},
+    metadata: (entry.metadata ?? {}) as never,
   });
 }
 
