@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -10,11 +11,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Copy, ExternalLink } from "lucide-react";
+import { Loader2, Copy, ExternalLink, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 import type { AdminPaymentRow } from "@/lib/payments.functions";
 
 export type PaymentDetailRow = AdminPaymentRow;
+
+const EVENTS_PAGE_SIZE = 10;
+const RAW_MAX_BYTES = 96 * 1024; // 96 KB inline cap; larger payloads must be downloaded
+
 
 
 type WebhookEvent = {
