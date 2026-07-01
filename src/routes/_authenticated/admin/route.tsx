@@ -1,7 +1,8 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { getMyRole } from "@/lib/roles.functions";
 import { getAdminBootstrapStatus } from "@/lib/admin.functions";
 import { Forbidden, ForbiddenError } from "@/components/access/Forbidden";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async ({ location }) => {

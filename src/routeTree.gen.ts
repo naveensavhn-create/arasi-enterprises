@@ -19,6 +19,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedPromoterRouteRouteImport } from './routes/_authenticated/promoter/route'
 import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/customer/route'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedPromoterPortfolioRouteImport } from './routes/_authenticated/promoter/portfolio'
 import { Route as AuthenticatedPromoterLuckyDrawRouteImport } from './routes/_authenticated/promoter/lucky-draw'
 import { Route as AuthenticatedPromoterCustomersRouteImport } from './routes/_authenticated/promoter/customers'
@@ -104,6 +105,11 @@ const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
 const AuthenticatedPromoterPortfolioRoute =
   AuthenticatedPromoterPortfolioRouteImport.update({
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -357,7 +364,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -393,6 +399,7 @@ export interface FileRoutesByTo {
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -440,6 +447,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/_authenticated/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -487,6 +495,7 @@ export interface FileRouteTypes {
     | '/promoter/customers'
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
+    | '/admin/'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
@@ -496,7 +505,6 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
-    | '/admin'
     | '/customer'
     | '/promoter'
     | '/dashboard'
@@ -532,6 +540,7 @@ export interface FileRouteTypes {
     | '/promoter/customers'
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
+    | '/admin'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
@@ -578,6 +587,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/customers'
     | '/_authenticated/promoter/lucky-draw'
     | '/_authenticated/promoter/portfolio'
+    | '/_authenticated/admin/'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
@@ -666,6 +676,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/promoter/portfolio': {
       id: '/_authenticated/promoter/portfolio'
@@ -927,6 +944,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminSiteSettingsRoute: typeof AuthenticatedAdminSiteSettingsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
@@ -950,6 +968,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminSiteSettingsRoute: AuthenticatedAdminSiteSettingsRoute,
     AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+    AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   }
 
 const AuthenticatedAdminRouteRouteWithChildren =
