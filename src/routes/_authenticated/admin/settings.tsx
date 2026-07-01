@@ -62,6 +62,7 @@ type AuditRow = {
   role_before: string | null;
   role_after: string | null;
   reason: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 function csvCell(v: unknown): string {
