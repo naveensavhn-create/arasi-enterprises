@@ -451,7 +451,7 @@ export interface RoleEmailNotification {
   error_message: string | null;
   is_test: boolean;
   triggered_by: string | null;
-  metadata: Record<string, unknown> | null;
+  metadata: string | null;
   created_at: string;
   updated_at: string;
 }
