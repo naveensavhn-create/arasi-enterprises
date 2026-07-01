@@ -1,0 +1,438 @@
+import { useEffect, useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import {
+  Search,
+  ShieldCheck,
+  ShieldAlert,
+  Clock,
+  ExternalLink,
+  FileImage,
+  MapPin,
+  Phone,
+  Mail,
+  IdCard,
+} from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+
+import {
+  getKycSignedUrl,
+  listKycSubmissions,
+  setKycDecision,
+  type KycProfile,
+  type KycStatus,
+} from "@/lib/kyc.functions";
+
+export const Route = createFileRoute("/_authenticated/admin/approvals")({
+  head: () => ({ meta: [{ title: "Approvals — Admin" }] }),
+  component: AdminApprovalsPage,
+});
+
+function statusBadge(s: KycStatus) {
+  if (s === "approved")
+    return (
+      <Badge className="bg-emerald-600 hover:bg-emerald-600">
+        <ShieldCheck className="mr-1 h-3 w-3" /> Approved
+      </Badge>
+    );
+  if (s === "pending")
+    return (
+      <Badge className="bg-amber-500 hover:bg-amber-500">
+        <Clock className="mr-1 h-3 w-3" /> Pending
+      </Badge>
+    );
+  if (s === "rejected")
+    return (
+      <Badge variant="destructive">
+        <ShieldAlert className="mr-1 h-3 w-3" /> Rejected
+      </Badge>
+    );
+  return <Badge variant="outline">Unsubmitted</Badge>;
+}
+
+function AdminApprovalsPage() {
+  const qc = useQueryClient();
+  const listFn = useServerFn(listKycSubmissions);
+  const decideFn = useServerFn(setKycDecision);
+
+  const [tab, setTab] = useState<KycStatus>("pending");
+  const [q, setQ] = useState("");
+  const [selected, setSelected] = useState<KycProfile | null>(null);
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["kyc", "list", tab],
+    queryFn: () =>
+      listFn({ data: { status: tab } }) as Promise<KycProfile[]>,
+  });
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    if (!term) return rows;
+    return rows.filter(
+      (r) =>
+        (r.email ?? "").toLowerCase().includes(term) ||
+        (r.full_name ?? "").toLowerCase().includes(term) ||
+        (r.phone ?? "").toLowerCase().includes(term) ||
+        (r.city ?? "").toLowerCase().includes(term) ||
+        (r.aadhaar_number ?? "").includes(term),
+    );
+  }, [rows, q]);
+
+  const decideMut = useMutation({
+    mutationFn: (v: { userId: string; approve: boolean; notes: string | null }) =>
+      decideFn({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(v.approve ? "Approved" : "Rejected");
+      qc.invalidateQueries({ queryKey: ["kyc"] });
+      setSelected(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Membership approvals</h1>
+        <p className="text-sm text-muted-foreground">
+          Review customer and promoter KYC submissions and approve or reject membership.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as KycStatus)}>
+          <TabsList>
+            <TabsTrigger value="pending">Pending</TabsTrigger>
+            <TabsTrigger value="approved">Approved</TabsTrigger>
+            <TabsTrigger value="rejected">Rejected</TabsTrigger>
+            <TabsTrigger value="unsubmitted">Not submitted</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="relative w-full max-w-sm">
+          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            className="pl-8"
+            placeholder="Search name, email, phone, city, aadhaar…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            {tab === "pending" && "Pending submissions"}
+            {tab === "approved" && "Approved members"}
+            {tab === "rejected" && "Rejected submissions"}
+            {tab === "unsubmitted" && "Not yet submitted"} ({filtered.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Loading…</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-sm text-muted-foreground">Nothing here.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>City</TableHead>
+                  <TableHead>Aadhaar</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((r) => (
+                  <TableRow key={r.id} className="cursor-pointer" onClick={() => setSelected(r)}>
+                    <TableCell>
+                      <div className="font-medium">
+                        {r.full_name || <span className="text-muted-foreground">—</span>}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{r.email}</div>
+                    </TableCell>
+                    <TableCell>
+                      {r.role ? (
+                        <Badge variant="secondary" className="capitalize">
+                          {r.role}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{r.phone || "—"}</TableCell>
+                    <TableCell className="text-sm">{r.city || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">
+                      {r.aadhaar_number ? "•••• •••• " + r.aadhaar_number.slice(-4) : "—"}
+                    </TableCell>
+                    <TableCell>{statusBadge(r.kyc_status)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelected(r);
+                        }}
+                      >
+                        Review
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <ReviewDrawer
+        row={selected}
+        onClose={() => setSelected(null)}
+        onDecide={(approve, notes) =>
+          selected && decideMut.mutate({ userId: selected.id, approve, notes })
+        }
+        pending={decideMut.isPending}
+      />
+    </div>
+  );
+}
+
+function ReviewDrawer({
+  row,
+  onClose,
+  onDecide,
+  pending,
+}: {
+  row: KycProfile | null;
+  onClose: () => void;
+  onDecide: (approve: boolean, notes: string | null) => void;
+  pending: boolean;
+}) {
+  const [notes, setNotes] = useState("");
+  const signFn = useServerFn(getKycSignedUrl);
+  const [frontUrl, setFrontUrl] = useState<string | null>(null);
+  const [backUrl, setBackUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setNotes(row?.kyc_review_notes ?? "");
+    setFrontUrl(null);
+    setBackUrl(null);
+    if (!row) return;
+    (async () => {
+      if (row.aadhaar_front_url) {
+        try {
+          const r = (await signFn({
+            data: { path: row.aadhaar_front_url, forUserId: row.id },
+          })) as { url: string };
+          setFrontUrl(r.url);
+        } catch {}
+      }
+      if (row.aadhaar_back_url) {
+        try {
+          const r = (await signFn({
+            data: { path: row.aadhaar_back_url, forUserId: row.id },
+          })) as { url: string };
+          setBackUrl(r.url);
+        } catch {}
+      }
+    })();
+  }, [row?.id]);
+
+  return (
+    <Sheet open={!!row} onOpenChange={(o) => !o && onClose()}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
+        {row && (
+          <>
+            <SheetHeader>
+              <SheetTitle>
+                {row.full_name || row.email}
+                <span className="ml-2 align-middle">{statusBadge(row.kyc_status)}</span>
+              </SheetTitle>
+              <SheetDescription>Review the submitted details and decide.</SheetDescription>
+            </SheetHeader>
+
+            <div className="mt-4 space-y-4">
+              <Section title="Contact">
+                <Row icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={row.email} mono />
+                <Row icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={row.phone} mono />
+              </Section>
+
+              <Section title="Residential address">
+                <Row
+                  icon={<MapPin className="h-3.5 w-3.5" />}
+                  label="Address"
+                  value={[row.address_line1, row.address_line2].filter(Boolean).join(", ")}
+                />
+                <Row label="City" value={row.city} />
+                <Row label="State" value={row.state} />
+                <Row label="Postal code" value={row.postal_code} />
+                <Row label="Country" value={row.country} />
+              </Section>
+
+              <Section title="Aadhaar">
+                <Row
+                  icon={<IdCard className="h-3.5 w-3.5" />}
+                  label="Number"
+                  value={row.aadhaar_number}
+                  mono
+                />
+                <Row label="Address on Aadhaar" value={row.aadhaar_address} />
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <Doc label="Front" url={frontUrl} hasFile={!!row.aadhaar_front_url} />
+                  <Doc label="Back" url={backUrl} hasFile={!!row.aadhaar_back_url} />
+                </div>
+              </Section>
+
+              {row.kyc_status !== "approved" && row.kyc_status !== "rejected" && (
+                <div className="space-y-1.5">
+                  <Label>Review notes (optional, shared with the user if rejected)</Label>
+                  <Textarea
+                    rows={3}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g. Aadhaar image is blurry, please re-upload"
+                  />
+                </div>
+              )}
+
+              {(row.kyc_status === "approved" || row.kyc_status === "rejected") &&
+                row.kyc_review_notes && (
+                  <Section title="Previous review note">
+                    <div className="text-sm text-muted-foreground">{row.kyc_review_notes}</div>
+                  </Section>
+                )}
+            </div>
+
+            <SheetFooter className="mt-6 gap-2">
+              <Button variant="ghost" onClick={onClose}>
+                Close
+              </Button>
+              {row.kyc_status !== "rejected" && (
+                <Button
+                  variant="destructive"
+                  disabled={pending}
+                  onClick={() => onDecide(false, notes.trim() || null)}
+                >
+                  Reject
+                </Button>
+              )}
+              {row.kyc_status !== "approved" && (
+                <Button
+                  disabled={pending}
+                  onClick={() => onDecide(true, notes.trim() || null)}
+                >
+                  Approve
+                </Button>
+              )}
+            </SheetFooter>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {title}
+      </div>
+      <div className="rounded-md border p-3 text-sm space-y-1.5">{children}</div>
+    </div>
+  );
+}
+
+function Row({
+  icon,
+  label,
+  value,
+  mono,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: string | null | undefined;
+  mono?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-2">
+      <div className="mt-0.5 w-32 shrink-0 text-xs text-muted-foreground flex items-center gap-1">
+        {icon} {label}
+      </div>
+      <div className={"min-w-0 flex-1 break-words " + (mono ? "font-mono text-xs" : "")}>
+        {value || <span className="text-muted-foreground">—</span>}
+      </div>
+    </div>
+  );
+}
+
+function Doc({
+  label,
+  url,
+  hasFile,
+}: {
+  label: string;
+  url: string | null;
+  hasFile: boolean;
+}) {
+  return (
+    <div className="space-y-1">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="grid h-40 w-full place-items-center overflow-hidden rounded-md border bg-muted">
+        {!hasFile ? (
+          <span className="text-xs text-muted-foreground">Not uploaded</span>
+        ) : !url ? (
+          <span className="text-xs text-muted-foreground">Loading…</span>
+        ) : url.match(/\.pdf($|\?)/i) ? (
+          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+            <FileImage className="h-6 w-6" />
+            <span className="text-xs">PDF document</span>
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={url} alt={label} className="h-full w-full object-contain" />
+        )}
+      </div>
+      {url && (
+        <Button size="sm" variant="ghost" asChild className="h-7 px-2 text-xs">
+          <a href={url} target="_blank" rel="noreferrer">
+            <ExternalLink className="mr-1 h-3 w-3" /> Open full size
+          </a>
+        </Button>
+      )}
+    </div>
+  );
+}

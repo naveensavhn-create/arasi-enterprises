@@ -691,38 +691,83 @@ export type Database = {
       }
       profiles: {
         Row: {
+          aadhaar_address: string | null
+          aadhaar_back_url: string | null
+          aadhaar_front_url: string | null
+          aadhaar_number: string | null
+          address_line1: string | null
+          address_line2: string | null
           avatar_url: string | null
+          city: string | null
+          country: string | null
           coupon_number: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
+          kyc_review_notes: string | null
+          kyc_reviewed_at: string | null
+          kyc_reviewed_by: string | null
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
+          kyc_submitted_at: string | null
           membership_id: string | null
           phone: string | null
+          postal_code: string | null
+          state: string | null
           status: string
           updated_at: string
         }
         Insert: {
+          aadhaar_address?: string | null
+          aadhaar_back_url?: string | null
+          aadhaar_front_url?: string | null
+          aadhaar_number?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           coupon_number?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
+          kyc_review_notes?: string | null
+          kyc_reviewed_at?: string | null
+          kyc_reviewed_by?: string | null
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          kyc_submitted_at?: string | null
           membership_id?: string | null
           phone?: string | null
+          postal_code?: string | null
+          state?: string | null
           status?: string
           updated_at?: string
         }
         Update: {
+          aadhaar_address?: string | null
+          aadhaar_back_url?: string | null
+          aadhaar_front_url?: string | null
+          aadhaar_number?: string | null
+          address_line1?: string | null
+          address_line2?: string | null
           avatar_url?: string | null
+          city?: string | null
+          country?: string | null
           coupon_number?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          kyc_review_notes?: string | null
+          kyc_reviewed_at?: string | null
+          kyc_reviewed_by?: string | null
+          kyc_status?: Database["public"]["Enums"]["kyc_status"]
+          kyc_submitted_at?: string | null
           membership_id?: string | null
           phone?: string | null
+          postal_code?: string | null
+          state?: string | null
           status?: string
           updated_at?: string
         }
@@ -933,6 +978,30 @@ export type Database = {
         Args: { _payment_id: string }
         Returns: undefined
       }
+      admin_list_kyc: {
+        Args: { _status?: string }
+        Returns: {
+          aadhaar_address: string
+          aadhaar_back_url: string
+          aadhaar_front_url: string
+          aadhaar_number: string
+          address_line1: string
+          address_line2: string
+          city: string
+          country: string
+          email: string
+          full_name: string
+          id: string
+          kyc_review_notes: string
+          kyc_reviewed_at: string
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
+          kyc_submitted_at: string
+          phone: string
+          postal_code: string
+          role: Database["public"]["Enums"]["app_role"]
+          state: string
+        }[]
+      }
       admin_list_users: {
         Args: never
         Returns: {
@@ -964,6 +1033,10 @@ export type Database = {
           paid_sum: number
           total_count: number
         }[]
+      }
+      admin_set_kyc_decision: {
+        Args: { _approve: boolean; _notes?: string; _user_id: string }
+        Returns: undefined
       }
       count_active_admins: { Args: never; Returns: number }
       current_user_role: {
@@ -1012,6 +1085,7 @@ export type Database = {
       app_role: "admin" | "promoter" | "customer"
       draw_status: "scheduled" | "open" | "closed" | "completed" | "cancelled"
       installment_status: "pending" | "paid" | "overdue" | "waived"
+      kyc_status: "unsubmitted" | "pending" | "approved" | "rejected"
       membership_status:
         | "pending"
         | "active"
@@ -1150,6 +1224,7 @@ export const Constants = {
       app_role: ["admin", "promoter", "customer"],
       draw_status: ["scheduled", "open", "closed", "completed", "cancelled"],
       installment_status: ["pending", "paid", "overdue", "waived"],
+      kyc_status: ["unsubmitted", "pending", "approved", "rejected"],
       membership_status: [
         "pending",
         "active",
