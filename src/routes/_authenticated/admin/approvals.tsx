@@ -484,3 +484,69 @@ function Doc({
     </div>
   );
 }
+
+function ReferrerEditor({ row }: { row: KycProfile }) {
+  const qc = useQueryClient();
+  const listPromotersFn = useServerFn(adminListPromoters);
+  const setPromoterFn = useServerFn(adminSetCustomerPromoter);
+  const [value, setValue] = useState<string>(row.referred_by_promoter_id ?? "none");
+
+  useEffect(() => {
+    setValue(row.referred_by_promoter_id ?? "none");
+  }, [row.id, row.referred_by_promoter_id]);
+
+  const promotersQ = useQuery({
+    queryKey: ["admin-promoters-list"],
+    queryFn: () => listPromotersFn() as Promise<PromoterOption[]>,
+    staleTime: 5 * 60_000,
+  });
+
+  const saveMut = useMutation({
+    mutationFn: (promoterId: string | null) =>
+      setPromoterFn({ data: { userId: row.id, promoterId } } as any),
+    onSuccess: () => {
+      toast.success("Referring promoter updated");
+      qc.invalidateQueries({ queryKey: ["kyc"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to update"),
+  });
+
+  const currentLabel = row.referred_by_promoter_id
+    ? row.referred_by_name || row.referred_by_email || row.referred_by_promoter_id.slice(0, 8)
+    : "Direct signup";
+
+  return (
+    <div className="space-y-2">
+      <Row
+        icon={<UserRoundCog className="h-3.5 w-3.5" />}
+        label="Current"
+        value={currentLabel}
+      />
+      <div className="flex items-center gap-2">
+        <Select value={value} onValueChange={setValue}>
+          <SelectTrigger className="h-9 flex-1">
+            <SelectValue placeholder="Select promoter" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Direct (no promoter)</SelectItem>
+            {(promotersQ.data ?? []).map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.full_name || p.email}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          size="sm"
+          disabled={
+            saveMut.isPending ||
+            value === (row.referred_by_promoter_id ?? "none")
+          }
+          onClick={() => saveMut.mutate(value === "none" ? null : value)}
+        >
+          {saveMut.isPending ? "Saving…" : "Save"}
+        </Button>
+      </div>
+    </div>
+  );
+}
