@@ -29,6 +29,11 @@ import {
   ADMIN_PAYMENT_ROW_FIELD_LABELS,
   type AdminPaymentRow,
 } from "@/lib/payments/validate-row";
+import {
+  PAYMENT_STATUSES,
+  coercePaymentStatus,
+  type PaymentStatus,
+} from "@/lib/payments/status-filter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -38,9 +43,13 @@ import { useRouter } from "@tanstack/react-router";
 
 
 
-const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"] as const;
-type StatusKey = typeof STATUSES[number];
-const STATUS_META: Record<StatusKey, { label: string; dot: string; activeClass: string }> = {
+// Typed UI keys for the status chips. "all" is a UI-only sentinel that maps
+// to "no status filter" via `coercePaymentStatus` — the actual enum values
+// come from the shared `PAYMENT_STATUSES` tuple so the chip set stays in
+// lockstep with the DB enum.
+const STATUS_FILTER_KEYS = ["all", ...PAYMENT_STATUSES] as const;
+type StatusFilterKey = (typeof STATUS_FILTER_KEYS)[number];
+const STATUS_META: Record<StatusFilterKey, { label: string; dot: string; activeClass: string }> = {
   all:       { label: "All",        dot: "bg-muted-foreground",   activeClass: "bg-primary text-primary-foreground border-primary" },
   paid:      { label: "Succeeded",  dot: "bg-emerald-500",        activeClass: "bg-emerald-600 text-white border-emerald-600" },
   created:   { label: "Pending",    dot: "bg-amber-500",          activeClass: "bg-amber-600 text-white border-amber-600" },
@@ -48,6 +57,17 @@ const STATUS_META: Record<StatusKey, { label: string; dot: string; activeClass: 
   failed:    { label: "Failed",     dot: "bg-red-500",            activeClass: "bg-red-600 text-white border-red-600" },
   refunded:  { label: "Refunded",   dot: "bg-violet-500",         activeClass: "bg-violet-600 text-white border-violet-600" },
 };
+
+/**
+ * Narrow the UI's `StatusFilterKey` (which includes the "all" sentinel) to
+ * a server-facing `PaymentStatus | undefined`. Anything that isn't a valid
+ * enum member — including "all" and unknown URL values — becomes `undefined`
+ * (no filter applied). All server-fn callsites MUST go through this helper.
+ */
+function toPaymentStatusFilter(k: StatusFilterKey): PaymentStatus | undefined {
+  return coercePaymentStatus(k) ?? undefined;
+}
+
 const SORT_COLUMNS = [
   "created_at",
   "paid_at",
@@ -74,7 +94,7 @@ const searchSchema = z.object({
   pageSize: fallback(z.number().int().min(5).max(200), 25).default(25),
   sortBy: fallback(z.enum(SORT_COLUMNS), "created_at").default("created_at"),
   sortDir: fallback(z.enum(["asc", "desc"]), "desc").default("desc"),
-  status: fallback(z.string(), "all").default("all"),
+  status: fallback(z.enum(STATUS_FILTER_KEYS), "all").default("all"),
   from: fallback(z.string(), "").default(""),
   to: fallback(z.string(), "").default(""),
   dateField: fallback(z.enum(["created", "webhook_processed"]), "created").default("created"),
@@ -199,7 +219,7 @@ function AdminPaymentsPage() {
           pageSize: search.pageSize,
           sortBy: search.sortBy,
           sortDir: search.sortDir,
-          status: search.status || undefined,
+          status: toPaymentStatusFilter(search.status),
           from: search.from || undefined,
           to: search.to || undefined,
           dateField: search.dateField,
@@ -327,7 +347,7 @@ function AdminPaymentsPage() {
         data: {
           sortBy: search.sortBy,
           sortDir: search.sortDir,
-          status: search.status || undefined,
+          status: toPaymentStatusFilter(search.status),
           from: search.from || undefined,
           to: search.to || undefined,
           dateField: search.dateField,
@@ -386,7 +406,7 @@ function AdminPaymentsPage() {
           filters: {
             sortBy: search.sortBy,
             sortDir: search.sortDir,
-            status: search.status || undefined,
+            status: toPaymentStatusFilter(search.status),
             from: search.from || undefined,
             to: search.to || undefined,
             dateField: search.dateField,
@@ -631,7 +651,7 @@ function AdminPaymentsPage() {
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick status filters">
             <div className="flex flex-wrap gap-1.5">
-              {STATUSES.map((s) => {
+              {STATUS_FILTER_KEYS.map((s) => {
                 const meta = STATUS_META[s];
                 const active = search.status === s;
                 return (
@@ -871,7 +891,7 @@ function AdminPaymentsPage() {
           ) : rows.length === 0 ? (
             (() => {
               const activeFilters: { label: string; value: string; clear: Partial<z.infer<typeof searchSchema>> }[] = [];
-              if (search.status !== "all") activeFilters.push({ label: "Status", value: STATUS_META[search.status as StatusKey]?.label ?? search.status, clear: { status: "all", page: 0 } });
+              if (search.status !== "all") activeFilters.push({ label: "Status", value: STATUS_META[search.status as StatusFilterKey]?.label ?? search.status, clear: { status: "all", page: 0 } });
               if (search.from) activeFilters.push({ label: "From", value: search.from, clear: { from: "", page: 0 } });
               if (search.to) activeFilters.push({ label: "To", value: search.to, clear: { to: "", page: 0 } });
               if (search.q) activeFilters.push({ label: "Search", value: search.q, clear: { q: "", page: 0 } });
@@ -1143,7 +1163,7 @@ function AdminPaymentsPage() {
         open={reconcileOpen}
         onOpenChange={setReconcileOpen}
         filters={{
-          status: search.status || undefined,
+          status: toPaymentStatusFilter(search.status),
           from: search.from || undefined,
           to: search.to || undefined,
           q: search.q || undefined,
