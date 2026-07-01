@@ -177,14 +177,12 @@ function AdminPaymentsPage() {
         },
       }),
     placeholderData: keepPreviousData,
-    // Polling fallback interval is admin-configurable. Realtime pauses polling
-    // to a longer interval; when disconnected we honor the admin's setting
-    // (0 disables background polling entirely).
-    refetchInterval: liveConnected
-      ? (paymentsPollingMs === 0 ? false : Math.max(paymentsPollingMs, 120_000))
-      : (paymentsPollingMs === 0 ? false : paymentsPollingMs),
+    // Shared polling fallback: honors the cross-device admin preference.
+    // Realtime caps the interval at 120s; "Off" disables background polling.
+    refetchInterval: listRefetchInterval,
     refetchOnWindowFocus: true,
   });
+
 
 
   // Realtime: invalidate ledger + drawer queries when webhooks land.
