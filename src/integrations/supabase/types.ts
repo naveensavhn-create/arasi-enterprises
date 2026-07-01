@@ -643,8 +643,11 @@ export type Database = {
       admin_payments_totals: {
         Args: {
           _customer_ids?: string[]
+          _customer_ids_exact?: string[]
           _from?: string
           _membership_ids?: string[]
+          _order_id?: string
+          _payment_id?: string
           _q?: string
           _status?: string
           _to?: string

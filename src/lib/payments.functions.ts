@@ -20,6 +20,9 @@ const baseFilterSchema = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
   q: z.string().optional(),
+  orderId: z.string().optional(),
+  paymentId: z.string().optional(),
+  customer: z.string().optional(),
 });
 
 const pageSchema = baseFilterSchema.extend({
@@ -78,19 +81,36 @@ async function resolveSearchIds(sb: any, q: string | undefined) {
   };
 }
 
+async function resolveCustomerIdsExact(sb: any, customer: string | undefined) {
+  if (!customer) return undefined;
+  const like = `%${customer}%`;
+  const { data, error } = await sb
+    .from("profiles")
+    .select("id")
+    .or(`full_name.ilike.${like},email.ilike.${like}`)
+    .limit(500);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: any) => r.id) as string[];
+}
+
 function normalizeFilters(f: Filters) {
   const q = f.q?.trim() || undefined;
   const status = f.status && f.status !== "all" ? f.status : undefined;
   const fromISO = f.from ? new Date(f.from).toISOString() : undefined;
   const toISO = f.to ? new Date(new Date(f.to).getTime() + 86_400_000).toISOString() : undefined;
-  return { q, status, fromISO, toISO, sortBy: f.sortBy, sortDir: f.sortDir };
+  const orderId = f.orderId?.trim() || undefined;
+  const paymentId = f.paymentId?.trim() || undefined;
+  const customer = f.customer?.trim() || undefined;
+  return { q, status, fromISO, toISO, orderId, paymentId, customer, sortBy: f.sortBy, sortDir: f.sortDir };
 }
+
 
 async function fetchPaymentRows(
   sb: any,
   n: ReturnType<typeof normalizeFilters>,
   customerIds: string[] | undefined,
   membershipIds: string[] | undefined,
+  customerIdsExact: string[] | undefined,
   fromIdx: number,
   toIdx: number,
 ): Promise<AdminPaymentRow[]> {
@@ -108,6 +128,16 @@ async function fetchPaymentRows(
   if (n.status) query = query.eq("status", n.status);
   if (n.fromISO) query = query.gte("created_at", n.fromISO);
   if (n.toISO) query = query.lt("created_at", n.toISO);
+  if (n.orderId) query = query.ilike("provider_order_id", `%${n.orderId}%`);
+  if (n.paymentId) query = query.ilike("provider_payment_id", `%${n.paymentId}%`);
+  if (n.customer) {
+    if (!customerIdsExact || customerIdsExact.length === 0) {
+      // No matching customer — return empty result set.
+      query = query.eq("customer_id", "00000000-0000-0000-0000-000000000000");
+    } else {
+      query = query.in("customer_id", customerIdsExact);
+    }
+  }
   if (n.q) {
     const like = `%${n.q}%`;
     const parts = [
@@ -118,6 +148,7 @@ async function fetchPaymentRows(
     if (membershipIds && membershipIds.length) parts.push(`membership_id.in.(${membershipIds.join(",")})`);
     query = query.or(parts.join(","));
   }
+
 
   const { data: rows, error } = await query.range(fromIdx, toIdx);
   if (error) throw new Error(error.message);
@@ -149,12 +180,13 @@ export const listAdminPayments = createServerFn({ method: "GET" })
     const sb: any = context.supabase;
     const n = normalizeFilters(data);
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
+    const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
 
     const fromIdx = data.page * data.pageSize;
     const toIdx = fromIdx + data.pageSize - 1;
 
     const [rows, totalsRes] = await Promise.all([
-      fetchPaymentRows(sb, n, customerIds, membershipIds, fromIdx, toIdx),
+      fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, fromIdx, toIdx),
       sb.rpc("admin_payments_totals", {
         _status: n.status ?? null,
         _from: n.fromISO ?? null,
@@ -162,8 +194,12 @@ export const listAdminPayments = createServerFn({ method: "GET" })
         _customer_ids: customerIds ?? null,
         _membership_ids: membershipIds ?? null,
         _q: n.q ?? null,
+        _order_id: n.orderId ?? null,
+        _payment_id: n.paymentId ?? null,
+        _customer_ids_exact: customerIdsExact ?? null,
       }),
     ]);
+
     if (totalsRes.error) throw new Error(totalsRes.error.message);
     const totals = Array.isArray(totalsRes.data) ? totalsRes.data[0] : totalsRes.data;
 
@@ -213,7 +249,9 @@ export const exportAdminPayments = createServerFn({ method: "GET" })
     const sb: any = context.supabase;
     const n = normalizeFilters(data);
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
-    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, 0, data.limit - 1);
+    const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
+    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, 0, data.limit - 1);
+
 
     // Build history map by scanning webhook events for the exported payments.
     const orderIds = Array.from(new Set(rows.map((r) => r.provider_order_id).filter(Boolean))) as string[];

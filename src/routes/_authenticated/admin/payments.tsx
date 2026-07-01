@@ -30,7 +30,11 @@ const searchSchema = z.object({
   from: fallback(z.string(), "").default(""),
   to: fallback(z.string(), "").default(""),
   q: fallback(z.string(), "").default(""),
+  orderId: fallback(z.string(), "").default(""),
+  paymentId: fallback(z.string(), "").default(""),
+  customer: fallback(z.string(), "").default(""),
 });
+
 
 export const Route = createFileRoute("/_authenticated/admin/payments")({
   head: () => ({ meta: [{ title: "Payments — Admin" }] }),
@@ -93,6 +97,9 @@ function AdminPaymentsPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const [selected, setSelected] = useState<AdminPaymentRow | null>(null);
   const [qDraft, setQDraft] = useState(search.q);
+  const [orderDraft, setOrderDraft] = useState(search.orderId);
+  const [paymentDraft, setPaymentDraft] = useState(search.paymentId);
+  const [customerDraft, setCustomerDraft] = useState(search.customer);
   const [exporting, setExporting] = useState(false);
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
@@ -107,6 +114,7 @@ function AdminPaymentsPage() {
       "admin-payments",
       search.page, search.pageSize, search.sortBy, search.sortDir,
       search.status, search.from, search.to, search.q,
+      search.orderId, search.paymentId, search.customer,
     ],
     queryFn: () =>
       listFn({
@@ -119,6 +127,9 @@ function AdminPaymentsPage() {
           from: search.from || undefined,
           to: search.to || undefined,
           q: search.q || undefined,
+          orderId: search.orderId || undefined,
+          paymentId: search.paymentId || undefined,
+          customer: search.customer || undefined,
         },
       }),
     placeholderData: keepPreviousData,
@@ -126,6 +137,7 @@ function AdminPaymentsPage() {
     refetchInterval: liveConnected ? 120_000 : 30_000,
     refetchOnWindowFocus: true,
   });
+
 
   // Realtime: invalidate ledger + drawer queries when webhooks land.
   useEffect(() => {
@@ -185,9 +197,13 @@ function AdminPaymentsPage() {
           from: search.from || undefined,
           to: search.to || undefined,
           q: search.q || undefined,
+          orderId: search.orderId || undefined,
+          paymentId: search.paymentId || undefined,
+          customer: search.customer || undefined,
           limit: 10_000,
         },
       });
+
       downloadCSV(all);
       if (all.length >= 10_000) {
         toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
@@ -310,7 +326,69 @@ function AdminPaymentsPage() {
               ))}
             </select>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch({ orderId: orderDraft.trim(), page: 0 });
+              }}
+            >
+              <Input
+                value={orderDraft}
+                onChange={(e) => setOrderDraft(e.target.value)}
+                onBlur={() => { if (orderDraft.trim() !== search.orderId) setSearch({ orderId: orderDraft.trim(), page: 0 }); }}
+                placeholder="Order ID (order_...)"
+                className="h-8 w-52 font-mono text-xs"
+              />
+            </form>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch({ paymentId: paymentDraft.trim(), page: 0 });
+              }}
+            >
+              <Input
+                value={paymentDraft}
+                onChange={(e) => setPaymentDraft(e.target.value)}
+                onBlur={() => { if (paymentDraft.trim() !== search.paymentId) setSearch({ paymentId: paymentDraft.trim(), page: 0 }); }}
+                placeholder="Payment ID (pay_...)"
+                className="h-8 w-52 font-mono text-xs"
+              />
+            </form>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch({ customer: customerDraft.trim(), page: 0 });
+              }}
+            >
+              <Input
+                value={customerDraft}
+                onChange={(e) => setCustomerDraft(e.target.value)}
+                onBlur={() => { if (customerDraft.trim() !== search.customer) setSearch({ customer: customerDraft.trim(), page: 0 }); }}
+                placeholder="Customer name or email"
+                className="h-8 w-64 text-xs"
+              />
+            </form>
+            {(search.orderId || search.paymentId || search.customer || search.q ||
+              search.from || search.to || search.status !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => {
+                  setQDraft(""); setOrderDraft(""); setPaymentDraft(""); setCustomerDraft("");
+                  setSearch({
+                    q: "", orderId: "", paymentId: "", customer: "",
+                    status: "all", from: "", to: "", page: 0,
+                  });
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
         </CardHeader>
+
         <CardContent>
           {isLoading ? (
             <div className="flex items-center py-8 text-muted-foreground">
