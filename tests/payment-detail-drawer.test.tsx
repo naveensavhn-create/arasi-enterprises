@@ -299,6 +299,36 @@ describe("<PaymentDetailDrawer /> — invalid row surfaces", () => {
     );
   });
 
+  it("copy-row-id button shows an error toast when navigator.clipboard exists but writeText is missing", async () => {
+    const invalid: AdminPaymentRow = { ...validRow, provider_payment_id: null };
+    // Simulate a partially-implemented Clipboard API (e.g. locked-down browser / insecure context)
+    Object.assign(navigator, { clipboard: {} });
+
+    renderWithClient(
+      <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
+    );
+
+    const alert = screen
+      .getByText("Incomplete payment record")
+      .closest('[role="alert"]') as HTMLElement;
+    await userEvent.click(within(alert).getByRole("button", { name: /copy/i }));
+
+    const err = toastCalls.find(
+      (t) => t.level === "error" && t.message === "Couldn't copy row ID",
+    );
+    expect(err).toBeDefined();
+    expect(err!.opts).toMatchObject({
+      id: `payment-row-copy-${invalid.id}`,
+    });
+    expect((err!.opts as { description?: string }).description).toMatch(
+      /Clipboard API unavailable/i,
+    );
+    // No success toast should be emitted when the API is unavailable
+    expect(
+      toastCalls.some((t) => t.level === "success" && t.message === "Row ID copied"),
+    ).toBe(false);
+
+
   it("renders every missing field with its remediation hint inside the alert", () => {
     const invalid: AdminPaymentRow = {
       ...validRow,
