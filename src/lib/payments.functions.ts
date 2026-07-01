@@ -25,11 +25,14 @@ export {
   PAYMENT_STATUS_TEXT_COLUMN,
   PAYMENT_STATUSES,
   isPaymentStatus,
+  coercePaymentStatus,
+  coercePaymentStatuses,
 } from "@/lib/payments/status-filter";
 export type { PaymentStatus } from "@/lib/payments/status-filter";
 import {
   applyPaymentStatusEq,
-  PAYMENT_STATUSES,
+  coercePaymentStatus,
+  type PaymentStatus,
 } from "@/lib/payments/status-filter";
 
 
@@ -47,14 +50,16 @@ export type PaymentSortColumn = typeof SORT_COLUMNS[number];
 const DATE_FIELDS = ["created", "webhook_processed"] as const;
 export type PaymentDateField = typeof DATE_FIELDS[number];
 
-// `status` is validated against the `payment_status` enum union so callsites
-// can pass `n.status` straight into `applyPaymentStatusEq` without an extra
-// coercion step. Blank strings collapse to `undefined` (no-op filter).
+// Untrusted `status` inputs (URL params, JSON bodies, form fields) are
+// funneled through `coercePaymentStatus` so ONLY valid `payment_status`
+// enum members reach `applyPaymentStatusEq`. Anything else — "", "all",
+// wrong casing, unknown values — collapses to `undefined` (no-op filter).
+// This is the single source of truth for the field's runtime contract;
+// downstream helpers can assume the value is `PaymentStatus | undefined`.
 const paymentStatusFilterSchema = z
-  .enum(PAYMENT_STATUSES)
-  .optional()
-  .or(z.literal("").transform(() => undefined))
-  .or(z.literal("all").transform(() => undefined));
+  .unknown()
+  .transform((v): PaymentStatus | undefined => coercePaymentStatus(v) ?? undefined);
+
 
 const baseFilterSchema = z.object({
   sortBy: z.enum(SORT_COLUMNS).default("created_at"),
