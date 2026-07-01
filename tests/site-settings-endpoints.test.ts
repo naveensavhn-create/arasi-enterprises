@@ -128,6 +128,9 @@ describeIfDb("site_settings persistence (integration)", () => {
 
   beforeAll(async () => {
     await client.connect();
+    // Elevate to service_role so we can round-trip an UPDATE the same way the
+    // server function's admin client does. Ignored if the role does not exist.
+    await client.query(`SET ROLE service_role`).catch(() => undefined);
     const { rows } = await client.query(
       `SELECT * FROM public.site_settings WHERE id = $1`,
       [SETTINGS_ID],
@@ -138,23 +141,25 @@ describeIfDb("site_settings persistence (integration)", () => {
   afterAll(async () => {
     if (snapshot) {
       // Restore the fields the test mutates.
-      await client.query(
-        `UPDATE public.site_settings
-            SET brand_name    = $2,
-                tagline       = $3,
-                primary_color = $4,
-                heading_font  = $5,
-                footer_text   = $6
-          WHERE id = $1`,
-        [
-          SETTINGS_ID,
-          snapshot.brand_name,
-          snapshot.tagline,
-          snapshot.primary_color,
-          snapshot.heading_font,
-          snapshot.footer_text,
-        ],
-      );
+      await client
+        .query(
+          `UPDATE public.site_settings
+              SET brand_name    = $2,
+                  tagline       = $3,
+                  primary_color = $4,
+                  heading_font  = $5,
+                  footer_text   = $6
+            WHERE id = $1`,
+          [
+            SETTINGS_ID,
+            snapshot.brand_name,
+            snapshot.tagline,
+            snapshot.primary_color,
+            snapshot.heading_font,
+            snapshot.footer_text,
+          ],
+        )
+        .catch(() => undefined);
     }
     await client.end();
   });
