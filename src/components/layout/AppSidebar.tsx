@@ -69,6 +69,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
       items: [
         { title: "Admin Settings", url: "/admin/settings", icon: Settings },
         { title: "Email Preview", url: "/admin/email-preview", icon: Send },
+        { title: "Membership Emails", url: "/admin/membership-emails", icon: Mail },
         { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
       ],
 
