@@ -30,7 +30,7 @@ function PromoterCommissionsPage() {
       const { data, error } = await supabase
         .from("payments")
         .select("id, amount, paid_at, created_at, membership_id, memberships!inner(membership_number, promoter_id)")
-        .eq("status", "paid")
+        .filter("status::text", "eq", "paid")
         .eq("memberships.promoter_id", session!.user.id)
         .order("paid_at", { ascending: false });
       if (error) throw error;
