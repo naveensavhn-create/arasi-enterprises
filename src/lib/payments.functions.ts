@@ -209,13 +209,15 @@ async function fetchPaymentRows(
     }
   }
 
-  return (rows ?? []).map((r: any) => ({
-    ...r,
-    profile: profMap.get(r.customer_id)
-      ? { full_name: profMap.get(r.customer_id).full_name, email: profMap.get(r.customer_id).email }
-      : null,
-    reconciliation: reconMap.get(r.id) ?? null,
-  }));
+  return (rows ?? []).map((r: any) => {
+    const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+    const { profiles: _profiles, ...rest } = r;
+    return {
+      ...rest,
+      profile: p ? { full_name: p.full_name ?? null, email: p.email ?? null } : null,
+      reconciliation: reconMap.get(r.id) ?? null,
+    };
+  });
 }
 
 
