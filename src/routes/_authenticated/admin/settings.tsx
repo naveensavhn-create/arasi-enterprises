@@ -104,12 +104,28 @@ function AdminSettings() {
     mutationFn: (vars: { userId: string; reason?: string }) =>
       demoteFn({ data: { userId: vars.userId, role: "customer", reason: vars.reason } }),
     onSuccess: () => {
-      toast.success("Admin role revoked.");
+      toast.success("Admin role revoked.", {
+        description: revokeTarget?.isSelf
+          ? "You have lost access to admin tools."
+          : `${revokeTarget?.email ?? "The account"} is now a customer.`,
+      });
+      setRevokeTarget(null);
+      setRevokeReason("");
       queryClient.invalidateQueries({ queryKey: ["admin-list"] });
       queryClient.invalidateQueries({ queryKey: ["admin-audit-log"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      if (e.message.startsWith("LAST_ADMIN:")) {
+        toast.error("Cannot revoke the last administrator", {
+          description: e.message.replace(/^LAST_ADMIN:\s*/, ""),
+          duration: 8000,
+        });
+      } else {
+        toast.error("Revoke failed", { description: e.message });
+      }
+    },
   });
+
 
 
   if (roleLoading || bootstrap.isLoading) {
