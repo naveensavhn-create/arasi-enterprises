@@ -118,7 +118,7 @@ describeIfDb("plan-delete DB trigger (integration)", () => {
   async function createMembership(status: "pending" | "active" | "cancelled" | "completed") {
     const res = await client.query<{ id: string }>(
       `INSERT INTO public.memberships (customer_id, plan_id, status, start_date)
-       VALUES ($1, $2, $3, CURRENT_DATE)
+       VALUES ($1, $2, $3::membership_status, CURRENT_DATE)
        RETURNING id`,
       [customerId, planId, status],
     );
