@@ -64,6 +64,9 @@ function AdminSettings() {
     isSelf: boolean;
   }>(null);
   const [revokeReason, setRevokeReason] = useState("");
+  const [promoteReasonError, setPromoteReasonError] = useState<string | null>(null);
+  const [revokeReasonError, setRevokeReasonError] = useState<string | null>(null);
+  const REASON_MIN = 5;
 
   // Audit log filters
   const [fActor, setFActor] = useState("");
