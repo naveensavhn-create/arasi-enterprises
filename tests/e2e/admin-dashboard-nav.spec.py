@@ -43,13 +43,20 @@ async def login(page):
 
 
 async def assert_on_dashboard(page, label: str):
-    # Give the router a beat to settle any pending redirects.
-    await page.wait_for_timeout(750)
+    # The redirect from `/admin` or `/admin/admin` runs in beforeLoad and
+    # only fires after route hydration, so poll instead of relying on a
+    # single fixed sleep.
+    for _ in range(30):
+        await page.wait_for_timeout(200)
+        url = page.url
+        if url.rstrip("/").endswith("/dashboard"):
+            return
     url = page.url
     if not url.rstrip("/").endswith("/dashboard"):
         raise AssertionError(f"[{label}] expected /dashboard, got {url}")
     if "/admin/admin" in url or url.rstrip("/").endswith("/admin"):
         raise AssertionError(f"[{label}] landed on stray admin URL: {url}")
+
 
 
 async def main():
