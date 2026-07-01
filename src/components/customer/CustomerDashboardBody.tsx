@@ -320,26 +320,54 @@ export function CustomerDashboardBody() {
         />
       </div>
 
-      {/* Count row */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <CountCard
-          icon={<Wallet className="h-4 w-4" />}
-          value={totalCount}
-          label="Total Installments"
-        />
-        <CountCard
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          value={paidCount}
-          label="Paid"
-          tone="text-emerald-500"
-        />
-        <CountCard
-          icon={<Clock className="h-4 w-4" />}
-          value={balanceCount}
-          label="Balance Due"
-          tone="text-amber-500"
-        />
-      </div>
+
+      {/* Installments — loading / empty / summary */}
+      {installmentsQ.isLoading ? (
+        <Card>
+          <CardContent className="flex items-center gap-3 p-5 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            Loading your installment schedule…
+          </CardContent>
+        </Card>
+      ) : installments.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
+            <div className="rounded-full bg-primary/10 p-3 text-primary">
+              <Inbox className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <p className="text-sm font-medium">No installments generated yet</p>
+            <p className="max-w-md text-xs text-muted-foreground">
+              {membership.status === "pending"
+                ? "Your schedule will appear here as soon as your advance payment is confirmed."
+                : "We couldn't find any installments for this membership. If you paid the advance recently, please refresh in a moment."}
+            </p>
+            <Button asChild size="sm" variant="outline" className="mt-2">
+              <Link to="/customer/membership">View membership</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <CountCard
+            icon={<Wallet className="h-4 w-4" />}
+            value={totalCount}
+            label="Total Installments"
+          />
+          <CountCard
+            icon={<CheckCircle2 className="h-4 w-4" />}
+            value={paidCount}
+            label="Paid"
+            tone="text-emerald-500"
+          />
+          <CountCard
+            icon={<Clock className="h-4 w-4" />}
+            value={balanceCount}
+            label="Balance Due"
+            tone="text-amber-500"
+          />
+        </div>
+      )}
+
 
       {/* Quick actions */}
       <Card>
