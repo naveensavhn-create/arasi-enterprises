@@ -172,9 +172,9 @@ describe("reconcile-payments cron — status filter cast", () => {
 });
 
 describe("reconcile-payments source — helper usage cannot regress", () => {
-  it("imports applyPaymentStatusIn from the shared status-filter helper", () => {
+  it("imports applyPaymentStatusEq from the shared status-filter helper", () => {
     expect(ROUTE_SRC).toMatch(
-      /import\s*\{[^}]*\bapplyPaymentStatusIn\b[^}]*\}\s*from\s*["']@\/lib\/payments\/status-filter["']/,
+      /import\s*\{[^}]*\bapplyPaymentStatusEq\b[^}]*\}\s*from\s*["']@\/lib\/payments\/status-filter["']/,
     );
   });
 
@@ -189,11 +189,11 @@ describe("reconcile-payments source — helper usage cannot regress", () => {
     expect(ROUTE_SRC).not.toMatch(/["']status::text["']/);
   });
 
-  it("passes the resolved `statuses` array into applyPaymentStatusIn", () => {
+  it("passes the resolved `statuses` array into applyPaymentStatusEq", () => {
     // Route builds `statuses` (default or from body) and forwards it to the
-    // helper as the second argument. A regression that inlines a literal
-    // array on the query directly would fail the assertions above; this
-    // check pins the variable name for readability.
-    expect(ROUTE_SRC).toMatch(/applyPaymentStatusIn\([\s\S]*?,\s*statuses\s*,?\s*\)/);
+    // unified helper as the second argument. A regression that inlines a
+    // literal array on the query directly would fail the assertions above;
+    // this check pins the variable name for readability.
+    expect(ROUTE_SRC).toMatch(/applyPaymentStatusEq\([\s\S]*?,\s*statuses\s*,?\s*\)/);
   });
 });
