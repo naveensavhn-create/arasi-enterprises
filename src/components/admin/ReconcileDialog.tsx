@@ -118,7 +118,18 @@ export function ReconcileDialog({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold">Open mismatches</h3>
-              {openList.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+              <div className="flex items-center gap-2">
+                {openList.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={openRows.length === 0}
+                  onClick={() => exportMismatchesCsv(openRows)}
+                >
+                  <Download className="mr-2 h-3.5 w-3.5" />
+                  Export CSV
+                </Button>
+              </div>
             </div>
             {openRows.length === 0 ? (
               <div className="flex items-center gap-2 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
