@@ -30,7 +30,11 @@ const searchSchema = z.object({
   from: fallback(z.string(), "").default(""),
   to: fallback(z.string(), "").default(""),
   q: fallback(z.string(), "").default(""),
+  orderId: fallback(z.string(), "").default(""),
+  paymentId: fallback(z.string(), "").default(""),
+  customer: fallback(z.string(), "").default(""),
 });
+
 
 export const Route = createFileRoute("/_authenticated/admin/payments")({
   head: () => ({ meta: [{ title: "Payments — Admin" }] }),
