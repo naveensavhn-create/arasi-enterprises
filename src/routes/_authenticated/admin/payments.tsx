@@ -161,13 +161,19 @@ function AdminPaymentsPage() {
             All Razorpay transactions across the platform.
           </p>
         </div>
-        <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
-          {exporting
-            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            : <Download className="mr-2 h-4 w-4" />}
-          Export CSV
-        </Button>
-      </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setReconcileOpen(true)}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reconcile
+          </Button>
+          <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
+            {exporting
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : <Download className="mr-2 h-4 w-4" />}
+            Export CSV
+          </Button>
+        </div>
+
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
