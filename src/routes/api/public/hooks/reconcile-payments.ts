@@ -101,15 +101,10 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
             });
           }
           if (body.statuses.length > 0) {
-            // De-dupe while preserving order.
-            const seen = new Set<PaymentStatus>();
-            statuses = [];
-            for (const v of body.statuses as PaymentStatus[]) {
-              if (!seen.has(v)) {
-                seen.add(v);
-                statuses.push(v);
-              }
-            }
+            // Strict check above already rejected any invalid entry, so
+            // `coercePaymentStatuses` here only dedupes and narrows the
+            // TS type to `PaymentStatus[]` before it hits the query helper.
+            statuses = coercePaymentStatuses(body.statuses);
           }
         }
 
