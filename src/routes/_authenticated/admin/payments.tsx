@@ -105,6 +105,7 @@ function AdminPaymentsPage() {
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
   const lastLiveAt = useRef<number>(0);
+  const { paymentsPollingMs } = useUiPrefs();
 
   const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
