@@ -107,18 +107,24 @@ function AdminApprovalsPage() {
       listFn({ data: { status: tab } }) as Promise<KycProfile[]>,
   });
 
+  const [onlyReferred, setOnlyReferred] = useState(false);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter(
+    let out = rows;
+    if (onlyReferred) out = out.filter((r) => !!r.referred_by_promoter_id);
+    if (!term) return out;
+    return out.filter(
       (r) =>
         (r.email ?? "").toLowerCase().includes(term) ||
         (r.full_name ?? "").toLowerCase().includes(term) ||
         (r.phone ?? "").toLowerCase().includes(term) ||
         (r.city ?? "").toLowerCase().includes(term) ||
+        (r.referred_by_name ?? "").toLowerCase().includes(term) ||
+        (r.referred_by_email ?? "").toLowerCase().includes(term) ||
         (r.aadhaar_number ?? "").includes(term),
     );
-  }, [rows, q]);
+  }, [rows, q, onlyReferred]);
 
   const decideMut = useMutation({
     mutationFn: (v: { userId: string; approve: boolean; notes: string | null }) =>
