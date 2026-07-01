@@ -557,13 +557,106 @@ function AdminPaymentsPage() {
 
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center py-8 text-muted-foreground">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
+            <div className="overflow-x-auto" aria-busy="true" aria-label="Loading transactions">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-muted-foreground">
+                    {["Date","Customer","Membership","Inst.","Order / Payment","Method","Amount","Status","Reconciliation"].map((h) => (
+                      <th key={h} className="py-2 pr-4 font-medium">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: Math.min(search.pageSize, 8) }).map((_, i) => (
+                    <tr key={i} className="border-b last:border-0">
+                      <td className="py-3 pr-4"><Skeleton className="h-3 w-28" /></td>
+                      <td className="py-3 pr-4">
+                        <Skeleton className="mb-1 h-3 w-32" />
+                        <Skeleton className="h-2.5 w-40" />
+                      </td>
+                      <td className="py-3 pr-4"><Skeleton className="h-3 w-20" /></td>
+                      <td className="py-3 pr-4"><Skeleton className="h-3 w-10" /></td>
+                      <td className="py-3 pr-4">
+                        <Skeleton className="mb-1 h-2.5 w-36" />
+                        <Skeleton className="h-2.5 w-32" />
+                      </td>
+                      <td className="py-3 pr-4"><Skeleton className="h-3 w-14" /></td>
+                      <td className="py-3 pr-4"><Skeleton className="h-3 w-20" /></td>
+                      <td className="py-3 pr-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                      <td className="py-3 pr-4"><Skeleton className="h-5 w-20 rounded-full" /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading transactions…
+              </div>
             </div>
           ) : rows.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No transactions match filters.</p>
+            (() => {
+              const activeFilters: { label: string; value: string; clear: Partial<z.infer<typeof searchSchema>> }[] = [];
+              if (search.status !== "all") activeFilters.push({ label: "Status", value: search.status, clear: { status: "all", page: 0 } });
+              if (search.from) activeFilters.push({ label: "From", value: search.from, clear: { from: "", page: 0 } });
+              if (search.to) activeFilters.push({ label: "To", value: search.to, clear: { to: "", page: 0 } });
+              if (search.q) activeFilters.push({ label: "Search", value: search.q, clear: { q: "", page: 0 } });
+              if (search.orderId) activeFilters.push({ label: "Order ID", value: search.orderId, clear: { orderId: "", page: 0 } });
+              if (search.paymentId) activeFilters.push({ label: "Payment ID", value: search.paymentId, clear: { paymentId: "", page: 0 } });
+              if (search.customer) activeFilters.push({ label: "Customer", value: search.customer, clear: { customer: "", page: 0 } });
+              const hasFilters = activeFilters.length > 0;
+              return (
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <div className="rounded-full border bg-muted/40 p-3">
+                    <Inbox className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {hasFilters ? "No transactions match your filters" : "No transactions yet"}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {hasFilters
+                        ? "Try adjusting or clearing filters below."
+                        : "Payments will appear here as customers complete Razorpay checkout."}
+                    </p>
+                  </div>
+                  {hasFilters && (
+                    <>
+                      <div className="flex max-w-2xl flex-wrap justify-center gap-1.5">
+                        {activeFilters.map((f) => (
+                          <Badge
+                            key={f.label}
+                            variant="secondary"
+                            className="cursor-pointer gap-1 text-[11px]"
+                            onClick={() => setSearch(f.clear)}
+                            title={`Remove ${f.label} filter`}
+                          >
+                            <span className="text-muted-foreground">{f.label}:</span>
+                            <span className="font-medium">{f.value}</span>
+                            <span aria-hidden>×</span>
+                          </Badge>
+                        ))}
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs"
+                        onClick={() => {
+                          setQDraft(""); setOrderDraft(""); setPaymentDraft(""); setCustomerDraft("");
+                          setSearch({
+                            q: "", orderId: "", paymentId: "", customer: "",
+                            status: "all", from: "", to: "", dateField: "created", page: 0,
+                          });
+                        }}
+                      >
+                        <FilterX className="mr-1.5 h-3.5 w-3.5" /> Reset all filters
+                      </Button>
+                    </>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             <div className="overflow-x-auto">
+
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
