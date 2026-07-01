@@ -268,7 +268,7 @@ describeIfDb("draw_winners — DB invariants backing the admin feed", () => {
       `SELECT indexdef FROM pg_indexes
         WHERE schemaname = 'public'
           AND tablename = 'draw_winners'
-          AND indexdef ~* 'UNIQUE.*\(draw_id,\s*"?position"?\)'`,
+          AND indexdef ILIKE '%UNIQUE INDEX%(draw_id, "position")%'`,
     );
     expect(res.rowCount).toBeGreaterThan(0);
   });
