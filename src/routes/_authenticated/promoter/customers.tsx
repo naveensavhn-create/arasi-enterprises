@@ -244,9 +244,27 @@ function PromoterCustomersPage() {
                       </TableCell>
                       <TableCell>{kycBadge(r.kyc_status)}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" onClick={() => setSelected(r)}>
-                          View
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                          {(r.kyc_status === "unsubmitted" || r.kyc_status === "rejected") && (
+                            <Button
+                              size="sm"
+                              disabled={!r.has_aadhaar_docs || submitMut.isPending}
+                              title={
+                                r.has_aadhaar_docs
+                                  ? "Submit this customer for admin KYC review"
+                                  : "Customer must upload Aadhaar number and front document first"
+                              }
+                              onClick={() =>
+                                submitMut.mutate({ userId: r.id, note: null })
+                              }
+                            >
+                              <Send className="mr-1 h-3.5 w-3.5" /> Submit
+                            </Button>
+                          )}
+                          <Button size="sm" variant="outline" onClick={() => setSelected(r)}>
+                            View
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
