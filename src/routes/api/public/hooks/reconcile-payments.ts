@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   applyPaymentStatusEq,
-  coercePaymentStatuses,
+  coercePaymentStatusesOrLog,
   isPaymentStatus,
   type PaymentStatus,
 } from "@/lib/payments/status-filter";
