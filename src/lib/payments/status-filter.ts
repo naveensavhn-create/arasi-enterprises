@@ -14,21 +14,31 @@
  * can all share the exact same format without dragging in heavy deps.
  *
  * ─────────────────────────────────────────────────────────────────────────
+ *  Type safety
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *  Helpers accept ONLY `PaymentStatus` (union of the enum members) — plain
+ *  `string` is rejected by the compiler. This eliminates a whole class of
+ *  bugs where a caller passes "PAID", "success", or a stale value that
+ *  PostgREST would silently return zero rows for.
+ *
+ *  For inputs of type `string` (URL search params, request bodies, CSV
+ *  imports), pass them through `coercePaymentStatus` / `coercePaymentStatuses`
+ *  first — those return only valid enum values and drop everything else.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
  *  When to use which helper
  * ─────────────────────────────────────────────────────────────────────────
  *
  *  applyPaymentStatusEq(query, status)   ← PREFERRED, use for everything
- *    • Accepts a single status string, an array of statuses, or nullish.
+ *    • Accepts a single `PaymentStatus`, an array of them, or nullish.
  *    • Automatically picks the right PostgREST operator:
  *        - 1 value  → `eq`   → `status::text=eq.paid`
  *        - N values → `in`   → `status::text=in.(paid,refunded)`
- *        - null / undefined / "" / [] → no-op (query passes through)
- *    • Use it directly with URL search params, multi-select chip arrays,
- *      or a hard-coded literal — no branching at the callsite.
+ *        - null / undefined / [] → no-op (query passes through)
  *
  *  applyPaymentStatusIn(query, statuses) ← DEPRECATED, thin alias
- *    • Kept only for backwards compatibility with older callsites and
- *      tests written before the helpers were unified. New code MUST use
+ *    • Kept only for backwards compatibility. New code MUST use
  *      `applyPaymentStatusEq`; the ESLint rule + CI check
  *      (`scripts/check-payment-status-filters.mjs`) enforce that no new
  *      callsite hand-rolls a `.eq("status", …)` / `.in("status", …)`.
@@ -37,12 +47,64 @@
  *    Column selector : `status::text`  (exported as `PAYMENT_STATUS_TEXT_COLUMN`)
  *    Operators       : `eq` | `in`
  *    IN value shape  : `(v1,v2,v3)`    — parens + comma-separated, NO quotes
- *
- *  Anti-patterns (all caught by CI):
- *    query.eq("status", "paid")                       // missing ::text cast
- *    query.filter("status", "eq", "paid")             // missing ::text cast
- *    query.filter("status::text", "in", "paid,refunded") // missing parens
  */
+
+import type { Database } from "@/integrations/supabase/types";
+
+/**
+ * Canonical `payment_status` enum values. Derived from the generated
+ * Supabase types so this list stays in lockstep with the DB — if the enum
+ * gains/loses a member, TypeScript will surface every affected callsite.
+ *
+ * The tuple is `as const` so `PaymentStatus` is a string-literal union,
+ * not `string`.
+ */
+export const PAYMENT_STATUSES = [
+  "created",
+  "attempted",
+  "paid",
+  "failed",
+  "refunded",
+] as const satisfies ReadonlyArray<Database["public"]["Enums"]["payment_status"]>;
+
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+/** O(1) membership set for the runtime guard below. */
+const PAYMENT_STATUS_SET: ReadonlySet<PaymentStatus> = new Set(PAYMENT_STATUSES);
+
+/** Type guard: narrows an arbitrary string to `PaymentStatus`. */
+export function isPaymentStatus(value: unknown): value is PaymentStatus {
+  return typeof value === "string" && PAYMENT_STATUS_SET.has(value as PaymentStatus);
+}
+
+/**
+ * Coerce an untrusted single value (URL search param, form field) to a
+ * `PaymentStatus` or `null`. Anything not in the enum — including `""`,
+ * `"all"`, wrong casing, or `undefined` — collapses to `null` so callers
+ * can pass the result straight to `applyPaymentStatusEq` for a no-op.
+ */
+export function coercePaymentStatus(value: unknown): PaymentStatus | null {
+  return isPaymentStatus(value) ? value : null;
+}
+
+/**
+ * Coerce an untrusted list (URL repeated params, chip multi-select, JSON
+ * body array) to a deduped `PaymentStatus[]`. Invalid entries are dropped
+ * silently — same contract as `coercePaymentStatus`. Returns `[]` when no
+ * valid values remain, which `applyPaymentStatusEq` treats as a no-op.
+ */
+export function coercePaymentStatuses(values: unknown): PaymentStatus[] {
+  if (!Array.isArray(values)) return [];
+  const out: PaymentStatus[] = [];
+  const seen = new Set<PaymentStatus>();
+  for (const v of values) {
+    if (isPaymentStatus(v) && !seen.has(v)) {
+      seen.add(v);
+      out.push(v);
+    }
+  }
+  return out;
+}
 
 /** Minimal PostgREST query shape both browser and admin clients satisfy. */
 type FilterableQuery<Q> = { filter: (col: string, op: string, v: unknown) => Q };
@@ -51,26 +113,28 @@ type FilterableQuery<Q> = { filter: (col: string, op: string, v: unknown) => Q }
 export const PAYMENT_STATUS_TEXT_COLUMN = "status::text" as const;
 
 /**
- * Unified payments-status filter. Accepts either a single status string or a
- * list of status strings and emits the correct PostgREST cast filter:
+ * Unified payments-status filter. Accepts either a single `PaymentStatus`
+ * or a list, and emits the correct PostgREST cast filter:
  *
  *   - `"paid"`                  → `filter("status::text","eq","paid")`
  *   - `["paid"]`                → `filter("status::text","eq","paid")`
  *   - `["paid","refunded"]`     → `filter("status::text","in","(paid,refunded)")`
- *   - `null | undefined | ""`   → no-op (query returned untouched)
+ *   - `null | undefined`        → no-op (query returned untouched)
  *   - `[]`                      → no-op
  *
- * Use for every equality/membership filter against `payments.status`; a
- * single callsite type means callers can pass URL search-param strings or
- * multi-select chip arrays without branching.
+ * The compiler rejects arbitrary strings — coerce untrusted input via
+ * `coercePaymentStatus` / `coercePaymentStatuses` first.
  */
 export function applyPaymentStatusEq<Q extends FilterableQuery<Q>>(
   query: Q,
-  status: string | readonly string[] | null | undefined,
+  status: PaymentStatus | readonly PaymentStatus[] | null | undefined,
 ): Q {
   if (status == null) return query;
   if (Array.isArray(status)) {
-    const values = status.filter((s): s is string => typeof s === "string" && s.length > 0);
+    // Runtime belt-and-braces: filter out any value the compiler couldn't
+    // catch (e.g. a caller passing `as any`). Keeps the emitted PostgREST
+    // filter valid even if type-safety is bypassed upstream.
+    const values = (status as readonly unknown[]).filter(isPaymentStatus);
     if (values.length === 0) return query;
     if (values.length === 1) {
       return query.filter(PAYMENT_STATUS_TEXT_COLUMN, "eq", values[0]);
@@ -81,7 +145,7 @@ export function applyPaymentStatusEq<Q extends FilterableQuery<Q>>(
       `(${values.join(",")})`,
     );
   }
-  if (typeof status !== "string" || status.length === 0) return query;
+  if (!isPaymentStatus(status)) return query;
   return query.filter(PAYMENT_STATUS_TEXT_COLUMN, "eq", status);
 }
 
@@ -92,8 +156,7 @@ export function applyPaymentStatusEq<Q extends FilterableQuery<Q>>(
  */
 export function applyPaymentStatusIn<Q extends FilterableQuery<Q>>(
   query: Q,
-  statuses: readonly string[] | null | undefined,
+  statuses: readonly PaymentStatus[] | null | undefined,
 ): Q {
   return applyPaymentStatusEq(query, statuses);
 }
-
