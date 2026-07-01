@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
 
           const { data: paymentRow, error: findErr } = await supabaseAdmin
             .from("payments")
-            .select("id, installment_id, status")
+            .select("id, installment_id, membership_id, status")
             .eq("provider_order_id", orderId)
             .maybeSingle();
 
@@ -80,6 +80,13 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
                 _paid_at: new Date(paidAtSec * 1000).toISOString(),
               });
               if (rpcErr) console.error("mark_installment_paid failed", rpcErr);
+            } else if (paymentRow.membership_id) {
+              // Advance/enrollment payment → activate the membership
+              const { error: actErr } = await supabaseAdmin.rpc(
+                "activate_membership_after_advance",
+                { _payment_id: paymentRow.id },
+              );
+              if (actErr) console.error("activate_membership_after_advance failed", actErr);
             }
           } else if (eventType === "payment.failed") {
             await supabaseAdmin

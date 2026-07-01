@@ -369,6 +369,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_membership_after_advance: {
+        Args: { _payment_id: string }
+        Returns: undefined
+      }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
