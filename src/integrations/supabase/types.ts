@@ -476,6 +476,21 @@ export type Database = {
         Args: { _payment_id: string }
         Returns: undefined
       }
+      admin_payments_totals: {
+        Args: {
+          _customer_ids?: string[]
+          _from?: string
+          _membership_ids?: string[]
+          _q?: string
+          _status?: string
+          _to?: string
+        }
+        Returns: {
+          paid_count: number
+          paid_sum: number
+          total_count: number
+        }[]
+      }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]

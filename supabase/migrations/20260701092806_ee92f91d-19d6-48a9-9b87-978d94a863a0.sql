@@ -1,0 +1,39 @@
+
+CREATE OR REPLACE FUNCTION public.admin_payments_totals(
+  _status text DEFAULT NULL,
+  _from timestamptz DEFAULT NULL,
+  _to timestamptz DEFAULT NULL,
+  _customer_ids uuid[] DEFAULT NULL,
+  _membership_ids uuid[] DEFAULT NULL,
+  _q text DEFAULT NULL
+)
+RETURNS TABLE(total_count bigint, paid_count bigint, paid_sum numeric)
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.has_role(auth.uid(), 'admin') THEN
+    RAISE EXCEPTION 'Forbidden';
+  END IF;
+  RETURN QUERY
+  SELECT
+    count(*)::bigint AS total_count,
+    count(*) FILTER (WHERE p.status = 'paid')::bigint AS paid_count,
+    COALESCE(sum(p.amount) FILTER (WHERE p.status = 'paid'), 0)::numeric AS paid_sum
+  FROM public.payments p
+  WHERE (_status IS NULL OR p.status = _status)
+    AND (_from IS NULL OR p.created_at >= _from)
+    AND (_to   IS NULL OR p.created_at <  _to)
+    AND (
+      _q IS NULL OR (
+        p.provider_order_id   ILIKE '%' || _q || '%' OR
+        p.provider_payment_id ILIKE '%' || _q || '%' OR
+        (_customer_ids   IS NOT NULL AND p.customer_id   = ANY(_customer_ids)) OR
+        (_membership_ids IS NOT NULL AND p.membership_id = ANY(_membership_ids))
+      )
+    );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.admin_payments_totals(text, timestamptz, timestamptz, uuid[], uuid[], text) TO authenticated;
