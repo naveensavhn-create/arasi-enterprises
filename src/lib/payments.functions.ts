@@ -122,7 +122,46 @@ function normalizeFilters(f: Filters) {
   const orderId = f.orderId?.trim() || undefined;
   const paymentId = f.paymentId?.trim() || undefined;
   const customer = f.customer?.trim() || undefined;
-  return { q, status, fromISO, toISO, orderId, paymentId, customer, sortBy: f.sortBy, sortDir: f.sortDir };
+  return {
+    q, status, fromISO, toISO, orderId, paymentId, customer,
+    sortBy: f.sortBy, sortDir: f.sortDir,
+    dateField: f.dateField ?? "created",
+  };
+}
+
+/**
+ * When the admin filters by "webhook processed" date, we resolve the set of
+ * payment IDs whose linked razorpay_webhook_events fall in [from, to] and
+ * then filter payments by that set. Returns `null` when no date range is
+ * active in this mode (caller applies the regular created_at bounds instead).
+ */
+async function resolveWebhookProcessedPaymentIds(
+  sb: any,
+  n: ReturnType<typeof normalizeFilters>,
+): Promise<string[] | null> {
+  if (n.dateField !== "webhook_processed") return null;
+  if (!n.fromISO && !n.toISO) return null;
+  let evq = sb
+    .from("razorpay_webhook_events")
+    .select("order_id, payment_id")
+    .not("processed_at", "is", null);
+  if (n.fromISO) evq = evq.gte("processed_at", n.fromISO);
+  if (n.toISO) evq = evq.lt("processed_at", n.toISO);
+  const { data: evs, error } = await evq.limit(50_000);
+  if (error) throw new Error(error.message);
+  const orderIds = Array.from(new Set((evs ?? []).map((e: any) => e.order_id).filter(Boolean))) as string[];
+  const providerPaymentIds = Array.from(new Set((evs ?? []).map((e: any) => e.payment_id).filter(Boolean))) as string[];
+  if (!orderIds.length && !providerPaymentIds.length) return [];
+  const orParts: string[] = [];
+  if (orderIds.length) orParts.push(`provider_order_id.in.(${orderIds.map((o) => `"${o}"`).join(",")})`);
+  if (providerPaymentIds.length) orParts.push(`provider_payment_id.in.(${providerPaymentIds.map((p) => `"${p}"`).join(",")})`);
+  const { data: pays, error: pErr } = await sb
+    .from("payments")
+    .select("id")
+    .or(orParts.join(","))
+    .limit(50_000);
+  if (pErr) throw new Error(pErr.message);
+  return (pays ?? []).map((p: any) => p.id as string);
 }
 
 
