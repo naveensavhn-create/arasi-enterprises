@@ -36,6 +36,7 @@ import { Route as AuthenticatedAdminPromotersRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin/plans'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin/payments'
 import { Route as AuthenticatedAdminMembershipsRouteImport } from './routes/_authenticated/admin/memberships'
+import { Route as AuthenticatedAdminMembershipEmailsRouteImport } from './routes/_authenticated/admin/membership-emails'
 import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authenticated/admin/lucky-draw'
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
@@ -194,6 +195,12 @@ const AuthenticatedAdminMembershipsRoute =
     path: '/memberships',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminMembershipEmailsRoute =
+  AuthenticatedAdminMembershipEmailsRouteImport.update({
+    id: '/membership-emails',
+    path: '/membership-emails',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminLuckyDrawRoute =
   AuthenticatedAdminLuckyDrawRouteImport.update({
     id: '/lucky-draw',
@@ -231,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
+  '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
@@ -263,6 +271,7 @@ export interface FileRoutesByTo {
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
+  '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
@@ -297,6 +306,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
+  '/_authenticated/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/_authenticated/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/admin/customers'
     | '/admin/email-preview'
     | '/admin/lucky-draw'
+    | '/admin/membership-emails'
     | '/admin/memberships'
     | '/admin/payments'
     | '/admin/plans'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/admin/customers'
     | '/admin/email-preview'
     | '/admin/lucky-draw'
+    | '/admin/membership-emails'
     | '/admin/memberships'
     | '/admin/payments'
     | '/admin/plans'
@@ -396,6 +408,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/email-preview'
     | '/_authenticated/admin/lucky-draw'
+    | '/_authenticated/admin/membership-emails'
     | '/_authenticated/admin/memberships'
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/plans'
@@ -616,6 +629,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMembershipsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/membership-emails': {
+      id: '/_authenticated/admin/membership-emails'
+      path: '/membership-emails'
+      fullPath: '/admin/membership-emails'
+      preLoaderRoute: typeof AuthenticatedAdminMembershipEmailsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/lucky-draw': {
       id: '/_authenticated/admin/lucky-draw'
       path: '/lucky-draw'
@@ -651,6 +671,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminEmailPreviewRoute: typeof AuthenticatedAdminEmailPreviewRoute
   AuthenticatedAdminLuckyDrawRoute: typeof AuthenticatedAdminLuckyDrawRoute
+  AuthenticatedAdminMembershipEmailsRoute: typeof AuthenticatedAdminMembershipEmailsRoute
   AuthenticatedAdminMembershipsRoute: typeof AuthenticatedAdminMembershipsRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
@@ -665,6 +686,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
     AuthenticatedAdminEmailPreviewRoute: AuthenticatedAdminEmailPreviewRoute,
     AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,
+    AuthenticatedAdminMembershipEmailsRoute:
+      AuthenticatedAdminMembershipEmailsRoute,
     AuthenticatedAdminMembershipsRoute: AuthenticatedAdminMembershipsRoute,
     AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
     AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,

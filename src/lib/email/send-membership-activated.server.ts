@@ -1,10 +1,11 @@
-// Server-only helper: renders and attempts to send the "membership activated"
-// email after a successful advance payment. Mirrors send-role-change.server.ts:
-// if email infrastructure isn't wired yet (no sender domain), we short-circuit
-// with status="skipped_no_email_infra" so nothing crashes the webhook.
+// Server-only helper: renders + attempts to send the "membership activated"
+// email after a successful advance payment, and records every attempt in
+// `membership_email_notifications` for admin visibility.
 //
-// Callers must be server-only (webhook handler / server fn). Do NOT import
-// from client-reachable module scope.
+// If email infrastructure isn't wired yet (no sender domain), the attempt is
+// recorded with status="skipped_no_email_infra" so nothing crashes the webhook
+// and admins can still see what would have gone out. Once the sender domain
+// is verified, real sends start recording "sent"/"failed" automatically.
 
 import { render } from "@react-email/render";
 import * as React from "react";
@@ -18,10 +19,20 @@ export interface SendMembershipActivatedInput {
   membershipId: string;
   /** Optional: pass through the payment id that triggered activation, for logs. */
   triggeringPaymentId?: string | null;
+  triggeredBy?: string | null;
+  isTest?: boolean;
+  /** Optional override, e.g. for a test send from admin UI. */
+  recipientEmailOverride?: string | null;
 }
 
 export interface SendMembershipActivatedResult {
-  status: "sent" | "failed" | "skipped_no_email_infra" | "skipped_no_recipient";
+  logId: string;
+  status:
+    | "sent"
+    | "failed"
+    | "skipped_no_email_infra"
+    | "skipped_no_recipient"
+    | "skipped_membership_not_found";
   messageId?: string;
   error?: string;
   recipientEmail?: string;
@@ -43,8 +54,19 @@ export async function sendMembershipActivatedEmail(
     .maybeSingle();
 
   if (mErr || !membership) {
+    const logId = await logAttempt({
+      membershipId: input.membershipId,
+      paymentId: input.triggeringPaymentId ?? null,
+      recipientEmail: input.recipientEmailOverride ?? "(unknown)",
+      status: "skipped_membership_not_found",
+      errorMessage: mErr?.message ?? `Membership ${input.membershipId} not found`,
+      isTest: input.isTest ?? false,
+      triggeredBy: input.triggeredBy ?? null,
+      metadata: null,
+    });
     return {
-      status: "failed",
+      logId,
+      status: "skipped_membership_not_found",
       error: mErr?.message ?? `Membership ${input.membershipId} not found`,
     };
   }
@@ -71,47 +93,154 @@ export async function sendMembershipActivatedEmail(
         .maybeSingle(),
     ]);
 
-  const recipientEmail = profile?.email ?? null;
-  if (!recipientEmail) {
-    return { status: "skipped_no_recipient" };
-  }
-
-  const props: MembershipActivatedProps = {
-    recipientName: profile?.full_name ?? undefined,
+  const recipientEmail =
+    input.recipientEmailOverride ?? profile?.email ?? null;
+  const baseMetadata = {
     membershipNumber: membership.membership_number,
-    planName: plan?.name ?? "Membership",
+    planName: plan?.name ?? null,
     advancePaid: Number(membership.advance_paid ?? 0),
     monthlyInstallment: Number(plan?.monthly_installment ?? 0),
-    durationMonths: Number(plan?.duration_months ?? 0),
     totalAmount: Number(membership.total_amount ?? 0),
-    startDate: membership.start_date,
-    endDate: membership.end_date,
-    activatedAt: membership.updated_at ?? new Date().toISOString(),
-    nextDueDate: nextDue?.due_date ?? null,
-    nextDueAmount:
-      nextDue?.amount != null ? Number(nextDue.amount) : null,
-    currency: "INR",
+    triggeringPaymentId: input.triggeringPaymentId ?? null,
   };
 
-  const html = await render(React.createElement(MembershipActivated, props));
-  return dispatchIfConfigured({
-    templateName: TEMPLATE_NAME,
-    recipientEmail,
-    subject: SUBJECT,
-    html,
+  if (!recipientEmail) {
+    const logId = await logAttempt({
+      membershipId: membership.id,
+      paymentId: input.triggeringPaymentId ?? null,
+      recipientEmail: "(none)",
+      status: "skipped_no_recipient",
+      errorMessage: "Customer profile has no email address.",
+      isTest: input.isTest ?? false,
+      triggeredBy: input.triggeredBy ?? null,
+      metadata: baseMetadata,
+    });
+    return {
+      logId,
+      status: "skipped_no_recipient",
+      error: "Customer profile has no email address.",
+    };
+  }
+
+  // 2. Insert a pending log row up front so we always have a record.
+  const logId = await logAttempt({
     membershipId: membership.id,
-    triggeringPaymentId: input.triggeringPaymentId ?? null,
+    paymentId: input.triggeringPaymentId ?? null,
+    recipientEmail,
+    status: "pending",
+    errorMessage: null,
+    isTest: input.isTest ?? false,
+    triggeredBy: input.triggeredBy ?? null,
+    metadata: baseMetadata,
   });
+
+  try {
+    const props: MembershipActivatedProps = {
+      recipientName: profile?.full_name ?? undefined,
+      membershipNumber: membership.membership_number,
+      planName: plan?.name ?? "Membership",
+      advancePaid: Number(membership.advance_paid ?? 0),
+      monthlyInstallment: Number(plan?.monthly_installment ?? 0),
+      durationMonths: Number(plan?.duration_months ?? 0),
+      totalAmount: Number(membership.total_amount ?? 0),
+      startDate: membership.start_date,
+      endDate: membership.end_date,
+      activatedAt: membership.updated_at ?? new Date().toISOString(),
+      nextDueDate: nextDue?.due_date ?? null,
+      nextDueAmount:
+        nextDue?.amount != null ? Number(nextDue.amount) : null,
+      currency: "INR",
+    };
+
+    const html = await render(React.createElement(MembershipActivated, props));
+    const dispatched = await dispatchIfConfigured({
+      recipientEmail,
+      subject: SUBJECT,
+      html,
+      membershipId: membership.id,
+      triggeringPaymentId: input.triggeringPaymentId ?? null,
+      isTest: input.isTest ?? false,
+    });
+
+    await updateAttempt(logId, {
+      status: dispatched.status,
+      messageId: dispatched.messageId ?? null,
+      errorMessage: dispatched.error ?? null,
+    });
+
+    return {
+      logId,
+      status: dispatched.status,
+      recipientEmail,
+      messageId: dispatched.messageId,
+      error: dispatched.error,
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    await updateAttempt(logId, { status: "failed", errorMessage: message });
+    return { logId, status: "failed", recipientEmail, error: message };
+  }
+}
+
+// ---------------- internals ----------------
+
+async function logAttempt(args: {
+  membershipId: string | null;
+  paymentId: string | null;
+  recipientEmail: string;
+  status: SendMembershipActivatedResult["status"] | "pending";
+  errorMessage: string | null;
+  isTest: boolean;
+  triggeredBy: string | null;
+  metadata: Record<string, unknown> | null;
+}): Promise<string> {
+  const { data, error } = await supabaseAdmin
+    .from("membership_email_notifications")
+    .insert({
+      membership_id: args.membershipId,
+      payment_id: args.paymentId,
+      recipient_email: args.recipientEmail,
+      template_name: TEMPLATE_NAME,
+      subject: SUBJECT,
+      status: args.status,
+      error_message: args.errorMessage,
+      is_test: args.isTest,
+      triggered_by: args.triggeredBy,
+      metadata: args.metadata as never,
+    })
+    .select("id")
+    .single();
+  if (error || !data) return "";
+  return data.id;
+}
+
+async function updateAttempt(
+  logId: string,
+  patch: { status: string; messageId?: string | null; errorMessage?: string | null },
+) {
+  if (!logId) return;
+  await supabaseAdmin
+    .from("membership_email_notifications")
+    .update({
+      status: patch.status,
+      message_id: patch.messageId ?? null,
+      error_message: patch.errorMessage ?? null,
+    })
+    .eq("id", logId);
 }
 
 async function dispatchIfConfigured(args: {
-  templateName: string;
   recipientEmail: string;
   subject: string;
   html: string;
   membershipId: string;
   triggeringPaymentId: string | null;
-}): Promise<SendMembershipActivatedResult> {
+  isTest: boolean;
+}): Promise<{
+  status: SendMembershipActivatedResult["status"];
+  messageId?: string;
+  error?: string;
+}> {
   const senderDomain = process.env.SENDER_DOMAIN;
   const lovableApiKey = process.env.LOVABLE_API_KEY;
 
@@ -131,19 +260,19 @@ async function dispatchIfConfigured(args: {
             from: `notify@${senderDomain}`,
             subject: args.subject,
             html: args.html,
-            template: args.templateName,
-            // Idempotency: never resend the activation email for the same
-            // membership + payment combination.
-            idempotency_key: `membership-activated:${args.membershipId}:${
-              args.triggeringPaymentId ?? "advance"
-            }`,
+            template: TEMPLATE_NAME,
+            // Tests should NOT collide with real webhook idempotency.
+            idempotency_key: args.isTest
+              ? `membership-activated-test:${args.membershipId}:${Date.now()}`
+              : `membership-activated:${args.membershipId}:${
+                  args.triggeringPaymentId ?? "advance"
+                }`,
           }),
         },
       );
       if (!res.ok) {
         return {
           status: "failed",
-          recipientEmail: args.recipientEmail,
           error: `Email provider returned ${res.status}: ${await res.text()}`,
         };
       }
@@ -151,15 +280,10 @@ async function dispatchIfConfigured(args: {
         message_id?: string;
         id?: string;
       };
-      return {
-        status: "sent",
-        recipientEmail: args.recipientEmail,
-        messageId: body.message_id ?? body.id,
-      };
+      return { status: "sent", messageId: body.message_id ?? body.id };
     } catch (err) {
       return {
         status: "failed",
-        recipientEmail: args.recipientEmail,
         error: err instanceof Error ? err.message : String(err),
       };
     }
@@ -167,7 +291,6 @@ async function dispatchIfConfigured(args: {
 
   return {
     status: "skipped_no_email_infra",
-    recipientEmail: args.recipientEmail,
     error:
       "Sender domain not configured. Set up an email domain in Cloud → Emails to activate sending.",
   };

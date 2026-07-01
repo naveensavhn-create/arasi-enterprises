@@ -119,6 +119,72 @@ export type Database = {
           },
         ]
       }
+      membership_email_notifications: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          is_test: boolean
+          membership_id: string | null
+          message_id: string | null
+          metadata: Json | null
+          payment_id: string | null
+          recipient_email: string
+          status: string
+          subject: string | null
+          template_name: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_test?: boolean
+          membership_id?: string | null
+          message_id?: string | null
+          metadata?: Json | null
+          payment_id?: string | null
+          recipient_email: string
+          status?: string
+          subject?: string | null
+          template_name: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_test?: boolean
+          membership_id?: string | null
+          message_id?: string | null
+          metadata?: Json | null
+          payment_id?: string | null
+          recipient_email?: string
+          status?: string
+          subject?: string | null
+          template_name?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_email_notifications_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_email_notifications_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       membership_plans: {
         Row: {
           advance_amount: number
