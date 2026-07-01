@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { applyPaymentStatusEq } from "@/lib/payments/status-filter";
 import { useSession } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Receipt } from "lucide-react";
@@ -27,10 +28,12 @@ function PromoterCommissionsPage() {
     queryKey: ["promoter-commissions", session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async (): Promise<Row[]> => {
-      const { data, error } = await supabase
-        .from("payments")
-        .select("id, amount, paid_at, created_at, membership_id, memberships!inner(membership_number, promoter_id)")
-        .filter("status::text", "eq", "paid")
+      const { data, error } = await applyPaymentStatusEq(
+        supabase
+          .from("payments")
+          .select("id, amount, paid_at, created_at, membership_id, memberships!inner(membership_number, promoter_id)"),
+        "paid",
+      )
         .eq("memberships.promoter_id", session!.user.id)
         .order("paid_at", { ascending: false });
       if (error) throw error;

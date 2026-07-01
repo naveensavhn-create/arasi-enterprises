@@ -27,7 +27,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { Client } from "pg";
-import { applyPaymentStatusEq } from "@/lib/payments.functions";
+import {
+  applyPaymentStatusEq,
+  applyPaymentStatusIn,
+  PAYMENT_STATUS_TEXT_COLUMN,
+} from "@/lib/payments/status-filter";
 
 // ---------------------------------------------------------------------------
 // 1. Helper contract
@@ -69,7 +73,42 @@ describe("applyPaymentStatusEq (status::text cast helper)", () => {
       expect(q.calls).toEqual([]);
     }
   });
+
+  it("PAYMENT_STATUS_TEXT_COLUMN is the single source of truth", () => {
+    expect(PAYMENT_STATUS_TEXT_COLUMN).toBe("status::text");
+  });
 });
+
+describe("applyPaymentStatusIn (status::text IN helper)", () => {
+  function makeQuery() {
+    const calls: Array<{ col: string; op: string; v: unknown }> = [];
+    const q: any = {
+      calls,
+      filter(col: string, op: string, v: unknown) {
+        calls.push({ col, op, v });
+        return q;
+      },
+    };
+    return q;
+  }
+
+  it("emits filter('status::text','in','(a,b,c)') for a non-empty list", () => {
+    const q = makeQuery();
+    applyPaymentStatusIn(q, ["paid", "refunded", "failed"]);
+    expect(q.calls).toEqual([
+      { col: "status::text", op: "in", v: "(paid,refunded,failed)" },
+    ]);
+  });
+
+  it("is a no-op for empty/null/undefined lists", () => {
+    for (const v of [[], null, undefined] as const) {
+      const q = makeQuery();
+      applyPaymentStatusIn(q, v);
+      expect(q.calls).toEqual([]);
+    }
+  });
+});
+
 
 // ---------------------------------------------------------------------------
 // 2. Source-level audit: no raw payments.status equality anywhere
@@ -87,24 +126,30 @@ describe("source audit: payments.status equality goes through the helper", () =>
     }
   }
 
-  it("no .eq(\"status\", ...) or .filter(\"status\", \"eq\", ...) callsite exists in src/**", () => {
-    const HELPER_FILE = resolve(SRC, "lib/payments.functions.ts");
-    // Patterns that would bypass applyPaymentStatusEq
+  it("no bare .eq/.filter on payments.status and no inline 'status::text' outside the helper", () => {
+    const HELPER_MODULE = resolve(SRC, "lib/payments/status-filter.ts");
+    // Patterns that would bypass the helper
     const badEq = /\.eq\(\s*["']status["']\s*,/;
     const badFilter = /\.filter\(\s*["']status["']\s*,\s*["']eq["']/;
+    // Inline hardcoded "status::text" strings are a second bypass vector:
+    // if someone copy-pastes the literal instead of importing the helper,
+    // a future rename (e.g. to "payment_status::text") desyncs callsites.
+    const inlineCastLiteral = /["']status::text["']/;
     const offenders: string[] = [];
     for (const file of walk(SRC)) {
-      if (file === HELPER_FILE) continue; // helper defines the correct form
+      if (file === HELPER_MODULE) continue; // helper defines the correct form
       const text = readFileSync(file, "utf8");
-      // Only flag matches in files that also touch the payments table, to
-      // avoid false positives on unrelated tables that happen to have a
-      // `status` column (e.g. installments, memberships).
       const touchesPayments = /from\(\s*["']payments["']\s*\)/.test(text);
-      if (!touchesPayments) continue;
-      if (badEq.test(text) || badFilter.test(text)) offenders.push(file);
+      if (touchesPayments && (badEq.test(text) || badFilter.test(text))) {
+        offenders.push(`${file} (bare status filter)`);
+      }
+      if (inlineCastLiteral.test(text)) {
+        offenders.push(`${file} (inline "status::text" literal)`);
+      }
     }
-    expect(offenders, `Bare payments.status equality found in:\n${offenders.join("\n")}`).toEqual([]);
+    expect(offenders, `Payments status filter bypass found in:\n${offenders.join("\n")}`).toEqual([]);
   });
+
 });
 
 // ---------------------------------------------------------------------------

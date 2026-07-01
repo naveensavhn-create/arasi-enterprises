@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { applyPaymentStatusEq } from "@/lib/payments/status-filter";
 import { useSession } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,11 +40,13 @@ function PromoterPortfolioPage() {
     queryFn: async () => {
       const [ms, ps] = await Promise.all([
         supabase.from("memberships").select("id, total_amount, paid_amount").eq("promoter_id", session!.user.id),
-        supabase
-          .from("payments")
-          .select("amount, memberships!inner(promoter_id)")
-          .filter("status::text", "eq", "paid")
-          .eq("memberships.promoter_id", session!.user.id),
+        applyPaymentStatusEq(
+          supabase
+            .from("payments")
+            .select("amount, memberships!inner(promoter_id)"),
+          "paid",
+        ).eq("memberships.promoter_id", session!.user.id),
+
       ]);
       const mems = ms.data ?? [];
       const pays = ps.data ?? [];

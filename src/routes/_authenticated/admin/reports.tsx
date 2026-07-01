@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { applyPaymentStatusEq } from "@/lib/payments/status-filter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart3, TrendingUp, Users, Wallet, Loader2 } from "lucide-react";
 
@@ -19,7 +20,10 @@ function AdminReportsPage() {
         supabase.from("membership_plans").select("id", { count: "exact", head: true }).eq("is_active", true),
         supabase.from("memberships").select("id, status, total_amount, paid_amount"),
         supabase.from("installments").select("status, amount"),
-        supabase.from("payments").select("amount, status, created_at").filter("status::text", "eq", "paid"),
+        applyPaymentStatusEq(
+          supabase.from("payments").select("amount, status, created_at"),
+          "paid",
+        ),
       ]);
 
       const mems = memberships.data ?? [];
