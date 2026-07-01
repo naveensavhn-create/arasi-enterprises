@@ -134,7 +134,7 @@ function AdminPaymentsPage() {
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
   const lastLiveAt = useRef<number>(0);
-  const { paymentsPollingMs } = useUiPrefs();
+  const listRefetchInterval = useListRefetchInterval(liveConnected);
 
   const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
@@ -144,11 +144,13 @@ function AdminPaymentsPage() {
   const { data: lastWebhook } = useQuery({
     queryKey: ["admin-payments-last-webhook"],
     queryFn: () => lastWebhookFn(),
-    refetchInterval: liveConnected
-      ? (paymentsPollingMs === 0 ? false : Math.max(paymentsPollingMs, 120_000))
-      : (paymentsPollingMs === 0 ? 60_000 : paymentsPollingMs),
+    // Even when the admin turns polling "Off", we still tick the last-webhook
+    // badge on a slow interval when realtime is down — otherwise the "no
+    // webhooks yet" state can lie for hours.
+    refetchInterval: listRefetchInterval === false && !liveConnected ? 60_000 : listRefetchInterval,
     refetchOnWindowFocus: true,
   });
+
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
