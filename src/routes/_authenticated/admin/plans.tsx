@@ -26,12 +26,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Package, Plus, Pencil, Trash2, History } from "lucide-react";
-import { useState } from "react";
+import { Loader2, Package, Plus, Pencil, Trash2, History, Sparkles, Calendar, Wallet, TrendingUp, CheckCircle2, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 import { deletePlanAudited } from "@/lib/plans.functions";
 import { BLOCKING_STATUSES, computePlanUsage, usageFor } from "@/lib/plans-precheck";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
@@ -54,6 +55,7 @@ type Plan = {
 type FormState = {
   name: string;
   description: string;
+  has_advance: boolean;
   advance_amount: string;
   monthly_installment: string;
   duration_months: string;
@@ -65,6 +67,7 @@ type FormState = {
 const empty: FormState = {
   name: "",
   description: "",
+  has_advance: true,
   advance_amount: "",
   monthly_installment: "",
   duration_months: "12",
@@ -72,6 +75,9 @@ const empty: FormState = {
   is_active: true,
   display_order: "0",
 };
+
+const inr = (n: number) =>
+  `₹${Number.isFinite(n) ? Math.round(n).toLocaleString("en-IN") : "0"}`;
 
 function AdminPlansPage() {
   const qc = useQueryClient();
