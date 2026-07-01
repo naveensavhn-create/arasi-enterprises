@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
-  coercePaymentStatus,
+  coercePaymentStatusOrLog,
   type PaymentStatus,
 } from "@/lib/payments/status-filter";
 
@@ -27,7 +27,9 @@ export const exportFiltersSchema = z
     // in `buildExportRows`. "", "all", unknown values → undefined (no-op).
     status: z
       .unknown()
-      .transform((v): PaymentStatus | undefined => coercePaymentStatus(v) ?? undefined),
+      .transform((v): PaymentStatus | undefined =>
+        coercePaymentStatusOrLog(v, { source: "exports.functions:filter" }) ?? undefined,
+      ),
     from: z.string().optional(),
     to: z.string().optional(),
     dateField: z.enum(DATE_FIELDS).default("created"),

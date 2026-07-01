@@ -106,6 +106,92 @@ export function coercePaymentStatuses(values: unknown): PaymentStatus[] {
   return out;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+//  Logging wrappers
+// ─────────────────────────────────────────────────────────────────────────
+//
+// The plain `coerce*` helpers deliberately drop invalid input silently so
+// UI code (URL params, form fields) can round-trip stale values without
+// blowing up. Server-side callers — reconciliation, export jobs, admin
+// queries — MUST NOT lose that signal: dropping "PAID" or "success" on the
+// floor turns a bug into a silent mis-filter that returns the wrong row
+// set. Use these wrappers everywhere the result feeds a query builder.
+//
+// They preserve the exact same return contract (`PaymentStatus | null` /
+// `PaymentStatus[]`) so callsites can swap in without other changes, but
+// emit a structured `console.warn` when a non-empty input was reduced to
+// `null` / had entries dropped. `console.warn` is captured by the Worker
+// runtime log tail, so operators can grep for `payment_status.coerce` in
+// server logs.
+
+export type CoerceLogContext = {
+  /** Short identifier of the callsite, e.g. `"exports.functions:filter"`. */
+  source: string;
+  /** Optional job/request id to correlate with other log lines. */
+  correlationId?: string;
+};
+
+function logDroppedStatus(
+  ctx: CoerceLogContext,
+  raw: unknown,
+  dropped: unknown[],
+): void {
+  // Best-effort structured warn; never throws so it can't break a query.
+  try {
+    // eslint-disable-next-line no-console
+    console.warn("[payment_status.coerce] dropped invalid status input", {
+      source: ctx.source,
+      correlationId: ctx.correlationId,
+      raw,
+      dropped,
+      allowed: PAYMENT_STATUSES,
+    });
+  } catch {
+    /* logging must never throw */
+  }
+}
+
+/**
+ * Same contract as {@link coercePaymentStatus} but emits a `console.warn`
+ * when a non-nullish, non-empty input was rejected. The safe fallback is
+ * `null` (== "no status filter"), which callers already handle as a no-op.
+ */
+export function coercePaymentStatusOrLog(
+  value: unknown,
+  ctx: CoerceLogContext,
+): PaymentStatus | null {
+  const coerced = coercePaymentStatus(value);
+  if (coerced === null && value !== undefined && value !== null && value !== "") {
+    logDroppedStatus(ctx, value, [value]);
+  }
+  return coerced;
+}
+
+/**
+ * Same contract as {@link coercePaymentStatuses} but emits a `console.warn`
+ * listing every entry that was dropped from a non-empty input array. The
+ * safe fallback is `[]` (== "no status filter"), which the query helper
+ * treats as a no-op.
+ */
+export function coercePaymentStatusesOrLog(
+  values: unknown,
+  ctx: CoerceLogContext,
+): PaymentStatus[] {
+  const coerced = coercePaymentStatuses(values);
+  if (Array.isArray(values) && values.length > 0) {
+    const kept = new Set<unknown>(coerced);
+    const dropped = values.filter((v) => !kept.has(v));
+    if (dropped.length > 0) logDroppedStatus(ctx, values, dropped);
+  } else if (values !== undefined && values !== null && !Array.isArray(values)) {
+    // Non-array truthy input (e.g. a single string mistakenly forwarded to
+    // the list variant) always coerces to `[]` — flag it so the caller
+    // doesn't silently run without a filter.
+    logDroppedStatus(ctx, values, [values]);
+  }
+  return coerced;
+}
+
+
 /** Minimal PostgREST query shape both browser and admin clients satisfy. */
 type FilterableQuery<Q> = { filter: (col: string, op: string, v: unknown) => Q };
 
@@ -133,8 +219,24 @@ export function applyPaymentStatusEq<Q extends FilterableQuery<Q>>(
   if (Array.isArray(status)) {
     // Runtime belt-and-braces: filter out any value the compiler couldn't
     // catch (e.g. a caller passing `as any`). Keeps the emitted PostgREST
-    // filter valid even if type-safety is bypassed upstream.
+    // filter valid even if type-safety is bypassed upstream. Any dropped
+    // entry is logged so a silent mis-filter is impossible to miss in
+    // Worker logs — grep for `payment_status.apply`.
     const values = (status as readonly unknown[]).filter(isPaymentStatus);
+    if (values.length !== status.length) {
+      const dropped = (status as readonly unknown[]).filter(
+        (v) => !isPaymentStatus(v),
+      );
+      try {
+        // eslint-disable-next-line no-console
+        console.warn(
+          "[payment_status.apply] dropped invalid entries from status filter",
+          { raw: status, dropped, allowed: PAYMENT_STATUSES },
+        );
+      } catch {
+        /* logging must never throw */
+      }
+    }
     if (values.length === 0) return query;
     if (values.length === 1) {
       return query.filter(PAYMENT_STATUS_TEXT_COLUMN, "eq", values[0]);
@@ -145,6 +247,7 @@ export function applyPaymentStatusEq<Q extends FilterableQuery<Q>>(
       `(${values.join(",")})`,
     );
   }
+
   if (!isPaymentStatus(status)) return query;
   return query.filter(PAYMENT_STATUS_TEXT_COLUMN, "eq", status);
 }

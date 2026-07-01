@@ -31,9 +31,10 @@ export {
 export type { PaymentStatus } from "@/lib/payments/status-filter";
 import {
   applyPaymentStatusEq,
-  coercePaymentStatus,
+  coercePaymentStatusOrLog,
   type PaymentStatus,
 } from "@/lib/payments/status-filter";
+
 
 
 const SORT_COLUMNS = [
@@ -58,7 +59,9 @@ export type PaymentDateField = typeof DATE_FIELDS[number];
 // downstream helpers can assume the value is `PaymentStatus | undefined`.
 const paymentStatusFilterSchema = z
   .unknown()
-  .transform((v): PaymentStatus | undefined => coercePaymentStatus(v) ?? undefined);
+  .transform((v): PaymentStatus | undefined =>
+    coercePaymentStatusOrLog(v, { source: "payments.functions:filter" }) ?? undefined,
+  );
 
 
 const baseFilterSchema = z.object({

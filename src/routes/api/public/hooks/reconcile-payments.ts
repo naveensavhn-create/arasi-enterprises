@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   applyPaymentStatusEq,
-  coercePaymentStatuses,
+  coercePaymentStatusesOrLog,
   isPaymentStatus,
   type PaymentStatus,
 } from "@/lib/payments/status-filter";
@@ -104,7 +104,9 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
             // Strict check above already rejected any invalid entry, so
             // `coercePaymentStatuses` here only dedupes and narrows the
             // TS type to `PaymentStatus[]` before it hits the query helper.
-            statuses = coercePaymentStatuses(body.statuses);
+            statuses = coercePaymentStatusesOrLog(body.statuses, {
+              source: "reconcile-payments:body.statuses",
+            });
           }
         }
 
