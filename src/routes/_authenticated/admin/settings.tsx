@@ -793,7 +793,170 @@ function AdminSettings() {
           );
         })()}
       </div>
+
+      <AuditDetailsDrawer
+        row={selectedAudit}
+        onClose={() => setSelectedAudit(null)}
+      />
     </div>
+  );
+}
+
+function RoleChip({ value }: { value: string | null }) {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  const cls =
+    value === "admin"
+      ? "bg-primary/15 text-primary"
+      : value === "promoter"
+        ? "bg-blue-500/15 text-blue-600 dark:text-blue-400"
+        : "bg-muted text-foreground/70";
+  return (
+    <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium uppercase tracking-wider ${cls}`}>
+      {value}
+    </span>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-sm text-foreground">{children}</div>
+    </div>
+  );
+}
+
+function CopyableId({ value }: { value: string | null }) {
+  if (!value) return <span className="text-muted-foreground">—</span>;
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        navigator.clipboard.writeText(value).then(
+          () => toast.success("Copied", { description: value }),
+          () => toast.error("Copy failed"),
+        );
+      }}
+      className="group inline-flex items-center gap-1.5 rounded border border-border bg-muted/40 px-2 py-1 font-mono text-[11px] hover:bg-muted"
+      title="Copy to clipboard"
+    >
+      <span className="truncate max-w-[220px]">{value}</span>
+      <Copy className="h-3 w-3 opacity-60 group-hover:opacity-100" />
+    </button>
+  );
+}
+
+function AuditDetailsDrawer({
+  row,
+  onClose,
+}: {
+  row: AuditRow | null;
+  onClose: () => void;
+}) {
+  const open = !!row;
+  const created = row ? new Date(row.created_at) : null;
+  const actionLabel = row?.action.replace(/_/g, " ") ?? "";
+  const actionCls =
+    row?.action === "promote" || row?.action === "bootstrap_claim"
+      ? "bg-emerald-500/10 text-emerald-600"
+      : row?.action === "revoke"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-primary/10 text-primary";
+
+  const metadataString =
+    row?.metadata && typeof row.metadata === "object" && Object.keys(row.metadata as object).length > 0
+      ? JSON.stringify(row.metadata, null, 2)
+      : null;
+
+  return (
+    <Sheet open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg">
+        <SheetHeader className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${actionCls}`}>
+              {actionLabel}
+            </span>
+            <SheetTitle className="text-base">Audit entry</SheetTitle>
+          </div>
+          <SheetDescription>
+            {created ? (
+              <>
+                {created.toLocaleString(undefined, {
+                  weekday: "short", year: "numeric", month: "short", day: "numeric",
+                  hour: "2-digit", minute: "2-digit", second: "2-digit",
+                })}
+                <span className="ml-2 text-xs opacity-70">({created.toISOString()})</span>
+              </>
+            ) : null}
+          </SheetDescription>
+        </SheetHeader>
+
+        {row && (
+          <div className="mt-6 space-y-6">
+            <section className="rounded-lg border border-border bg-muted/20 p-4">
+              <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Role change
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <RoleChip value={row.role_before} />
+                <span className="text-muted-foreground">→</span>
+                <RoleChip value={row.role_after} />
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Target</h3>
+              <div className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
+                <Field label="Email">
+                  {row.target_email ?? <span className="text-muted-foreground">—</span>}
+                </Field>
+                <Field label="User ID">
+                  <CopyableId value={row.target_user_id} />
+                </Field>
+              </div>
+            </section>
+
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Actor</h3>
+              <div className="grid gap-3 rounded-lg border border-border p-4 sm:grid-cols-2">
+                <Field label="Email">
+                  {row.actor_email ?? <span className="text-muted-foreground">—</span>}
+                </Field>
+                <Field label="User ID">
+                  <CopyableId value={row.actor_id} />
+                </Field>
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold">Reason</h3>
+              <div className="rounded-lg border border-border p-4 text-sm">
+                {row.reason ? (
+                  <p className="whitespace-pre-wrap leading-relaxed">{row.reason}</p>
+                ) : (
+                  <p className="italic text-muted-foreground">No reason recorded.</p>
+                )}
+              </div>
+            </section>
+
+            {metadataString && (
+              <section className="space-y-2">
+                <h3 className="text-sm font-semibold">Metadata</h3>
+                <pre className="max-h-56 overflow-auto rounded-lg border border-border bg-muted/30 p-3 font-mono text-[11px] leading-relaxed">
+                  {metadataString}
+                </pre>
+              </section>
+            )}
+
+            <section className="space-y-2">
+              <Field label="Entry ID">
+                <CopyableId value={row.id} />
+              </Field>
+            </section>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
 
