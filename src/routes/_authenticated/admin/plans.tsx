@@ -361,30 +361,69 @@ function AdminPlansPage() {
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete plan?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete <span className="font-semibold">{confirmDelete?.name}</span>.
-              Existing memberships already on this plan are unaffected, but customers will no longer be
-              able to enroll in it. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={remove.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={remove.isPending}
-              onClick={(e) => {
-                e.preventDefault();
-                if (!confirmDelete) return;
-                remove.mutate(confirmDelete.id, {
-                  onSuccess: () => setConfirmDelete(null),
-                });
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete plan"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {(() => {
+            const inUse = confirmDelete ? usageFor(confirmDelete.id) : 0;
+            const blocked = inUse > 0;
+            return (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {blocked ? "Cannot delete this plan" : "Delete plan?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {blocked ? (
+                      <>
+                        <span className="font-semibold">{confirmDelete?.name}</span> is used by{" "}
+                        <span className="font-semibold">{inUse}</span> existing membership
+                        {inUse === 1 ? "" : "s"}. Deleting it would orphan those records.
+                        Deactivate the plan instead to stop new enrollments while preserving history.
+                      </>
+                    ) : (
+                      <>
+                        This will permanently delete{" "}
+                        <span className="font-semibold">{confirmDelete?.name}</span>. No memberships
+                        reference this plan. This action cannot be undone.
+                      </>
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={remove.isPending}>
+                    {blocked ? "Close" : "Cancel"}
+                  </AlertDialogCancel>
+                  {blocked ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        if (!confirmDelete) return;
+                        toggleActive.mutate(
+                          { ...confirmDelete, is_active: true },
+                          { onSuccess: () => setConfirmDelete(null) },
+                        );
+                      }}
+                      disabled={toggleActive.isPending || !confirmDelete?.is_active === false}
+                    >
+                      {confirmDelete?.is_active ? "Deactivate plan" : "Already inactive"}
+                    </Button>
+                  ) : (
+                    <AlertDialogAction
+                      disabled={remove.isPending}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!confirmDelete) return;
+                        remove.mutate(confirmDelete.id, {
+                          onSuccess: () => setConfirmDelete(null),
+                        });
+                      }}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete plan"}
+                    </AlertDialogAction>
+                  )}
+                </AlertDialogFooter>
+              </>
+            );
+          })()}
         </AlertDialogContent>
       </AlertDialog>
     </div>
