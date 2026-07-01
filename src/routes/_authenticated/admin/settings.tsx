@@ -288,6 +288,80 @@ function AdminSettings() {
           )}
         </div>
       </div>
+
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+        <div className="flex items-center gap-3">
+          <History className="h-5 w-5 text-primary" />
+          <div>
+            <h2 className="text-lg font-semibold">Role change audit log</h2>
+            <p className="text-xs text-muted-foreground">
+              Every promote and revoke is recorded here with actor, target, timestamp, and reason.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-hidden rounded-lg border border-border">
+          {audit.isLoading && (
+            <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading audit log…
+            </div>
+          )}
+          {audit.data && audit.data.length === 0 && (
+            <div className="p-4 text-sm text-muted-foreground">No role changes recorded yet.</div>
+          )}
+          {audit.data && audit.data.length > 0 && (
+            <div className="max-h-[420px] overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">When</th>
+                    <th className="px-3 py-2 font-medium">Action</th>
+                    <th className="px-3 py-2 font-medium">Target</th>
+                    <th className="px-3 py-2 font-medium">Change</th>
+                    <th className="px-3 py-2 font-medium">Actor</th>
+                    <th className="px-3 py-2 font-medium">Reason</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {audit.data.map((row) => {
+                    const badge =
+                      row.action === "promote" || row.action === "bootstrap_claim"
+                        ? "bg-emerald-500/10 text-emerald-600"
+                        : row.action === "revoke"
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-primary/10 text-primary";
+                    return (
+                      <tr key={row.id} className="align-top">
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {new Date(row.created_at).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${badge}`}>
+                            {row.action.replace("_", " ")}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs">
+                          <div className="font-medium">{row.target_email ?? row.target_user_id}</div>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {(row.role_before ?? "—")} → {(row.role_after ?? "—")}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {row.actor_email ?? row.actor_id}
+                        </td>
+                        <td className="px-3 py-2 text-xs text-muted-foreground">
+                          {row.reason || <span className="italic opacity-60">—</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+
