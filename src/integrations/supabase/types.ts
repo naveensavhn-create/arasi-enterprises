@@ -1318,6 +1318,8 @@ export type Database = {
           membership_number: string
           membership_status: string
           phone: string
+          plan_id: string
+          plan_name: string
           postal_code: string
           state: string
         }[]
