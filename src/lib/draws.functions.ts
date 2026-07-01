@@ -341,19 +341,51 @@ export const listDrawsForPromoter = createServerFn({ method: "GET" })
 /**
  * createDrawEntry
  *
- * Canonical entry-creation server function. Eligibility is enforced in two layers:
- *   1) Zod input validation (well-formed UUIDs, optional membership).
- *   2) Database trigger `validate_draw_entry()` (draw exists, status is scheduled/open,
- *      within open/close window, active membership + plan match when required).
- *   3) RLS policy `draw_entries.customer_id = auth.uid()` on INSERT, so a caller
- *      cannot create an entry on behalf of another user.
+ * Canonical entry-creation server function. Eligibility is enforced in layers:
+ *   1) Zod input validation (well-formed UUIDs, optional membership)
+ *      → INVALID_INPUT.
+ *   2) Server-side pre-flight (draw exists, status scheduled/open, within
+ *      open/close window, plan/membership match when required)
+ *      → INVALID_ELIGIBILITY, thrown BEFORE any INSERT is attempted.
+ *   3) Database trigger `validate_draw_entry()` — belt-and-braces authority.
+ *   4) RLS policy `draw_entries.customer_id = auth.uid()` on INSERT.
  *
  * Unique index on (draw_id, customer_id) prevents duplicate entries.
  */
-const createDrawEntrySchema = z.object({
+export const createDrawEntrySchema = z.object({
   drawId: z.string().uuid("Invalid draw id"),
   membershipId: z.string().uuid().optional().nullable(),
 });
+
+export type DrawEntryErrorCode = "INVALID_INPUT" | "INVALID_ELIGIBILITY";
+
+export class DrawEntryError extends Error {
+  readonly code: DrawEntryErrorCode;
+  readonly status = 400 as const;
+  readonly reason: string;
+  readonly details?: Record<string, unknown>;
+  constructor(
+    code: DrawEntryErrorCode,
+    reason: string,
+    message?: string,
+    details?: Record<string, unknown>,
+  ) {
+    super(message ?? reason);
+    this.name = "DrawEntryError";
+    this.code = code;
+    this.reason = reason;
+    this.details = details;
+  }
+  toJSON() {
+    return {
+      ok: false,
+      error: this.code,
+      reason: this.reason,
+      message: this.message,
+      ...(this.details ? { details: this.details } : {}),
+    };
+  }
+}
 
 type PgError = { code?: string; message?: string; details?: string | null };
 
@@ -361,58 +393,182 @@ function mapEntryError(err: PgError): Error {
   const code = err.code ?? "";
   const msg = err.message ?? "Failed to create draw entry";
   if (code === "23505") return new Error("You've already entered this draw");
-  if (code === "23503") return new Error("Draw not found");
-  if (code === "42501") return new Error("You are not allowed to enter this draw");
+  if (code === "23503")
+    return new DrawEntryError("INVALID_ELIGIBILITY", "DRAW_NOT_FOUND", "Draw not found");
+  if (code === "42501")
+    return new DrawEntryError(
+      "INVALID_ELIGIBILITY",
+      "NOT_ALLOWED",
+      "You are not allowed to enter this draw",
+    );
   // Trigger-raised check_violation surfaces the human-readable message directly.
-  if (code === "23514" || code === "P0001") return new Error(msg);
+  if (code === "23514" || code === "P0001")
+    return new DrawEntryError("INVALID_ELIGIBILITY", "TRIGGER_REJECTED", msg);
   return new Error(msg);
+}
+
+const ENTRY_COLUMNS =
+  "id, draw_id, customer_id, membership_id, entry_number, eligible, created_at";
+
+type DrawEntryContext = {
+  supabase: {
+    from: (t: string) => any;
+  };
+  userId: string;
+};
+
+/**
+ * Testable handler body — exported so integration tests can drive it with a
+ * mocked supabase client and assert the exact error contract (code / reason /
+ * status) plus "no INSERT before rejection".
+ */
+export async function createDrawEntryHandler(
+  input: unknown,
+  context: DrawEntryContext,
+) {
+  // 1) INPUT VALIDATION → INVALID_INPUT (never touches the DB).
+  const parsed = createDrawEntrySchema.safeParse(input);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => ({
+      path: i.path.join("."),
+      message: i.message,
+    }));
+    throw new DrawEntryError(
+      "INVALID_INPUT",
+      "SCHEMA_VALIDATION_FAILED",
+      issues[0]?.message ?? "Invalid input",
+      { issues },
+    );
+  }
+  const data = parsed.data;
+
+  // Idempotency: if the caller already has an entry for this draw, return it.
+  const { data: existing, error: existingError } = await context.supabase
+    .from("draw_entries")
+    .select(ENTRY_COLUMNS)
+    .eq("draw_id", data.drawId)
+    .eq("customer_id", context.userId)
+    .maybeSingle();
+  if (existingError) throw mapEntryError(existingError as PgError);
+  if (existing) return existing;
+
+  // 2) SERVER-SIDE PRE-FLIGHT → INVALID_ELIGIBILITY (before any INSERT).
+  const { data: draw, error: drawErr } = await context.supabase
+    .from("draws")
+    .select(
+      "id, status, opens_at, closes_at, requires_active_membership, plan_id",
+    )
+    .eq("id", data.drawId)
+    .maybeSingle();
+  if (drawErr) throw mapEntryError(drawErr as PgError);
+  if (!draw) {
+    throw new DrawEntryError(
+      "INVALID_ELIGIBILITY",
+      "DRAW_NOT_FOUND",
+      "This draw is no longer available.",
+      { drawId: data.drawId },
+    );
+  }
+  if (!["scheduled", "open"].includes(draw.status)) {
+    throw new DrawEntryError(
+      "INVALID_ELIGIBILITY",
+      "DRAW_CLOSED",
+      "Entries for this draw are closed.",
+      { status: draw.status },
+    );
+  }
+  const now = Date.now();
+  if (draw.opens_at && new Date(draw.opens_at).getTime() > now) {
+    throw new DrawEntryError(
+      "INVALID_ELIGIBILITY",
+      "DRAW_NOT_OPEN_YET",
+      "This draw hasn't opened yet.",
+      { opens_at: draw.opens_at },
+    );
+  }
+  if (draw.closes_at && new Date(draw.closes_at).getTime() < now) {
+    throw new DrawEntryError(
+      "INVALID_ELIGIBILITY",
+      "DRAW_ENTRIES_CLOSED",
+      "Entries for this draw have closed.",
+      { closes_at: draw.closes_at },
+    );
+  }
+
+  let membershipId = data.membershipId ?? null;
+  if (draw.requires_active_membership || membershipId || draw.plan_id) {
+    let q = context.supabase
+      .from("memberships")
+      .select("id, plan_id, status")
+      .eq("user_id", context.userId)
+      .eq("status", "active");
+    if (draw.plan_id) q = q.eq("plan_id", draw.plan_id);
+    if (membershipId) q = q.eq("id", membershipId);
+    const { data: mem, error: mErr } = await q
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (mErr) throw mapEntryError(mErr as PgError);
+
+    if (draw.requires_active_membership && !mem) {
+      throw new DrawEntryError(
+        "INVALID_ELIGIBILITY",
+        draw.plan_id ? "PLAN_NOT_ELIGIBLE" : "NO_ACTIVE_MEMBERSHIP",
+        draw.plan_id
+          ? "Your membership plan isn't eligible for this draw."
+          : "An active membership is required to enter this draw.",
+        draw.plan_id ? { required_plan_id: draw.plan_id } : undefined,
+      );
+    }
+    if (membershipId && !mem) {
+      throw new DrawEntryError(
+        "INVALID_ELIGIBILITY",
+        "MEMBERSHIP_NOT_ELIGIBLE",
+        "The selected membership isn't eligible for this draw.",
+        { membershipId, required_plan_id: draw.plan_id ?? null },
+      );
+    }
+    membershipId = mem?.id ?? membershipId;
+  }
+
+  // 3) INSERT — reachable only after all pre-flight gates pass.
+  const { data: row, error } = await context.supabase
+    .from("draw_entries")
+    .insert({
+      draw_id: data.drawId,
+      customer_id: context.userId,
+      membership_id: membershipId,
+    })
+    .select(ENTRY_COLUMNS)
+    .single();
+
+  if (error) {
+    // Race: concurrent insert won the unique-index race. Return that row.
+    if ((error as PgError).code === "23505") {
+      const { data: racedRow, error: racedError } = await context.supabase
+        .from("draw_entries")
+        .select(ENTRY_COLUMNS)
+        .eq("draw_id", data.drawId)
+        .eq("customer_id", context.userId)
+        .maybeSingle();
+      if (racedError) throw mapEntryError(racedError as PgError);
+      if (racedRow) return racedRow;
+    }
+    throw mapEntryError(error as PgError);
+  }
+  return row;
 }
 
 export const createDrawEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => createDrawEntrySchema.parse(i))
+  // Pass raw input through — the handler performs safeParse itself so that
+  // validation failures throw DrawEntryError (INVALID_INPUT), not raw ZodError.
+  .inputValidator((i: unknown) => i)
   .handler(async ({ data, context }) => {
-    const entryColumns =
-      "id, draw_id, customer_id, membership_id, entry_number, eligible, created_at";
-
-    // Idempotency: if the caller already has an entry for this draw, return
-    // it instead of attempting a duplicate insert. RLS scopes the read to
-    // the caller's own rows, so this cannot leak other users' entries.
-    const { data: existing, error: existingError } = await context.supabase
-      .from("draw_entries")
-      .select(entryColumns)
-      .eq("draw_id", data.drawId)
-      .eq("customer_id", context.userId)
-      .maybeSingle();
-    if (existingError) throw mapEntryError(existingError as PgError);
-    if (existing) return existing;
-
-    const { data: row, error } = await context.supabase
-      .from("draw_entries")
-      .insert({
-        draw_id: data.drawId,
-        customer_id: context.userId,
-        membership_id: data.membershipId ?? null,
-      })
-      .select(entryColumns)
-      .single();
-
-    // Race condition: a concurrent insert won the unique-index race between
-    // our pre-check and this insert. Re-read and return that row instead of
-    // surfacing the duplicate-key error to the caller.
-    if (error) {
-      if ((error as PgError).code === "23505") {
-        const { data: racedRow, error: racedError } = await context.supabase
-          .from("draw_entries")
-          .select(entryColumns)
-          .eq("draw_id", data.drawId)
-          .eq("customer_id", context.userId)
-          .maybeSingle();
-        if (racedError) throw mapEntryError(racedError as PgError);
-        if (racedRow) return racedRow;
-      }
-      throw mapEntryError(error as PgError);
-    }
-    return row;
+    return createDrawEntryHandler(data, {
+      supabase: context.supabase as unknown as DrawEntryContext["supabase"],
+      userId: context.userId,
+    });
   });
+
 
