@@ -37,6 +37,7 @@ type MembershipRow = {
   advance_paid: number;
   total_amount: number;
   paid_amount: number;
+  user_id: string;
   membership_plans: { name: string; monthly_installment: number; duration_months: number } | null;
 };
 
@@ -49,6 +50,7 @@ type Installment = {
   paid_at: string | null;
   membership_id: string;
 };
+
 
 const inr = (n: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
