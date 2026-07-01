@@ -5,7 +5,7 @@ import { useSession } from "@/lib/auth";
 import { PayInstallmentButton } from "@/components/payments/PayInstallmentButton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarClock, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/customer/installments")({
   head: () => ({ meta: [{ title: "Installments — Arasi Enterprises" }] }),
@@ -73,14 +73,80 @@ function InstallmentsPage() {
     );
   }
 
+  // Determine next due (earliest unpaid; overdue prioritised implicitly by due_date order)
+  const unpaid = rows.filter((r) => r.status !== "paid");
+  const next = unpaid[0];
+  const paidCount = rows.length - unpaid.length;
+
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">My Installments</h1>
         <p className="text-sm text-muted-foreground">
-          Pay your monthly installments securely via Razorpay.
+          Pay your monthly installments securely via Razorpay. {paidCount}/{rows.length} paid.
         </p>
       </div>
+
+      {next && (() => {
+        const membership = Array.isArray(next.memberships) ? next.memberships[0] : next.memberships;
+        const dueDate = new Date(next.due_date);
+        const daysUntil = Math.ceil((dueDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        const isOverdue = next.status === "overdue" || daysUntil < 0;
+        return (
+          <Card className="glass border-primary/30">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                {isOverdue ? (
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                ) : (
+                  <CalendarClock className="h-4 w-4 text-primary" />
+                )}
+                <CardTitle className="text-sm uppercase tracking-wider text-muted-foreground">
+                  {isOverdue ? "Overdue — pay now" : "Next installment due"}
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <div className="text-xs text-muted-foreground">
+                  {membership?.membership_number} · Installment #{next.sequence}
+                </div>
+                <div className="mt-1 text-3xl font-bold">
+                  ₹{Number(next.amount).toLocaleString("en-IN")}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Due {dueDate.toLocaleDateString()}
+                  {isOverdue
+                    ? ` · ${Math.abs(daysUntil)} day(s) overdue`
+                    : daysUntil === 0
+                    ? " · Today"
+                    : ` · in ${daysUntil} day(s)`}
+                </div>
+              </div>
+              <PayInstallmentButton
+                installmentId={next.id}
+                amount={Number(next.amount)}
+                sequence={next.sequence}
+                customerName={fullName}
+                customerEmail={email}
+                customerPhone={phone}
+              />
+            </CardContent>
+          </Card>
+        );
+      })()}
+
+      {!next && (
+        <Card className="glass border-emerald-500/30">
+          <CardContent className="flex items-center gap-3 p-4 text-sm">
+            <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+            <div>
+              <div className="font-medium">You're all caught up!</div>
+              <div className="text-xs text-muted-foreground">No installments are currently due.</div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-3">
         {rows.map((r) => {
