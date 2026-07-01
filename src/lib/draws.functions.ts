@@ -210,3 +210,51 @@ export const listOpenDrawsForCustomer = createServerFn({ method: "GET" })
       myWin: winByDraw.get(d.id) ?? null,
     }));
   });
+
+/**
+ * createDrawEntry
+ *
+ * Canonical entry-creation server function. Eligibility is enforced in two layers:
+ *   1) Zod input validation (well-formed UUIDs, optional membership).
+ *   2) Database trigger `validate_draw_entry()` (draw exists, status is scheduled/open,
+ *      within open/close window, active membership + plan match when required).
+ *   3) RLS policy `draw_entries.customer_id = auth.uid()` on INSERT, so a caller
+ *      cannot create an entry on behalf of another user.
+ *
+ * Unique index on (draw_id, customer_id) prevents duplicate entries.
+ */
+const createDrawEntrySchema = z.object({
+  drawId: z.string().uuid("Invalid draw id"),
+  membershipId: z.string().uuid().optional().nullable(),
+});
+
+type PgError = { code?: string; message?: string; details?: string | null };
+
+function mapEntryError(err: PgError): Error {
+  const code = err.code ?? "";
+  const msg = err.message ?? "Failed to create draw entry";
+  if (code === "23505") return new Error("You've already entered this draw");
+  if (code === "23503") return new Error("Draw not found");
+  if (code === "42501") return new Error("You are not allowed to enter this draw");
+  // Trigger-raised check_violation surfaces the human-readable message directly.
+  if (code === "23514" || code === "P0001") return new Error(msg);
+  return new Error(msg);
+}
+
+export const createDrawEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => createDrawEntrySchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase
+      .from("draw_entries")
+      .insert({
+        draw_id: data.drawId,
+        customer_id: context.userId,
+        membership_id: data.membershipId ?? null,
+      })
+      .select("id, draw_id, customer_id, membership_id, entry_number, eligible, created_at")
+      .single();
+    if (error) throw mapEntryError(error as PgError);
+    return row;
+  });
+
