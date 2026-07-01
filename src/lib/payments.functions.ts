@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { AdminPaymentRow } from "@/lib/payments/validate-row";
+
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
@@ -48,92 +50,21 @@ const exportSchema = baseFilterSchema.extend({
 });
 
 /**
- * Zod schema for a joined admin payments ledger row.
- *
- * This is the single source of truth for the shape and runtime validation
- * of `AdminPaymentRow`. The exported TypeScript type is inferred from this
- * schema so drawer/table consumers stay in sync automatically.
+ * The row shape, Zod schema, and validation helpers live in the shared
+ * client-safe module `@/lib/payments/validate-row` so both the ledger and
+ * the detail drawer can import them without pulling in server code. We
+ * re-export from here to preserve the existing import surface.
  */
-export const adminPaymentRowSchema = z.object({
-  id: z.string().min(1),
-  amount: z.number().finite().nonnegative(),
-  currency: z.string().min(1),
-  status: z.string().min(1),
-  method: z.string().nullable(),
-  provider: z.string().min(1),
-  provider_order_id: z.string().nullable(),
-  provider_payment_id: z.string().nullable(),
-  error_code: z.string().nullable(),
-  error_description: z.string().nullable(),
-  paid_at: z.string().nullable(),
-  created_at: z.string().min(1),
-  customer_id: z.string().min(1),
-  membership_id: z.string().min(1),
-  installment_id: z.string().nullable(),
-  memberships: z
-    .object({ membership_number: z.string().nullable() })
-    .nullable(),
-  installments: z
-    .object({ sequence: z.number(), due_date: z.string() })
-    .nullable(),
-  profile: z
-    .object({
-      full_name: z.string().nullable(),
-      email: z.string().nullable(),
-    })
-    .nullable(),
-  reconciliation: z
-    .object({
-      last_checked_at: z.string(),
-      mismatch: z.boolean(),
-      resolved_at: z.string().nullable(),
-      provider_status: z.string().nullable(),
-      stored_status: z.string().nullable(),
-    })
-    .nullable(),
-});
+export {
+  adminPaymentRowSchema,
+  validateAdminPaymentRow,
+  validateAdminPaymentRowShape,
+  ADMIN_PAYMENT_ROW_FIELD_LABELS,
+  type AdminPaymentRow,
+  type AdminPaymentRowRequiredField,
+  type ValidateAdminPaymentRowResult,
+} from "@/lib/payments/validate-row";
 
-export type AdminPaymentRow = z.infer<typeof adminPaymentRowSchema>;
-
-/**
- * Validate a drawer-bound row against product-required display fields.
- *
- * Stricter than the base schema: enforces a resolvable customer name and
- * requires `provider_payment_id` when the payment is settled (`status === "paid"`).
- * Returns a discriminated result the drawer can render inline.
- */
-export type AdminPaymentRowRequiredField =
-  | "amount"
-  | "currency"
-  | "status"
-  | "paymentId"
-  | "customerName";
-
-export function validateAdminPaymentRow(
-  input: unknown,
-):
-  | { ok: true; row: AdminPaymentRow }
-  | { ok: false; missing: AdminPaymentRowRequiredField[] } {
-  const missing: AdminPaymentRowRequiredField[] = [];
-  const parsed = adminPaymentRowSchema.safeParse(input);
-  if (!parsed.success) {
-    const paths = new Set(
-      parsed.error.issues.map((i) => String(i.path[0] ?? "")),
-    );
-    if (paths.has("amount")) missing.push("amount");
-    if (paths.has("currency")) missing.push("currency");
-    if (paths.has("status")) missing.push("status");
-    if (paths.has("provider_payment_id")) missing.push("paymentId");
-    if (paths.has("profile")) missing.push("customerName");
-    return { ok: false, missing: missing.length ? missing : ["status"] };
-  }
-  const row = parsed.data;
-  if (row.status === "paid" && !row.provider_payment_id) missing.push("paymentId");
-  const name =
-    row.profile?.full_name?.trim() || row.profile?.email?.trim() || "";
-  if (!name) missing.push("customerName");
-  return missing.length ? { ok: false, missing } : { ok: true, row };
-}
 
 
 

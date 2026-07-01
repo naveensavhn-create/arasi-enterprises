@@ -17,38 +17,28 @@ import { Loader2, Copy, ExternalLink, ChevronLeft, ChevronRight, Download, Alert
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useServerFn } from "@tanstack/react-start";
+import { getWebhookEventPayload } from "@/lib/payments.functions";
 import {
-  getWebhookEventPayload,
-  validateAdminPaymentRow,
+  validateAdminPaymentRowShape,
+  ADMIN_PAYMENT_ROW_FIELD_LABELS as FIELD_LABELS,
   type AdminPaymentRow,
   type AdminPaymentRowRequiredField,
-} from "@/lib/payments.functions";
+} from "@/lib/payments/validate-row";
 
 /**
  * Runtime validation of the ledger row before the drawer renders it.
- *
- * Delegates to the shared Zod schema in `payments.functions.ts` so the
- * drawer, ledger, and any future consumers share one source of truth for
- * what a valid `AdminPaymentRow` looks like. Adds the drawer-specific
- * business rules (paid rows must carry a Razorpay payment ID, a display
- * name must be resolvable) on top of the base schema.
+ * Delegates to the shared helper so the drawer and ledger apply the same
+ * required-field rules (see `@/lib/payments/validate-row`).
  */
 type RequiredField = AdminPaymentRowRequiredField;
 
 function validateRow(
   row: AdminPaymentRow,
 ): { ok: true } | { ok: false; missing: RequiredField[] } {
-  const result = validateAdminPaymentRow(row);
+  const result = validateAdminPaymentRowShape(row);
   return result.ok ? { ok: true } : { ok: false, missing: result.missing };
 }
 
-const FIELD_LABELS: Record<RequiredField, string> = {
-  amount: "Amount",
-  currency: "Currency",
-  status: "Status",
-  paymentId: "Razorpay payment ID",
-  customerName: "Customer name",
-};
 
 
 const EVENTS_PAGE_SIZE = 10;
