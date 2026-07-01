@@ -68,6 +68,7 @@ function MembershipsAdminPage() {
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [openCreate, setOpenCreate] = useState(false);
+  const [openImport, setOpenImport] = useState(false);
   const [editing, setEditing] = useState<any>(null);
 
   const membershipsQ = useQuery({
