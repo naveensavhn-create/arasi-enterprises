@@ -14,7 +14,16 @@ import {
   Copy,
   Lock,
   Send,
+  X,
+  FilterX,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,6 +101,10 @@ function PromoterCustomersPage() {
   const submitFn = useServerFn(submitReferralForReview);
 
   const [q, setQ] = useState("");
+  const [kycFilter, setKycFilter] = useState<"all" | ReferredCustomer["kyc_status"]>("all");
+  const [planFilter, setPlanFilter] = useState<string>("all"); // plan_id | "all" | "__none"
+  const [fromDate, setFromDate] = useState<string>(""); // yyyy-mm-dd
+  const [toDate, setToDate] = useState<string>("");
   const [openRegister, setOpenRegister] = useState(false);
   const [selected, setSelected] = useState<ReferredCustomer | null>(null);
   const [issuedCreds, setIssuedCreds] = useState<{ email: string; password: string } | null>(null);
@@ -101,19 +114,59 @@ function PromoterCustomersPage() {
     queryFn: () => listFn(),
   });
 
+  const planOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of listQ.data ?? []) {
+      if (r.plan_id && r.plan_name) map.set(r.plan_id, r.plan_name);
+    }
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [listQ.data]);
+
+  const fromTs = fromDate ? new Date(`${fromDate}T00:00:00`).getTime() : null;
+  const toTs = toDate ? new Date(`${toDate}T23:59:59.999`).getTime() : null;
+
   const filtered = useMemo(() => {
     const rows = listQ.data ?? [];
-    if (!q.trim()) return rows;
     const s = q.trim().toLowerCase();
-    return rows.filter(
-      (r) =>
-        r.full_name?.toLowerCase().includes(s) ||
-        r.email?.toLowerCase().includes(s) ||
-        r.phone?.toLowerCase().includes(s) ||
-        r.city?.toLowerCase().includes(s) ||
-        r.membership_number?.toLowerCase().includes(s),
-    );
-  }, [listQ.data, q]);
+    return rows.filter((r) => {
+      if (kycFilter !== "all" && r.kyc_status !== kycFilter) return false;
+      if (planFilter === "__none" && r.plan_id) return false;
+      if (planFilter !== "all" && planFilter !== "__none" && r.plan_id !== planFilter)
+        return false;
+      const created = new Date(r.created_at).getTime();
+      if (fromTs !== null && created < fromTs) return false;
+      if (toTs !== null && created > toTs) return false;
+      if (
+        s &&
+        !(
+          r.full_name?.toLowerCase().includes(s) ||
+          r.email?.toLowerCase().includes(s) ||
+          r.phone?.toLowerCase().includes(s) ||
+          r.city?.toLowerCase().includes(s) ||
+          r.membership_number?.toLowerCase().includes(s)
+        )
+      )
+        return false;
+      return true;
+    });
+  }, [listQ.data, q, kycFilter, planFilter, fromTs, toTs]);
+
+  const activeFilterCount =
+    (kycFilter !== "all" ? 1 : 0) +
+    (planFilter !== "all" ? 1 : 0) +
+    (fromDate ? 1 : 0) +
+    (toDate ? 1 : 0) +
+    (q.trim() ? 1 : 0);
+
+  const clearFilters = () => {
+    setQ("");
+    setKycFilter("all");
+    setPlanFilter("all");
+    setFromDate("");
+    setToDate("");
+  };
 
   const registerMut = useMutation({
     mutationFn: (input: Parameters<typeof registerFn>[0]) => registerFn(input),
@@ -176,16 +229,94 @@ function PromoterCustomersPage() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-          <CardTitle className="text-base">Referred customers</CardTitle>
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="w-64 pl-8"
-              placeholder="Search name, email, phone, city…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle className="text-base">
+              Referred customers
+              {activeFilterCount > 0 && (
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  ({filtered.length} of {total})
+                </span>
+              )}
+            </CardTitle>
+            {activeFilterCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <FilterX className="mr-1 h-3.5 w-3.5" />
+                Clear filters
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="relative min-w-[16rem] flex-1">
+              <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-8"
+                placeholder="Search name, email, phone, city, membership no…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+              {q && (
+                <button
+                  aria-label="Clear search"
+                  className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground hover:bg-muted"
+                  onClick={() => setQ("")}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+            <div className="w-40">
+              <Label className="text-xs text-muted-foreground">KYC status</Label>
+              <Select value={kycFilter} onValueChange={(v) => setKycFilter(v as typeof kycFilter)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="unsubmitted">Unsubmitted</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-48">
+              <Label className="text-xs text-muted-foreground">Plan</Label>
+              <Select value={planFilter} onValueChange={setPlanFilter}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All plans</SelectItem>
+                  <SelectItem value="__none">No plan yet</SelectItem>
+                  {planOptions.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Referred from</Label>
+              <Input
+                type="date"
+                value={fromDate}
+                max={toDate || undefined}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="w-[10.5rem]"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Referred to</Label>
+              <Input
+                type="date"
+                value={toDate}
+                min={fromDate || undefined}
+                onChange={(e) => setToDate(e.target.value)}
+                className="w-[10.5rem]"
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -197,7 +328,7 @@ function PromoterCustomersPage() {
             <p className="py-10 text-center text-sm text-muted-foreground">
               {total === 0
                 ? "You haven't referred any customers yet. Use 'Register customer' to add one."
-                : "No customers match your search."}
+                : "No customers match your filters."}
             </p>
           ) : (
             <div className="overflow-x-auto">
