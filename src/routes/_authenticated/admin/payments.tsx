@@ -13,6 +13,7 @@ import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
 import { listAdminPayments, exportAdminPayments, type AdminPaymentRow } from "@/lib/payments.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS } from "@/lib/ui-prefs";
 import { toast } from "sonner";
 
 
