@@ -50,6 +50,14 @@ function AdminSettings() {
   const queryClient = useQueryClient();
 
   const [promoteReason, setPromoteReason] = useState("");
+  const [revokeTarget, setRevokeTarget] = useState<null | {
+    userId: string;
+    email: string | null;
+    fullName: string | null;
+    isSelf: boolean;
+  }>(null);
+  const [revokeReason, setRevokeReason] = useState("");
+
 
 
   const bootstrap = useQuery({
