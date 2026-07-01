@@ -598,23 +598,38 @@ function AdminSettings() {
                   <Label htmlFor="f-to" className="text-[10px] uppercase tracking-wider text-muted-foreground">To</Label>
                   <Input id="f-to" type="date" value={fTo} onChange={(e) => setFTo(e.target.value)} className="h-8" />
                 </div>
-                <div className="flex items-end justify-between gap-2 sm:col-span-2 lg:col-span-6">
+                <div className="flex flex-wrap items-end justify-between gap-2 sm:col-span-2 lg:col-span-6">
                   <div className="text-xs text-muted-foreground">
                     Showing <span className="font-medium text-foreground">{filtered.length}</span> of {rows.length} entries
                   </div>
-                  {hasFilters && (
+                  <div className="flex items-center gap-2">
+                    {hasFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setFActor(""); setFTarget(""); setFRole("all");
+                          setFAction("all"); setFFrom(""); setFTo("");
+                        }}
+                      >
+                        <X className="mr-1 h-3.5 w-3.5" /> Clear filters
+                      </Button>
+                    )}
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setFActor(""); setFTarget(""); setFRole("all");
-                        setFAction("all"); setFFrom(""); setFTo("");
-                      }}
+                      disabled={filtered.length === 0}
+                      onClick={() => exportAuditCsv(filtered, {
+                        actor: fActor, target: fTarget, role: fRole,
+                        action: fAction, from: fFrom, to: fTo,
+                      })}
                     >
-                      <X className="mr-1 h-3.5 w-3.5" /> Clear filters
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      Export CSV{hasFilters ? ` (${filtered.length})` : ""}
                     </Button>
-                  )}
+                  </div>
                 </div>
+
               </div>
 
               <div className="mt-4 overflow-hidden rounded-lg border border-border">
