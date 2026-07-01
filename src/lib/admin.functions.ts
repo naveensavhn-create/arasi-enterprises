@@ -471,10 +471,13 @@ export const listRoleEmailNotifications = createServerFn({ method: "GET" })
 
     const { data, error } = await context.supabase
       .from("role_email_notifications")
-      .select("*")
+      .select("id, audit_id, target_user_id, recipient_email, template_name, subject, status, message_id, error_message, is_test, triggered_by, metadata, created_at, updated_at")
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) throw new Error(error.message);
-    return (data ?? []) as RoleEmailNotification[];
+    return (data ?? []).map((r) => ({
+      ...r,
+      metadata: r.metadata == null ? null : JSON.stringify(r.metadata),
+    })) as RoleEmailNotification[];
   });
 
