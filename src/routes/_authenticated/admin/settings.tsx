@@ -65,6 +65,14 @@ function AdminSettings() {
   }>(null);
   const [revokeReason, setRevokeReason] = useState("");
 
+  // Audit log filters
+  const [fActor, setFActor] = useState("");
+  const [fTarget, setFTarget] = useState("");
+  const [fRole, setFRole] = useState<string>("all");
+  const [fAction, setFAction] = useState<string>("all");
+  const [fFrom, setFFrom] = useState("");
+  const [fTo, setFTo] = useState("");
+
 
 
   const bootstrap = useQuery({
