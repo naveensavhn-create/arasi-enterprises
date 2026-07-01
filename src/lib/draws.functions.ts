@@ -372,6 +372,21 @@ export const createDrawEntry = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => createDrawEntrySchema.parse(i))
   .handler(async ({ data, context }) => {
+    const entryColumns =
+      "id, draw_id, customer_id, membership_id, entry_number, eligible, created_at";
+
+    // Idempotency: if the caller already has an entry for this draw, return
+    // it instead of attempting a duplicate insert. RLS scopes the read to
+    // the caller's own rows, so this cannot leak other users' entries.
+    const { data: existing, error: existingError } = await context.supabase
+      .from("draw_entries")
+      .select(entryColumns)
+      .eq("draw_id", data.drawId)
+      .eq("customer_id", context.userId)
+      .maybeSingle();
+    if (existingError) throw mapEntryError(existingError as PgError);
+    if (existing) return existing;
+
     const { data: row, error } = await context.supabase
       .from("draw_entries")
       .insert({
@@ -379,9 +394,25 @@ export const createDrawEntry = createServerFn({ method: "POST" })
         customer_id: context.userId,
         membership_id: data.membershipId ?? null,
       })
-      .select("id, draw_id, customer_id, membership_id, entry_number, eligible, created_at")
+      .select(entryColumns)
       .single();
-    if (error) throw mapEntryError(error as PgError);
+
+    // Race condition: a concurrent insert won the unique-index race between
+    // our pre-check and this insert. Re-read and return that row instead of
+    // surfacing the duplicate-key error to the caller.
+    if (error) {
+      if ((error as PgError).code === "23505") {
+        const { data: racedRow, error: racedError } = await context.supabase
+          .from("draw_entries")
+          .select(entryColumns)
+          .eq("draw_id", data.drawId)
+          .eq("customer_id", context.userId)
+          .maybeSingle();
+        if (racedError) throw mapEntryError(racedError as PgError);
+        if (racedRow) return racedRow;
+      }
+      throw mapEntryError(error as PgError);
+    }
     return row;
   });
 
