@@ -32,9 +32,13 @@ function AdminSettings() {
   const bootstrapFn = useServerFn(getAdminBootstrapStatus);
   const claimFn = useServerFn(claimFirstAdmin);
   const listFn = useServerFn(listAdmins);
+  const auditFn = useServerFn(listAdminAuditLog);
   const promoteFn = useServerFn(promoteToAdminByEmail);
   const demoteFn = useServerFn(setUserRole);
   const queryClient = useQueryClient();
+
+  const [promoteReason, setPromoteReason] = useState("");
+
 
   const bootstrap = useQuery({
     queryKey: ["admin-bootstrap"],
