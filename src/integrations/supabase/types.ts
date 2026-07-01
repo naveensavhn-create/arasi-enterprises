@@ -26,7 +26,7 @@ export type Database = {
           role_after: Database["public"]["Enums"]["app_role"] | null
           role_before: Database["public"]["Enums"]["app_role"] | null
           target_email: string | null
-          target_user_id: string
+          target_user_id: string | null
         }
         Insert: {
           action: string
@@ -39,7 +39,7 @@ export type Database = {
           role_after?: Database["public"]["Enums"]["app_role"] | null
           role_before?: Database["public"]["Enums"]["app_role"] | null
           target_email?: string | null
-          target_user_id: string
+          target_user_id?: string | null
         }
         Update: {
           action?: string
@@ -52,7 +52,7 @@ export type Database = {
           role_after?: Database["public"]["Enums"]["app_role"] | null
           role_before?: Database["public"]["Enums"]["app_role"] | null
           target_email?: string | null
-          target_user_id?: string
+          target_user_id?: string | null
         }
         Relationships: []
       }
