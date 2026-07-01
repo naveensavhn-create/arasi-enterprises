@@ -251,13 +251,10 @@ function AdminPaymentsPage() {
   const onExport = async (scope: "page" | "filtered") => {
     setExporting(true);
     try {
-      // "page" respects the current filters AND the visible page window
-      // (page * pageSize .. +pageSize). "filtered" exports every row that
-      // matches the current filters, capped at 10,000.
-      const limit = scope === "page" ? search.pageSize : 10_000;
-      const offsetRows = scope === "page" ? search.page * search.pageSize : 0;
-
-      const all = await exportFn({
+      // CSV is built server-side against the same authenticated filter set
+      // used to render the ledger — the client can't tamper with the rows,
+      // add unfiltered records, or bypass the 10k cap.
+      const result = await exportCsvFn({
         data: {
           sortBy: search.sortBy,
           sortDir: search.sortDir,
@@ -269,22 +266,23 @@ function AdminPaymentsPage() {
           orderId: search.orderId || undefined,
           paymentId: search.paymentId || undefined,
           customer: search.customer || undefined,
-          limit: offsetRows + limit,
+          scope,
+          page: search.page,
+          pageSize: search.pageSize,
         },
       });
 
-      const slice = scope === "page" ? all.slice(offsetRows, offsetRows + limit) : all;
-      if (slice.length === 0) {
+      if (result.rowCount === 0) {
         toast.info("Nothing to export for current filters.");
         return;
       }
-      downloadCSV(slice);
+      saveCsvBlob(result.csv, result.filename);
       toast.success(
         scope === "page"
-          ? `Exported ${slice.length} row(s) from page ${search.page + 1}.`
-          : `Exported ${slice.length} row(s) matching current filters.`,
+          ? `Exported ${result.rowCount} row(s) from page ${search.page + 1}.`
+          : `Exported ${result.rowCount} row(s) matching current filters.`,
       );
-      if (scope === "filtered" && all.length >= 10_000) {
+      if (result.capped) {
         toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
       }
     } catch (e) {
