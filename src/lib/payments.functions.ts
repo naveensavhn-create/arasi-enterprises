@@ -23,8 +23,14 @@ export {
   applyPaymentStatusEq,
   applyPaymentStatusIn,
   PAYMENT_STATUS_TEXT_COLUMN,
+  PAYMENT_STATUSES,
+  isPaymentStatus,
 } from "@/lib/payments/status-filter";
-import { applyPaymentStatusEq } from "@/lib/payments/status-filter";
+export type { PaymentStatus } from "@/lib/payments/status-filter";
+import {
+  applyPaymentStatusEq,
+  PAYMENT_STATUSES,
+} from "@/lib/payments/status-filter";
 
 
 const SORT_COLUMNS = [
@@ -41,10 +47,18 @@ export type PaymentSortColumn = typeof SORT_COLUMNS[number];
 const DATE_FIELDS = ["created", "webhook_processed"] as const;
 export type PaymentDateField = typeof DATE_FIELDS[number];
 
+// `status` is validated against the `payment_status` enum union so callsites
+// can pass `n.status` straight into `applyPaymentStatusEq` without an extra
+// coercion step. Blank strings collapse to `undefined` (no-op filter).
+const paymentStatusFilterSchema = z
+  .enum(PAYMENT_STATUSES)
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 const baseFilterSchema = z.object({
   sortBy: z.enum(SORT_COLUMNS).default("created_at"),
   sortDir: z.enum(["asc", "desc"]).default("desc"),
-  status: z.string().optional(),
+  status: paymentStatusFilterSchema,
   from: z.string().optional(),
   to: z.string().optional(),
   dateField: z.enum(DATE_FIELDS).default("created"),
@@ -129,7 +143,9 @@ async function resolveCustomerIdsExact(sb: any, customer: string | undefined) {
 
 function normalizeFilters(f: Filters) {
   const q = f.q?.trim() || undefined;
-  const status = f.status && f.status !== "all" ? f.status : undefined;
+  // Zod already narrowed `f.status` to PaymentStatus | undefined; the "all"
+  // chip is a UI-only concept that never survives validation.
+  const status = f.status;
   const fromISO = f.from ? new Date(f.from).toISOString() : undefined;
   const toISO = f.to ? new Date(new Date(f.to).getTime() + 86_400_000).toISOString() : undefined;
   const orderId = f.orderId?.trim() || undefined;
@@ -832,7 +848,7 @@ export const reconcilePayments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
-      status: z.string().optional(),
+      status: paymentStatusFilterSchema,
       from: z.string().optional(),
       to: z.string().optional(),
       q: z.string().optional(),
