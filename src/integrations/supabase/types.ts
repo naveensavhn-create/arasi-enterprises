@@ -572,6 +572,90 @@ export type Database = {
           },
         ]
       }
+      payment_reminder_jobs: {
+        Row: {
+          attempts: number
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          installment_id: string
+          last_attempt_at: string | null
+          membership_id: string
+          metadata: Json
+          provider: string | null
+          provider_message_id: string | null
+          recipient_email: string | null
+          recipient_id: string
+          recipient_phone: string | null
+          reminder_kind: string
+          scheduled_at: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["reminder_status"]
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          channel?: Database["public"]["Enums"]["reminder_channel"]
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          installment_id: string
+          last_attempt_at?: string | null
+          membership_id: string
+          metadata?: Json
+          provider?: string | null
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          recipient_id: string
+          recipient_phone?: string | null
+          reminder_kind?: string
+          scheduled_at: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["reminder_status"]
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          channel?: Database["public"]["Enums"]["reminder_channel"]
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          installment_id?: string
+          last_attempt_at?: string | null
+          membership_id?: string
+          metadata?: Json
+          provider?: string | null
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          recipient_id?: string
+          recipient_phone?: string | null
+          reminder_kind?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["reminder_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reminder_jobs_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reminder_jobs_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -1142,6 +1226,14 @@ export type Database = {
         | "defaulted"
       payment_provider: "razorpay" | "manual" | "cash"
       payment_status: "created" | "attempted" | "paid" | "failed" | "refunded"
+      reminder_channel: "email" | "sms"
+      reminder_status:
+        | "pending"
+        | "sending"
+        | "sent"
+        | "failed"
+        | "cancelled"
+        | "skipped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1282,6 +1374,15 @@ export const Constants = {
       ],
       payment_provider: ["razorpay", "manual", "cash"],
       payment_status: ["created", "attempted", "paid", "failed", "refunded"],
+      reminder_channel: ["email", "sms"],
+      reminder_status: [
+        "pending",
+        "sending",
+        "sent",
+        "failed",
+        "cancelled",
+        "skipped",
+      ],
     },
   },
 } as const
