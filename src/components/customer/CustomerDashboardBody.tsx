@@ -459,3 +459,59 @@ function CountCard({
     </Card>
   );
 }
+
+function EmptyStep({ n, title, desc }: { n: number; title: string; desc: string }) {
+  return (
+    <li className="flex items-start gap-3 rounded-md border bg-card/50 p-3">
+      <span
+        className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold text-black/80"
+        style={{ background: "var(--gradient-gold-value)" }}
+        aria-hidden="true"
+      >
+        {n}
+      </span>
+      <div>
+        <p className="text-sm font-medium leading-tight">{title}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+    </li>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div
+      className="space-y-6 px-6 py-6"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading your dashboard"
+    >
+      <Card>
+        <CardContent className="space-y-4 p-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-14 w-14 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="hidden h-24 w-24 rounded-full sm:block" />
+          </div>
+          <div className="grid gap-3 pt-2 sm:grid-cols-2">
+            <Skeleton className="h-16 w-full rounded-md" />
+            <Skeleton className="h-16 w-full rounded-md" />
+          </div>
+        </CardContent>
+      </Card>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Skeleton className="h-20 w-full rounded-md" />
+        <Skeleton className="h-20 w-full rounded-md" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Skeleton className="h-20 w-full rounded-md" />
+        <Skeleton className="h-20 w-full rounded-md" />
+        <Skeleton className="h-20 w-full rounded-md" />
+      </div>
+      <span className="sr-only">Loading your dashboard…</span>
+    </div>
+  );
+}
