@@ -35,6 +35,16 @@ const SORT_COLUMNS = [
   "customer_name",
 ] as const;
 type SortCol = typeof SORT_COLUMNS[number];
+const SORT_LABELS: Record<SortCol, string> = {
+  created_at: "Created",
+  paid_at: "Paid at",
+  amount: "Amount",
+  status: "Status",
+  provider_order_id: "Order ID",
+  provider_payment_id: "Payment ID",
+  customer_name: "Customer",
+};
+
 
 const searchSchema = z.object({
   page: fallback(z.number().int().min(0), 0).default(0),
@@ -444,15 +454,41 @@ function AdminPaymentsPage() {
                 className="h-8 w-72 pl-7 text-xs"
               />
             </form>
+            <label className="flex items-center gap-1 text-xs text-muted-foreground">
+              <span className="hidden sm:inline">Sort by</span>
+              <select
+                value={search.sortBy}
+                onChange={(e) => setSearch({ sortBy: e.target.value as SortCol, page: 0 })}
+                className="h-8 rounded-md border bg-background px-2 text-xs"
+                aria-label="Sort field"
+                title="Sort field (syncs with URL)"
+              >
+                {SORT_COLUMNS.map((c) => (
+                  <option key={c} value={c}>{SORT_LABELS[c]}</option>
+                ))}
+              </select>
+              <select
+                value={search.sortDir}
+                onChange={(e) => setSearch({ sortDir: e.target.value as "asc" | "desc", page: 0 })}
+                className="h-8 rounded-md border bg-background px-2 text-xs"
+                aria-label="Sort direction"
+                title="Sort direction (syncs with URL)"
+              >
+                <option value="desc">Desc</option>
+                <option value="asc">Asc</option>
+              </select>
+            </label>
             <select
               value={search.pageSize}
               onChange={(e) => setSearch({ pageSize: Number(e.target.value), page: 0 })}
               className="h-8 rounded-md border bg-background px-2 text-xs"
+              aria-label="Rows per page"
             >
               {[10, 25, 50, 100, 200].map((n) => (
                 <option key={n} value={n}>{n} / page</option>
               ))}
             </select>
+
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <form
