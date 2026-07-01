@@ -175,12 +175,118 @@ async function dispatchEmail(args: {
   }
 }
 
+/**
+ * Send an SMS via MSG91's Flow API. Requires MSG91_AUTH_KEY, MSG91_SENDER_ID,
+ * and MSG91_REMINDER_TEMPLATE_ID (a DLT-approved flow template with
+ * `##name##`, `##amount##`, `##due##`, `##membership##` variables). If any
+ * credential is missing, the job is skipped with `no_sms_infra` so ops can
+ * see the gap in the audit log without dead-lettering.
+ */
+async function dispatchSms(args: {
+  to: string;
+  variables: Record<string, string>;
+  idempotencyKey: string;
+}): Promise<{
+  status: "sent" | "failed" | "skipped_no_sms_infra";
+  providerMessageId?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}> {
+  const authKey = process.env.MSG91_AUTH_KEY;
+  const templateId = process.env.MSG91_REMINDER_TEMPLATE_ID;
+  const senderId = process.env.MSG91_SENDER_ID;
+  if (!authKey || !templateId || !senderId) {
+    return {
+      status: "skipped_no_sms_infra",
+      errorCode: "no_sms_infra",
+      errorMessage:
+        "SMS provider not configured. Set MSG91_AUTH_KEY, MSG91_SENDER_ID, and MSG91_REMINDER_TEMPLATE_ID.",
+    };
+  }
+  // Normalize phone to E.164-ish digits; MSG91 expects country+number, no '+'.
+  const mobile = args.to.replace(/[^\d]/g, "");
+  if (!mobile || mobile.length < 10) {
+    return {
+      status: "failed",
+      errorCode: "invalid_recipient",
+      errorMessage: `Recipient phone "${args.to}" is not a valid number.`,
+    };
+  }
+  try {
+    const res = await fetch("https://control.msg91.com/api/v5/flow", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authkey: authKey,
+      },
+      body: JSON.stringify({
+        template_id: templateId,
+        sender: senderId,
+        short_url: "0",
+        recipients: [
+          {
+            mobiles: mobile,
+            ...args.variables,
+          },
+        ],
+      }),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      return {
+        status: "failed",
+        errorCode: `http_${res.status}`,
+        errorMessage: `MSG91 returned ${res.status}: ${text.slice(0, 500)}`,
+      };
+    }
+    const parsed = (() => {
+      try {
+        return JSON.parse(text) as {
+          type?: string;
+          message?: string;
+          request_id?: string;
+        };
+      } catch {
+        return {} as Record<string, string>;
+      }
+    })();
+    if (parsed.type && parsed.type !== "success") {
+      return {
+        status: "failed",
+        errorCode: "provider_error",
+        errorMessage: parsed.message ?? text.slice(0, 500),
+      };
+    }
+    return {
+      status: "sent",
+      providerMessageId: parsed.request_id ?? args.idempotencyKey,
+    };
+  } catch (err) {
+    return {
+      status: "failed",
+      errorCode: "network_error",
+      errorMessage: err instanceof Error ? err.message : String(err),
+    };
+  }
+}
+
+function formatDueDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 async function processJob(
   supabase: SupabaseClient<Database>,
   job: Job,
 ): Promise<{ jobId: string; outcome: string }> {
-  // Only email is wired today; SMS jobs get skipped with a clear reason.
-  if (job.channel !== "email") {
+  if (job.channel !== "email" && job.channel !== "sms") {
     await finalize(supabase, job.id, {
       status: "skipped",
       errorCode: "unsupported_channel",
@@ -189,12 +295,16 @@ async function processJob(
     return { jobId: job.id, outcome: "skipped_channel" };
   }
 
-  const recipient = job.recipient_email;
+  const recipient =
+    job.channel === "email" ? job.recipient_email : job.recipient_phone;
   if (!recipient) {
     await finalize(supabase, job.id, {
       status: "skipped",
       errorCode: "no_recipient",
-      errorMessage: "Recipient email is missing.",
+      errorMessage:
+        job.channel === "email"
+          ? "Recipient email is missing."
+          : "Recipient phone is missing.",
     });
     return { jobId: job.id, outcome: "skipped_no_recipient" };
   }
@@ -229,39 +339,68 @@ async function processJob(
       }
     ).plan?.duration_months ?? null;
 
-  const html = await render(
-    React.createElement(PaymentReminder, {
-      recipientName: profile?.full_name ?? undefined,
-      membershipNumber: membership.membership_number,
-      memberDisplayId: membership.member_display_id ?? undefined,
-      planName: planName ?? undefined,
-      installmentSequence: installment.sequence,
-      installmentTotal: totalMonths ?? undefined,
-      amountDue: Number(installment.amount),
-      currency: "INR",
-      dueDate: installment.due_date,
-      brand,
-    }),
-  );
+  const amountFormatted = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(installment.amount));
+  const dueFormatted = formatDueDate(installment.due_date);
 
-  const dispatched = await dispatchEmail({
-    to: recipient,
-    subject: reminderTemplate.subject,
-    html,
-    // Stable per (job + attempt) so retries never re-send an already-accepted email.
-    idempotencyKey: `payment-reminder:${job.id}:${job.attempts}`,
-  });
+  let dispatched:
+    | Awaited<ReturnType<typeof dispatchEmail>>
+    | Awaited<ReturnType<typeof dispatchSms>>;
+  let providerName: string;
+  let skippedInfraCode: "skipped_no_email_infra" | "skipped_no_sms_infra";
+
+  if (job.channel === "email") {
+    const html = await render(
+      React.createElement(PaymentReminder, {
+        recipientName: profile?.full_name ?? undefined,
+        membershipNumber: membership.membership_number,
+        memberDisplayId: membership.member_display_id ?? undefined,
+        planName: planName ?? undefined,
+        installmentSequence: installment.sequence,
+        installmentTotal: totalMonths ?? undefined,
+        amountDue: Number(installment.amount),
+        currency: "INR",
+        dueDate: installment.due_date,
+        brand,
+      }),
+    );
+    dispatched = await dispatchEmail({
+      to: recipient,
+      subject: reminderTemplate.subject,
+      html,
+      idempotencyKey: `payment-reminder:${job.id}:${job.attempts}`,
+    });
+    providerName = "lovable-emails";
+    skippedInfraCode = "skipped_no_email_infra";
+  } else {
+    dispatched = await dispatchSms({
+      to: recipient,
+      variables: {
+        name: (profile?.full_name ?? "Member").slice(0, 30),
+        amount: amountFormatted,
+        due: dueFormatted,
+        membership:
+          membership.member_display_id ?? membership.membership_number,
+      },
+      idempotencyKey: `payment-reminder:${job.id}:${job.attempts}`,
+    });
+    providerName = "msg91";
+    skippedInfraCode = "skipped_no_sms_infra";
+  }
 
   if (dispatched.status === "sent") {
     await finalize(supabase, job.id, {
       status: "sent",
-      provider: "lovable-emails",
+      provider: providerName,
       providerMessageId: dispatched.providerMessageId ?? null,
     });
     return { jobId: job.id, outcome: "sent" };
   }
 
-  if (dispatched.status === "skipped_no_email_infra") {
+  if (dispatched.status === skippedInfraCode) {
     await finalize(supabase, job.id, {
       status: "skipped",
       errorCode: dispatched.errorCode ?? null,
@@ -270,7 +409,6 @@ async function processJob(
     return { jobId: job.id, outcome: "skipped_no_infra" };
   }
 
-  // Transient failure — let finalize decide retry vs dead-letter.
   await finalize(supabase, job.id, {
     status: "failed",
     errorCode: dispatched.errorCode ?? null,
