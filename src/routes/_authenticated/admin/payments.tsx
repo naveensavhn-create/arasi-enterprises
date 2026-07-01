@@ -22,7 +22,7 @@ import { useEffect, useRef, useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
 import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
-import { listAdminPayments, exportAdminPayments, getLastWebhookEvent } from "@/lib/payments.functions";
+import { listAdminPayments, exportAdminPaymentsCsv, getLastWebhookEvent } from "@/lib/payments.functions";
 import {
   validateAdminPaymentRowShape,
   ADMIN_PAYMENT_ROW_FIELD_LABELS,
