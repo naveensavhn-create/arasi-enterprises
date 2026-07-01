@@ -173,8 +173,73 @@ function CustomerMembershipPage() {
                     </ul>
                   </div>
                 )}
+
+                {/* Installment schedule */}
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <CalendarClock className="h-3.5 w-3.5" /> Installment schedule
+                    </div>
+                    <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+                      <Link to="/customer/installments">Open full view</Link>
+                    </Button>
+                  </div>
+                  {(() => {
+                    const rows = (installments ?? []).filter((i) => i.membership_id === m.id);
+                    if (rows.length === 0) {
+                      return (
+                        <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+                          {m.status === "pending"
+                            ? "Schedule will appear once your advance payment is confirmed."
+                            : "No installments generated yet."}
+                        </p>
+                      );
+                    }
+                    return (
+                      <div className="overflow-hidden rounded-md border">
+                        <table className="w-full text-left text-xs">
+                          <thead className="bg-muted/50 text-[10px] uppercase tracking-wider text-muted-foreground">
+                            <tr>
+                              <th className="px-2 py-2">#</th>
+                              <th className="px-2 py-2">Due</th>
+                              <th className="px-2 py-2">Amount</th>
+                              <th className="px-2 py-2">Status</th>
+                              <th className="px-2 py-2 text-right">Action</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((r) => (
+                              <tr key={r.id} className="border-t">
+                                <td className="px-2 py-2 font-mono">{r.sequence}</td>
+                                <td className="px-2 py-2">{new Date(r.due_date).toLocaleDateString()}</td>
+                                <td className="px-2 py-2 font-medium">
+                                  ₹{Number(r.amount).toLocaleString("en-IN")}
+                                </td>
+                                <td className="px-2 py-2"><InstallmentStatus status={r.status} /></td>
+                                <td className="px-2 py-2 text-right">
+                                  {r.status !== "paid" ? (
+                                    <PayInstallmentButton
+                                      installmentId={r.id}
+                                      amount={Number(r.amount)}
+                                      customer={{ name: fullName, email, phone }}
+                                    />
+                                  ) : (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {r.paid_at ? new Date(r.paid_at).toLocaleDateString() : "Paid"}
+                                    </span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    );
+                  })()}
+                </div>
               </CardContent>
             </Card>
+
           );
         })}
       </div>
