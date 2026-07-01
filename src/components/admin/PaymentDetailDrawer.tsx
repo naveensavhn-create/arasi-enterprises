@@ -41,6 +41,27 @@ const HINTS: Record<RequiredField, string> = {
   customerName: "Linked profile is missing or has no name/email. The customer may have been deleted.",
 };
 
+/** Consistent placeholder label used across the drawer when a row is invalid. */
+const UNAVAILABLE_LABEL = "Data unavailable";
+
+/**
+ * Renders the shared "Data unavailable" placeholder. Optional `reason` is
+ * shown as a small parenthetical for extra context (e.g. "Amount invalid").
+ */
+function UnavailableTag({ reason }: { reason?: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-md border border-dashed border-destructive/40 bg-destructive/5 px-1.5 py-0.5 align-middle text-xs font-medium text-destructive"
+      title={reason ?? UNAVAILABLE_LABEL}
+      aria-label={reason ? `${UNAVAILABLE_LABEL} — ${reason}` : UNAVAILABLE_LABEL}
+    >
+      <AlertTriangle className="h-3 w-3" aria-hidden />
+      {UNAVAILABLE_LABEL}
+      {reason ? <span className="opacity-70">· {reason}</span> : null}
+    </span>
+  );
+}
+
 
 function validateRow(
   row: AdminPaymentRow,
