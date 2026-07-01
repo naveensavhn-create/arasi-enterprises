@@ -51,6 +51,12 @@ function AdminSettings() {
     enabled: role === "admin",
   });
 
+  const audit = useQuery({
+    queryKey: ["admin-audit-log"],
+    queryFn: () => auditFn(),
+    enabled: role === "admin",
+  });
+
   const claim = useMutation({
     mutationFn: () => claimFn(),
     onSuccess: () => {
@@ -62,24 +68,29 @@ function AdminSettings() {
 
   const [email, setEmail] = useState("");
   const promote = useMutation({
-    mutationFn: (targetEmail: string) => promoteFn({ data: { email: targetEmail } }),
+    mutationFn: (vars: { email: string; reason?: string }) =>
+      promoteFn({ data: vars }),
     onSuccess: () => {
       toast.success(`Promoted ${email} to admin.`);
       setEmail("");
+      setPromoteReason("");
       queryClient.invalidateQueries({ queryKey: ["admin-list"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-audit-log"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const demote = useMutation({
-    mutationFn: (userId: string) =>
-      demoteFn({ data: { userId, role: "customer" as const } }),
+    mutationFn: (vars: { userId: string; reason?: string }) =>
+      demoteFn({ data: { userId: vars.userId, role: "customer", reason: vars.reason } }),
     onSuccess: () => {
       toast.success("Admin role revoked.");
       queryClient.invalidateQueries({ queryKey: ["admin-list"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-audit-log"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   if (roleLoading || bootstrap.isLoading) {
     return (
