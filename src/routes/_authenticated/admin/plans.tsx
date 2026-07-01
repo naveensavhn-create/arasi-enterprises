@@ -26,9 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Package, Plus, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Package, Plus, Pencil, Trash2, History } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
@@ -76,6 +77,7 @@ function AdminPlansPage() {
   const [editing, setEditing] = useState<Plan | null>(null);
   const [form, setForm] = useState<FormState>(empty);
   const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null);
+  const [historyPlan, setHistoryPlan] = useState<Plan | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-plans"],
@@ -312,8 +314,16 @@ function AdminPlansPage() {
                       )}
                     </div>
                     <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(p)}>
+                      <Button size="icon" variant="ghost" onClick={() => startEdit(p)} title="Edit">
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setHistoryPlan(p)}
+                        title="Audit history"
+                      >
+                        <History className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon"
@@ -327,7 +337,7 @@ function AdminPlansPage() {
                         size="icon"
                         variant="ghost"
                         onClick={() => setConfirmDelete(p)}
-
+                        title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -430,6 +440,13 @@ function AdminPlansPage() {
           })()}
         </AlertDialogContent>
       </AlertDialog>
+
+      <PlanAuditDrawer
+        planId={historyPlan?.id ?? null}
+        planName={historyPlan?.name}
+        open={!!historyPlan}
+        onOpenChange={(o) => !o && setHistoryPlan(null)}
+      />
     </div>
   );
 }
