@@ -232,7 +232,17 @@ async function fetchPaymentRows(
 
 
   const { data: rows, error } = await query.range(fromIdx, toIdx);
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[listAdminPayments] payments select failed", {
+      message: error.message,
+      details: (error as any).details,
+      hint: (error as any).hint,
+      code: (error as any).code,
+      filters: n,
+    });
+    throw new Error(`${error.message}${(error as any).details ? ` | details: ${(error as any).details}` : ""}${(error as any).hint ? ` | hint: ${(error as any).hint}` : ""}`);
+  }
 
   // Latest reconciliation per payment (batched)
   const paymentIds = (rows ?? []).map((r: any) => r.id).filter(Boolean);
