@@ -235,7 +235,7 @@ export interface ReminderJobRow {
   dead_letter_reason: string | null;
   created_at: string;
   updated_at: string;
-  metadata: Record<string, unknown>;
+  metadata: unknown;
   membership_number: string | null;
   member_display_id: string | null;
   customer_name: string | null;
