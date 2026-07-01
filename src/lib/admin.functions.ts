@@ -15,12 +15,14 @@ const roleChangeSchema = z.object({
 
 type AppRole = "admin" | "promoter" | "customer";
 
+async function getAdmin() {
+  const m = await import("@/integrations/supabase/client.server");
+  return m.supabaseAdmin;
+}
+type SupabaseAdmin = Awaited<ReturnType<typeof getAdmin>>;
+
 async function writeAudit(
-  supabaseAdmin: Awaited<
-    ReturnType<
-      typeof import("@/integrations/supabase/client.server")
-    >
-  >["supabaseAdmin"],
+  supabaseAdmin: SupabaseAdmin,
   entry: {
     actor_id: string;
     actor_email: string | null;
@@ -47,11 +49,7 @@ async function writeAudit(
 }
 
 async function lookupEmail(
-  supabaseAdmin: Awaited<
-    ReturnType<
-      typeof import("@/integrations/supabase/client.server")
-    >
-  >["supabaseAdmin"],
+  supabaseAdmin: SupabaseAdmin,
   userId: string,
 ): Promise<string | null> {
   const { data } = await supabaseAdmin
@@ -63,11 +61,7 @@ async function lookupEmail(
 }
 
 async function currentRole(
-  supabaseAdmin: Awaited<
-    ReturnType<
-      typeof import("@/integrations/supabase/client.server")
-    >
-  >["supabaseAdmin"],
+  supabaseAdmin: SupabaseAdmin,
   userId: string,
 ): Promise<AppRole | null> {
   const { data } = await supabaseAdmin
@@ -79,6 +73,7 @@ async function currentRole(
     .maybeSingle();
   return (data?.role as AppRole | null) ?? null;
 }
+
 
 /**
  * Public status endpoint — no auth required.
