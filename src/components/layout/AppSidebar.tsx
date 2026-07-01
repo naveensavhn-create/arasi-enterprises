@@ -16,6 +16,7 @@ import {
   Briefcase,
   ShieldCheck,
   Plus,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import {
@@ -63,7 +64,10 @@ const NAV: Record<AppRole, NavGroup[]> = {
     },
     {
       label: "System",
-      items: [{ title: "Settings", url: "/admin/settings", icon: Settings }],
+      items: [
+        { title: "Admin Settings", url: "/admin/settings", icon: Settings },
+        { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
+      ],
     },
   ],
   promoter: [
@@ -79,6 +83,10 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Commissions", url: "/promoter/commissions", icon: Receipt },
         { title: "Portfolio", url: "/promoter/portfolio", icon: Briefcase },
       ],
+    },
+    {
+      label: "System",
+      items: [{ title: "Preferences", url: "/settings", icon: SlidersHorizontal }],
     },
   ],
   customer: [
@@ -97,6 +105,10 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Lucky Draw", url: "/customer/lucky-draw", icon: Ticket },
         { title: "Referrals", url: "/customer/referrals", icon: Share2 },
       ],
+    },
+    {
+      label: "System",
+      items: [{ title: "Preferences", url: "/settings", icon: SlidersHorizontal }],
     },
   ],
 };
