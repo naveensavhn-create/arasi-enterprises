@@ -652,7 +652,7 @@ function AdminPaymentsPage() {
           ) : rows.length === 0 ? (
             (() => {
               const activeFilters: { label: string; value: string; clear: Partial<z.infer<typeof searchSchema>> }[] = [];
-              if (search.status !== "all") activeFilters.push({ label: "Status", value: search.status, clear: { status: "all", page: 0 } });
+              if (search.status !== "all") activeFilters.push({ label: "Status", value: STATUS_META[search.status as StatusKey]?.label ?? search.status, clear: { status: "all", page: 0 } });
               if (search.from) activeFilters.push({ label: "From", value: search.from, clear: { from: "", page: 0 } });
               if (search.to) activeFilters.push({ label: "To", value: search.to, clear: { to: "", page: 0 } });
               if (search.q) activeFilters.push({ label: "Search", value: search.q, clear: { q: "", page: 0 } });
