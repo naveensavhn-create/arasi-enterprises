@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { useSession, useCurrentRole, useSignOut } from "@/lib/auth";
 import { useEffect, useState } from "react";
+import { lastVisitedKey } from "@/lib/last-visited";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -57,6 +58,20 @@ function AuthenticatedShell() {
       navigate({ to: "/auth", search: { portal: "customer" }, replace: true });
     }
   }, [loading, user, navigate]);
+
+  // Remember last visited path per user+role so re-login resumes there.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    if (!user || !role) return;
+    // Only track role-scoped app pages; skip dashboard itself and auth-only paths.
+    const prefix = `/${role}/`;
+    if (!pathname.startsWith(prefix)) return;
+    try {
+      localStorage.setItem(lastVisitedKey(user.id, role), pathname);
+    } catch {
+      /* storage disabled */
+    }
+  }, [pathname, user?.id, role]);
 
   return (
     <SidebarProvider open={open ?? true} onOpenChange={handleOpenChange}>
