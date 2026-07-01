@@ -14,6 +14,163 @@ export type Database = {
   }
   public: {
     Tables: {
+      installments: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          membership_id: string
+          notes: string | null
+          paid_amount: number
+          paid_at: string | null
+          payment_reference: string | null
+          sequence: number
+          status: Database["public"]["Enums"]["installment_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date: string
+          id?: string
+          membership_id: string
+          notes?: string | null
+          paid_amount?: number
+          paid_at?: string | null
+          payment_reference?: string | null
+          sequence: number
+          status?: Database["public"]["Enums"]["installment_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          membership_id?: string
+          notes?: string | null
+          paid_amount?: number
+          paid_at?: string | null
+          payment_reference?: string | null
+          sequence?: number
+          status?: Database["public"]["Enums"]["installment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_plans: {
+        Row: {
+          advance_amount: number
+          benefits: Json
+          created_at: string
+          description: string | null
+          display_order: number
+          duration_months: number
+          id: string
+          is_active: boolean
+          monthly_installment: number
+          name: string
+          total_value: number | null
+          updated_at: string
+        }
+        Insert: {
+          advance_amount?: number
+          benefits?: Json
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          duration_months: number
+          id?: string
+          is_active?: boolean
+          monthly_installment: number
+          name: string
+          total_value?: number | null
+          updated_at?: string
+        }
+        Update: {
+          advance_amount?: number
+          benefits?: Json
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          duration_months?: number
+          id?: string
+          is_active?: boolean
+          monthly_installment?: number
+          name?: string
+          total_value?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      memberships: {
+        Row: {
+          advance_paid: number
+          created_at: string
+          end_date: string | null
+          id: string
+          membership_number: string
+          notes: string | null
+          paid_amount: number
+          plan_id: string
+          promoter_id: string | null
+          start_date: string
+          status: Database["public"]["Enums"]["membership_status"]
+          total_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          advance_paid?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          membership_number: string
+          notes?: string | null
+          paid_amount?: number
+          plan_id: string
+          promoter_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          total_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          advance_paid?: number
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          membership_number?: string
+          notes?: string | null
+          paid_amount?: number
+          plan_id?: string
+          promoter_id?: string | null
+          start_date?: string
+          status?: Database["public"]["Enums"]["membership_status"]
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memberships_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -90,9 +247,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_overdue_installments: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "promoter" | "customer"
+      installment_status: "pending" | "paid" | "overdue" | "waived"
+      membership_status:
+        | "pending"
+        | "active"
+        | "completed"
+        | "cancelled"
+        | "defaulted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -221,6 +386,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "promoter", "customer"],
+      installment_status: ["pending", "paid", "overdue", "waived"],
+      membership_status: [
+        "pending",
+        "active",
+        "completed",
+        "cancelled",
+        "defaulted",
+      ],
     },
   },
 } as const
