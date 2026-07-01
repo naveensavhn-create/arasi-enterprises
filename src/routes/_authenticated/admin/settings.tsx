@@ -64,6 +64,9 @@ function AdminSettings() {
     isSelf: boolean;
   }>(null);
   const [revokeReason, setRevokeReason] = useState("");
+  const [promoteReasonError, setPromoteReasonError] = useState<string | null>(null);
+  const [revokeReasonError, setRevokeReasonError] = useState<string | null>(null);
+  const REASON_MIN = 5;
 
   // Audit log filters
   const [fActor, setFActor] = useState("");
@@ -233,11 +236,23 @@ function AdminSettings() {
 
         <form
           className="mt-5 space-y-3"
+          noValidate
           onSubmit={(e) => {
             e.preventDefault();
             const value = email.trim().toLowerCase();
+            const reason = promoteReason.trim();
             if (!value) return;
-            promote.mutate({ email: value, reason: promoteReason.trim() || undefined });
+            if (reason.length < REASON_MIN) {
+              setPromoteReasonError(
+                reason.length === 0
+                  ? "Reason is required — this action is recorded in the audit log."
+                  : `Please provide at least ${REASON_MIN} characters (currently ${reason.length}).`,
+              );
+              document.getElementById("promote-reason")?.focus();
+              return;
+            }
+            setPromoteReasonError(null);
+            promote.mutate({ email: value, reason });
           }}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -263,19 +278,41 @@ function AdminSettings() {
             </Button>
           </div>
           <div>
-            <Label htmlFor="promote-reason" className="text-xs">Reason (recorded in audit log)</Label>
+            <Label htmlFor="promote-reason" className="text-xs">
+              Reason <span className="text-destructive">*</span>{" "}
+              <span className="text-muted-foreground">(recorded in audit log)</span>
+            </Label>
             <Textarea
               id="promote-reason"
               rows={2}
               maxLength={500}
+              required
+              aria-invalid={!!promoteReasonError}
+              aria-describedby={promoteReasonError ? "promote-reason-error" : undefined}
+              className={promoteReasonError ? "border-destructive focus-visible:ring-destructive" : ""}
               placeholder="e.g. Onboarding new operations lead"
               value={promoteReason}
-              onChange={(e) => setPromoteReason(e.target.value)}
+              onChange={(e) => {
+                setPromoteReason(e.target.value);
+                if (promoteReasonError && e.target.value.trim().length >= REASON_MIN) {
+                  setPromoteReasonError(null);
+                }
+              }}
               disabled={promote.isPending}
             />
+            {promoteReasonError ? (
+              <p id="promote-reason-error" role="alert" className="mt-1 text-xs text-destructive">
+                {promoteReasonError}
+              </p>
+            ) : (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Minimum {REASON_MIN} characters. {Math.max(0, REASON_MIN - promoteReason.trim().length)} to go.
+              </p>
+            )}
           </div>
         </form>
       </div>
+
 
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
@@ -411,17 +448,36 @@ function AdminSettings() {
 
           <div className="space-y-1.5">
             <Label htmlFor="revoke-reason" className="text-xs">
-              Reason (recorded in audit log)
+              Reason <span className="text-destructive">*</span>{" "}
+              <span className="text-muted-foreground">(recorded in audit log)</span>
             </Label>
             <Textarea
               id="revoke-reason"
               rows={3}
               maxLength={500}
+              required
+              aria-invalid={!!revokeReasonError}
+              aria-describedby={revokeReasonError ? "revoke-reason-error" : undefined}
+              className={revokeReasonError ? "border-destructive focus-visible:ring-destructive" : ""}
               placeholder="e.g. Employee departed — access no longer required"
               value={revokeReason}
-              onChange={(e) => setRevokeReason(e.target.value)}
+              onChange={(e) => {
+                setRevokeReason(e.target.value);
+                if (revokeReasonError && e.target.value.trim().length >= REASON_MIN) {
+                  setRevokeReasonError(null);
+                }
+              }}
               disabled={demote.isPending}
             />
+            {revokeReasonError ? (
+              <p id="revoke-reason-error" role="alert" className="text-xs text-destructive">
+                {revokeReasonError}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                Minimum {REASON_MIN} characters. {Math.max(0, REASON_MIN - revokeReason.trim().length)} to go.
+              </p>
+            )}
           </div>
 
           <AlertDialogFooter>
@@ -432,9 +488,20 @@ function AdminSettings() {
               onClick={(e) => {
                 e.preventDefault();
                 if (!revokeTarget) return;
+                const reason = revokeReason.trim();
+                if (reason.length < REASON_MIN) {
+                  setRevokeReasonError(
+                    reason.length === 0
+                      ? "Reason is required — this action is recorded in the audit log."
+                      : `Please provide at least ${REASON_MIN} characters (currently ${reason.length}).`,
+                  );
+                  document.getElementById("revoke-reason")?.focus();
+                  return;
+                }
+                setRevokeReasonError(null);
                 demote.mutate({
                   userId: revokeTarget.userId,
-                  reason: revokeReason.trim() || undefined,
+                  reason,
                 });
               }}
             >
