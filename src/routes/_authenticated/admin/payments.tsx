@@ -291,6 +291,12 @@ function AdminPaymentsPage() {
           )}
         </CardContent>
       </Card>
+
+      <PaymentDetailDrawer
+        row={selected}
+        open={!!selected}
+        onOpenChange={(o) => !o && setSelected(null)}
+      />
     </div>
   );
 }
