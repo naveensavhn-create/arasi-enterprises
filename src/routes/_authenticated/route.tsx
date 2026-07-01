@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { Button } from "@/components/ui/button";
 import { useSession, useCurrentRole, useSignOut } from "@/lib/auth";
 import { useEffect, useState } from "react";
