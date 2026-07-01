@@ -29,8 +29,9 @@ const ROLE_META = {
 
 function Dashboard() {
   const { user } = useSession();
-  const { data: role, isLoading: roleLoading } = useCurrentRole(user);
+  const { data: role } = useCurrentRole(user);
   const meta = role ? ROLE_META[role] : null;
+
 
 
 
