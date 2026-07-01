@@ -56,6 +56,60 @@ export type Database = {
         }
         Relationships: []
       }
+      export_jobs: {
+        Row: {
+          attempts: number
+          byte_size: number | null
+          created_at: string
+          error: string | null
+          expires_at: string | null
+          filters: Json
+          finished_at: string | null
+          id: string
+          kind: string
+          notified_at: string | null
+          requested_by: string
+          row_count: number | null
+          started_at: string | null
+          status: string
+          storage_path: string | null
+        }
+        Insert: {
+          attempts?: number
+          byte_size?: number | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string | null
+          filters?: Json
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          notified_at?: string | null
+          requested_by: string
+          row_count?: number | null
+          started_at?: string | null
+          status?: string
+          storage_path?: string | null
+        }
+        Update: {
+          attempts?: number
+          byte_size?: number | null
+          created_at?: string
+          error?: string | null
+          expires_at?: string | null
+          filters?: Json
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          notified_at?: string | null
+          requested_by?: string
+          row_count?: number | null
+          started_at?: string | null
+          status?: string
+          storage_path?: string | null
+        }
+        Relationships: []
+      }
       installments: {
         Row: {
           amount: number

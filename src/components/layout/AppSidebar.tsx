@@ -19,6 +19,7 @@ import {
   Send,
   Mail,
   SlidersHorizontal,
+  FileSpreadsheet,
 } from "lucide-react";
 
 
@@ -55,6 +56,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Plans", url: "/admin/plans", icon: Package },
         { title: "Memberships", url: "/admin/memberships", icon: ShieldCheck },
         { title: "Payments", url: "/admin/payments", icon: CreditCard },
+        { title: "Exports", url: "/admin/exports", icon: FileSpreadsheet },
       ],
     },
     {
