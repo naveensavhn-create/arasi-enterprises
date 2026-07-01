@@ -25,8 +25,11 @@ type Row = {
 
 function AdminCustomersPage() {
   const [q, setQ] = useState("");
+  const refetchInterval = useListRefetchInterval();
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-customers"],
+    refetchInterval,
+
     queryFn: async (): Promise<Row[]> => {
       const { data: roleRows, error: rErr } = await supabase
         .from("user_roles")
