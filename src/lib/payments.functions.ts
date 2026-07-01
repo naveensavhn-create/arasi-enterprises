@@ -487,10 +487,38 @@ export const exportAdminPayments = createServerFn({ method: "GET" })
 
 /* ---------- Server-side CSV generation (tamper-proof) ---------- */
 
+/**
+ * Escape a value for CSV. Handles:
+ * - null/undefined → empty
+ * - numbers → plain decimal, no quoting unless not finite (then empty)
+ * - booleans → "true"/"false"
+ * - Date → ISO string
+ * - strings → double-quote when they contain ", , CR, LF, or a leading
+ *   formula character (=,+,-,@,\t,\r) that Excel/Sheets would evaluate.
+ *   Formula-prefixed strings are additionally prefixed with a single quote
+ *   inside the quoted field to neutralize CSV injection.
+ * - control chars (except tab/CR/LF) are stripped to keep files parseable.
+ */
 function csvEscape(v: unknown): string {
-  const s = v == null ? "" : String(v);
-  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  if (v == null) return "";
+  if (typeof v === "number") return Number.isFinite(v) ? String(v) : "";
+  if (typeof v === "boolean") return v ? "true" : "false";
+  if (v instanceof Date) return isNaN(v.getTime()) ? "" : v.toISOString();
+  let s = typeof v === "string" ? v : String(v);
+  // strip C0/C1 control chars except \t \r \n
+  // eslint-disable-next-line no-control-regex
+  s = s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+  const needsInjectionGuard = /^[=+\-@\t\r]/.test(s);
+  const needsQuoting = needsInjectionGuard || /[",\r\n]/.test(s);
+  if (needsInjectionGuard) s = "'" + s;
+  if (needsQuoting) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
+
+const csvNum = (n: unknown): string =>
+  typeof n === "number" && Number.isFinite(n) ? String(n) : "";
+const csvInt = (n: unknown): string =>
+  typeof n === "number" && Number.isFinite(n) ? String(Math.trunc(n)) : "0";
 
 const CSV_HEADERS = [
   "Created", "Paid At", "Razorpay Order ID", "Razorpay Payment ID",
@@ -499,33 +527,48 @@ const CSV_HEADERS = [
   "Membership #", "Installment #", "Installment Due Date",
   "Order Paid At", "Authorized At", "Captured At", "Failed At", "Refunded At",
   "First Event At", "Last Event At", "Webhook Event Count",
-  "Error",
+  "Error Code", "Error Description",
 ] as const;
 
 export function rowsToCsv(rows: AdminPaymentExportRow[]): string {
-  const lines: string[] = [CSV_HEADERS.join(",")];
+  const lines: string[] = [CSV_HEADERS.map(csvEscape).join(",")];
   for (const r of rows) {
     const h = r.status_history;
+    // Installment # is numeric when known; advance payments have no sequence
+    // so we emit the literal token "advance" (as a string) — never mix into
+    // an integer column silently.
+    const installmentSeq =
+      r.installments?.sequence != null
+        ? csvInt(r.installments.sequence)
+        : r.installment_id
+          ? ""
+          : csvEscape("advance");
     lines.push([
-      r.created_at, r.paid_at ?? "",
-      r.provider_order_id ?? "", r.provider_payment_id ?? "",
-      r.status, r.method ?? "", r.provider,
-      r.amount, r.currency,
-      r.profile?.full_name ?? "",
-      r.profile?.email ?? "",
-      r.memberships?.membership_number ?? "",
-      r.installments?.sequence ?? (r.installment_id ? "" : "advance"),
-      r.installments?.due_date ?? "",
-      h.order_created_at ?? "",
-      h.authorized_at ?? "",
-      h.captured_at ?? "",
-      h.failed_at ?? "",
-      h.refunded_at ?? "",
-      h.first_event_at ?? "",
-      h.last_event_at ?? "",
-      h.event_count,
-      r.error_code ? `${r.error_code}: ${r.error_description ?? ""}` : "",
-    ].map(csvEscape).join(","));
+      csvEscape(r.created_at),
+      csvEscape(r.paid_at),
+      csvEscape(r.provider_order_id),
+      csvEscape(r.provider_payment_id),
+      csvEscape(r.status),
+      csvEscape(r.method),
+      csvEscape(r.provider),
+      csvNum(r.amount),
+      csvEscape(r.currency),
+      csvEscape(r.profile?.full_name),
+      csvEscape(r.profile?.email),
+      csvEscape(r.memberships?.membership_number),
+      installmentSeq,
+      csvEscape(r.installments?.due_date),
+      csvEscape(h.order_created_at),
+      csvEscape(h.authorized_at),
+      csvEscape(h.captured_at),
+      csvEscape(h.failed_at),
+      csvEscape(h.refunded_at),
+      csvEscape(h.first_event_at),
+      csvEscape(h.last_event_at),
+      csvInt(h.event_count),
+      csvEscape(r.error_code),
+      csvEscape(r.error_description),
+    ].join(","));
   }
   // CRLF is safer for Excel; also include UTF-8 BOM for consistent decoding.
   return "\uFEFF" + lines.join("\r\n") + "\r\n";
