@@ -97,7 +97,7 @@ describeIfDb("plan-delete DB trigger (integration)", () => {
   });
 
   afterAll(async () => {
-    // Best-effort cleanup, no matter which assertion failed.
+    // Best-effort cleanup — leave the reused profile alone.
     try {
       if (membershipIds.length) {
         await client.query(`DELETE FROM public.installments WHERE membership_id = ANY($1::uuid[])`, [
@@ -109,10 +109,6 @@ describeIfDb("plan-delete DB trigger (integration)", () => {
       }
       if (planId) {
         await client.query(`DELETE FROM public.membership_plans WHERE id = $1`, [planId]);
-      }
-      if (customerId) {
-        await client.query(`DELETE FROM public.profiles WHERE id = $1`, [customerId]);
-        await client.query(`DELETE FROM auth.users WHERE id = $1`, [customerId]);
       }
     } finally {
       await client.end();
