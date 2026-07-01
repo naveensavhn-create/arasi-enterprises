@@ -448,17 +448,36 @@ function AdminSettings() {
 
           <div className="space-y-1.5">
             <Label htmlFor="revoke-reason" className="text-xs">
-              Reason (recorded in audit log)
+              Reason <span className="text-destructive">*</span>{" "}
+              <span className="text-muted-foreground">(recorded in audit log)</span>
             </Label>
             <Textarea
               id="revoke-reason"
               rows={3}
               maxLength={500}
+              required
+              aria-invalid={!!revokeReasonError}
+              aria-describedby={revokeReasonError ? "revoke-reason-error" : undefined}
+              className={revokeReasonError ? "border-destructive focus-visible:ring-destructive" : ""}
               placeholder="e.g. Employee departed — access no longer required"
               value={revokeReason}
-              onChange={(e) => setRevokeReason(e.target.value)}
+              onChange={(e) => {
+                setRevokeReason(e.target.value);
+                if (revokeReasonError && e.target.value.trim().length >= REASON_MIN) {
+                  setRevokeReasonError(null);
+                }
+              }}
               disabled={demote.isPending}
             />
+            {revokeReasonError ? (
+              <p id="revoke-reason-error" role="alert" className="text-xs text-destructive">
+                {revokeReasonError}
+              </p>
+            ) : (
+              <p className="text-[11px] text-muted-foreground">
+                Minimum {REASON_MIN} characters. {Math.max(0, REASON_MIN - revokeReason.trim().length)} to go.
+              </p>
+            )}
           </div>
 
           <AlertDialogFooter>
@@ -469,9 +488,20 @@ function AdminSettings() {
               onClick={(e) => {
                 e.preventDefault();
                 if (!revokeTarget) return;
+                const reason = revokeReason.trim();
+                if (reason.length < REASON_MIN) {
+                  setRevokeReasonError(
+                    reason.length === 0
+                      ? "Reason is required — this action is recorded in the audit log."
+                      : `Please provide at least ${REASON_MIN} characters (currently ${reason.length}).`,
+                  );
+                  document.getElementById("revoke-reason")?.focus();
+                  return;
+                }
+                setRevokeReasonError(null);
                 demote.mutate({
                   userId: revokeTarget.userId,
-                  reason: revokeReason.trim() || undefined,
+                  reason,
                 });
               }}
             >
