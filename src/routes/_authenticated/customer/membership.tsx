@@ -40,19 +40,40 @@ type Row = {
 
 function CustomerMembershipPage() {
   const { session } = useSession();
+  const userId = session?.user.id;
+  const email = session?.user.email ?? undefined;
+  const phone = session?.user.phone ?? undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fullName = (session?.user.user_metadata as any)?.full_name as string | undefined;
+
   const { data, isLoading } = useQuery({
-    queryKey: ["my-memberships", session?.user.id],
-    enabled: !!session?.user.id,
+    queryKey: ["my-memberships", userId],
+    enabled: !!userId,
     queryFn: async (): Promise<Row[]> => {
       const { data, error } = await supabase
         .from("memberships")
         .select(
           "id, membership_number, status, start_date, end_date, advance_paid, total_amount, paid_amount, plan_id, membership_plans(name, description, monthly_installment, duration_months, benefits)"
         )
-        .eq("user_id", session!.user.id)
+        .eq("user_id", userId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as Row[];
+    },
+  });
+
+  const { data: installments } = useQuery({
+    queryKey: ["my-installments-inline", userId],
+    enabled: !!userId,
+    refetchInterval: 8000,
+    queryFn: async (): Promise<Installment[]> => {
+      const { data, error } = await supabase
+        .from("installments")
+        .select("id, sequence, due_date, amount, status, paid_at, membership_id, memberships!inner(user_id)")
+        .eq("memberships.user_id", userId!)
+        .order("sequence", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as unknown as Installment[];
     },
   });
 
@@ -63,6 +84,7 @@ function CustomerMembershipPage() {
       </div>
     );
   }
+
 
   const rows = data ?? [];
 
