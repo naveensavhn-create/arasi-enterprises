@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   buildPlanDeletionAuditEntry,
   computeDeletionCounts,
+  parseBlockingCountFromTriggerError,
 } from "@/lib/plan-deletion-audit";
 
 const deleteSchema = z.object({ planId: z.string().uuid() });
