@@ -171,6 +171,7 @@ async function fetchPaymentRows(
   customerIds: string[] | undefined,
   membershipIds: string[] | undefined,
   customerIdsExact: string[] | undefined,
+  webhookPaymentIds: string[] | null,
   fromIdx: number,
   toIdx: number,
 ): Promise<AdminPaymentRow[]> {
@@ -203,8 +204,19 @@ async function fetchPaymentRows(
   }
 
   if (n.status) query = query.eq("status", n.status);
-  if (n.fromISO) query = query.gte("created_at", n.fromISO);
-  if (n.toISO) query = query.lt("created_at", n.toISO);
+  // Date range: applies to payments.created_at unless the admin picked
+  // "webhook processed", in which case the caller resolved a list of
+  // payment IDs whose webhook events landed in the range.
+  if (n.dateField === "webhook_processed" && webhookPaymentIds !== null) {
+    if (webhookPaymentIds.length === 0) {
+      query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+    } else {
+      query = query.in("id", webhookPaymentIds);
+    }
+  } else {
+    if (n.fromISO) query = query.gte("created_at", n.fromISO);
+    if (n.toISO) query = query.lt("created_at", n.toISO);
+  }
   if (n.orderId) query = query.ilike("provider_order_id", `%${n.orderId}%`);
   if (n.paymentId) query = query.ilike("provider_payment_id", `%${n.paymentId}%`);
   if (n.customer) {
