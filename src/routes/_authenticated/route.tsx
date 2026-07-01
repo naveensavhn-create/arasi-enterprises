@@ -85,6 +85,12 @@ function AuthenticatedShell() {
 
   return (
     <SidebarProvider open={open ?? true} onOpenChange={handleOpenChange}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        Skip to main content
+      </a>
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar role={role} />
         <div className="flex min-w-0 flex-1 flex-col">
@@ -105,12 +111,13 @@ function AuthenticatedShell() {
                 </div>
               </div>
               <Button variant="outline" size="sm" onClick={signOut}>
-                <LogOut className="mr-0 h-4 w-4 sm:mr-2" />
+                <LogOut className="mr-0 h-4 w-4 sm:mr-2" aria-hidden="true" />
                 <span className="hidden sm:inline">Sign out</span>
+                <span className="sr-only sm:hidden">Sign out</span>
               </Button>
             </div>
           </header>
-          <main className="flex-1">
+          <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
             <Outlet />
           </main>
         </div>
