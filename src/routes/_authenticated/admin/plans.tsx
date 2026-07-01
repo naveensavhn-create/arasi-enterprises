@@ -152,6 +152,34 @@ function AdminPlansPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-plans"] }),
   });
 
+  // Explicit, idempotent "deactivate" — used from the delete dialog so a
+  // single click reliably disables future enrollments without touching
+  // existing memberships.
+  const deactivate = useMutation({
+    mutationFn: async (p: Plan) => {
+      if (!p.is_active) return { alreadyInactive: true as const };
+      const { error } = await supabase
+        .from("membership_plans")
+        .update({ is_active: false })
+        .eq("id", p.id);
+      if (error) throw error;
+      return { alreadyInactive: false as const };
+    },
+    onSuccess: (res, p) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      qc.invalidateQueries({ queryKey: ["admin-plans-usage"] });
+      toast.success(
+        res?.alreadyInactive ? `${p.name} is already inactive` : `${p.name} deactivated`,
+        {
+          description: res?.alreadyInactive
+            ? undefined
+            : "Existing memberships are unchanged; new enrollments are now blocked.",
+        },
+      );
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not deactivate plan"),
+  });
+
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("membership_plans").delete().eq("id", id);
