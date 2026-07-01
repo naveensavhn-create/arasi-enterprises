@@ -235,8 +235,11 @@ function AdminPaymentsPage() {
                   {filtered.map((r) => {
                     const p = r.profile;
                     return (
-                      <tr key={r.id} className="border-b last:border-0 align-top">
-                        <td className="py-2 pr-4 text-muted-foreground whitespace-nowrap">
+                      <tr
+                        key={r.id}
+                        className="cursor-pointer border-b align-top last:border-0 hover:bg-accent/50"
+                        onClick={() => setSelected(r)}
+                      >
                           {new Date(r.paid_at ?? r.created_at).toLocaleString()}
                         </td>
                         <td className="py-2 pr-4">
