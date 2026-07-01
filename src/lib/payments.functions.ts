@@ -180,12 +180,13 @@ export const listAdminPayments = createServerFn({ method: "GET" })
     const sb: any = context.supabase;
     const n = normalizeFilters(data);
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
+    const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
 
     const fromIdx = data.page * data.pageSize;
     const toIdx = fromIdx + data.pageSize - 1;
 
     const [rows, totalsRes] = await Promise.all([
-      fetchPaymentRows(sb, n, customerIds, membershipIds, fromIdx, toIdx),
+      fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, fromIdx, toIdx),
       sb.rpc("admin_payments_totals", {
         _status: n.status ?? null,
         _from: n.fromISO ?? null,
@@ -193,8 +194,12 @@ export const listAdminPayments = createServerFn({ method: "GET" })
         _customer_ids: customerIds ?? null,
         _membership_ids: membershipIds ?? null,
         _q: n.q ?? null,
+        _order_id: n.orderId ?? null,
+        _payment_id: n.paymentId ?? null,
+        _customer_ids_exact: customerIdsExact ?? null,
       }),
     ]);
+
     if (totalsRes.error) throw new Error(totalsRes.error.message);
     const totals = Array.isArray(totalsRes.data) ? totalsRes.data[0] : totalsRes.data;
 
