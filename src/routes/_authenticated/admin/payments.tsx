@@ -278,20 +278,34 @@ function AdminPaymentsPage() {
       });
 
       if (result.rowCount === 0) {
-        toast.info("Nothing to export for current filters.");
+        toast.info("Nothing to export", {
+          description: "No payments match the current filters.",
+        });
         return;
       }
       saveCsvBlob(result.csv, result.filename);
-      toast.success(
-        scope === "page"
-          ? `Exported ${result.rowCount} row(s) from page ${search.page + 1}.`
-          : `Exported ${result.rowCount} row(s) matching current filters.`,
-      );
       if (result.capped) {
-        toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
+        // Cap hit → surface as a warning (not silent success) so admins know
+        // the file is truncated and can either narrow filters or switch to
+        // the async "Export all" path.
+        toast.warning(`Export truncated at ${result.rowCount.toLocaleString()} rows`, {
+          description:
+            "The 10,000-row inline limit was hit. Use 'Export all (async)' for the full result set.",
+          duration: 8000,
+        });
+      } else {
+        toast.success(
+          scope === "page"
+            ? `Exported ${result.rowCount.toLocaleString()} row(s) from page ${search.page + 1}.`
+            : `Exported ${result.rowCount.toLocaleString()} row(s) matching current filters.`,
+        );
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Export failed");
+      const msg = e instanceof Error ? e.message : "Export failed";
+      toast.error("Export failed", {
+        description: msg,
+        duration: 8000,
+      });
     } finally {
       setExporting(false);
     }
