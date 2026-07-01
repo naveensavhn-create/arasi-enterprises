@@ -45,11 +45,14 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         const maxPayments = Math.min(Math.max(body.maxPayments ?? 200, 1), 1000);
         // In-scope by default: anything not yet in a terminal state, plus
         // recently-paid rows (catches refunds/chargebacks that flipped on the
-        // provider side after we recorded "paid").
-        const statuses =
-          body.statuses && body.statuses.length > 0
-            ? body.statuses
-            : ["created", "attempted", "pending", "paid", "failed"];
+        // provider side after we recorded "paid"). "pending" is not a
+        // payment_status enum value, so it's dropped by coercion — the
+        // effective default becomes ["created","attempted","paid","failed"].
+        const requested = coercePaymentStatuses(body.statuses);
+        const statuses: PaymentStatus[] =
+          requested.length > 0
+            ? requested
+            : ["created", "attempted", "paid", "failed"];
 
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
