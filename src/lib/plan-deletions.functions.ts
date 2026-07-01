@@ -19,7 +19,7 @@ export type PlanDeletionRow = {
   id: string;
   created_at: string;
   action: "plan_delete_blocked" | "plan_delete_success";
-  actor_id: string;
+  actor_id: string | null;
   actor_email: string | null;
   plan_id: string | null;
   plan_name: string | null;
