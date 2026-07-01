@@ -81,7 +81,7 @@ async function buildReconcileSelect(
   sinceISO: string,
   maxPayments: number,
 ) {
-  return await applyPaymentStatusIn(
+  return await applyPaymentStatusEq(
     client
       .from("payments")
       .select(
