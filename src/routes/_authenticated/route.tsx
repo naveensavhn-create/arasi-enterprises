@@ -32,6 +32,8 @@ function AuthenticatedShell() {
 
   // Apply saved UI preferences (density) to <html>.
   useApplyUiPrefs();
+  // Sync UI prefs to the signed-in user so they follow across devices.
+  useSyncUiPrefsWithServer(user?.id ?? null);
 
   // Per-user persisted sidebar open state. Undefined until we know the user
   // so the provider doesn't flash the wrong state.
