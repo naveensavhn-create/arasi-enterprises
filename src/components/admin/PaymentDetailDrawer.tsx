@@ -481,38 +481,67 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
   );
 }
 
-function RawPayload({ eventRowId, eventId }: { eventRowId: string; eventId: string }) {
+function RawPayload({ eventRowId, eventId }: { eventRowId: string; eventType?: string } & { eventId: string }) {
   const [open, setOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const fetchPayload = useServerFn(getWebhookEventPayload);
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["webhook-event-raw", eventRowId],
+  // Cheap metadata probe — no JSON body, just size + oversized flag.
+  const { data: meta, isLoading, error } = useQuery({
+    queryKey: ["webhook-event-meta", eventRowId],
     enabled: open,
     staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("razorpay_webhook_events")
-        .select("raw")
-        .eq("id", eventRowId)
-        .maybeSingle();
-      if (error) throw error;
-      const raw = data?.raw ?? null;
-      const text = raw == null ? "" : JSON.stringify(raw, null, 2);
-      const bytes = new Blob([text]).size;
-      return { text, bytes, truncated: bytes > RAW_MAX_BYTES };
-    },
+    queryFn: () => fetchPayload({ data: { eventRowId, mode: "meta" } }),
   });
 
-  const downloadFull = () => {
-    if (!data?.text) return;
-    const blob = new Blob([data.text], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `webhook-${eventId}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  // Small preview payload for inline display when the event is not oversized.
+  // Kept separate from the download flow so oversized events never fetch bytes.
+  const { data: preview, isLoading: previewLoading } = useQuery({
+    queryKey: ["webhook-event-preview", eventRowId],
+    enabled: open && !!meta && !meta.oversized && !meta.empty,
+    staleTime: 5 * 60_000,
+    queryFn: () => fetchPayload({ data: { eventRowId, mode: "download" } }),
+  });
+
+  const RAW_PREVIEW_BYTES = 96 * 1024;
+  const previewText = preview?.json ?? "";
+  const previewTruncated = previewText.length > RAW_PREVIEW_BYTES;
+
+  const downloadFull = async () => {
+    if (!meta) return;
+    if (meta.oversized) {
+      toast.error(
+        `Payload is ${(meta.bytes / 1024 / 1024).toFixed(2)} MB — exceeds the ${(meta.maxBytes / 1024 / 1024).toFixed(0)} MB download limit. Query the database directly.`,
+      );
+      return;
+    }
+    setDownloading(true);
+    try {
+      const full = preview ?? (await fetchPayload({ data: { eventRowId, mode: "download" } }));
+      const blob = new Blob([full.json ?? ""], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `webhook-${eventId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.startsWith("PAYLOAD_TOO_LARGE:")) {
+        const [, size, cap] = msg.split(":");
+        toast.error(
+          `Payload is ${(Number(size) / 1024 / 1024).toFixed(2)} MB — exceeds the ${(Number(cap) / 1024 / 1024).toFixed(0)} MB download cap.`,
+        );
+      } else if (msg === "Forbidden") {
+        toast.error("You do not have permission to download this payload.");
+      } else {
+        toast.error(`Download failed: ${msg}`);
+      }
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -528,34 +557,60 @@ function RawPayload({ eventRowId, eventId }: { eventRowId: string; eventId: stri
         <div className="mt-1">
           {isLoading ? (
             <div className="flex items-center rounded bg-muted p-2 text-[10px] text-muted-foreground">
-              <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> Loading payload…
+              <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> Checking payload…
             </div>
           ) : error ? (
             <p className="rounded bg-muted p-2 text-[10px] text-destructive">
-              Failed to load payload.
+              Failed to load payload metadata.
             </p>
-          ) : !data || !data.text ? (
+          ) : !meta || meta.empty ? (
             <p className="rounded bg-muted p-2 text-[10px] text-muted-foreground">
               No payload stored.
             </p>
+          ) : meta.oversized ? (
+            <Alert variant="destructive" className="py-2">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <AlertTitle className="text-[11px]">Payload too large for browser</AlertTitle>
+              <AlertDescription className="text-[10px]">
+                {(meta.bytes / 1024 / 1024).toFixed(2)} MB — exceeds the{" "}
+                {(meta.maxBytes / 1024 / 1024).toFixed(0)} MB download cap. Inline preview and
+                download are disabled to protect the session. Query{" "}
+                <code className="rounded bg-background/50 px-1">razorpay_webhook_events</code>{" "}
+                directly with the event id above.
+              </AlertDescription>
+            </Alert>
           ) : (
             <>
               <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
                 <span>
-                  {(data.bytes / 1024).toFixed(1)} KB
-                  {data.truncated && " • truncated preview"}
+                  {(meta.bytes / 1024).toFixed(1)} KB
+                  {previewTruncated && " • truncated preview"}
                 </span>
                 <button
                   type="button"
                   onClick={downloadFull}
-                  className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 hover:bg-accent"
+                  disabled={downloading || previewLoading}
+                  className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 hover:bg-accent disabled:opacity-50"
                 >
-                  <Download className="h-3 w-3" /> Download full JSON
+                  {downloading ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3" />
+                  )}
+                  Download full JSON
                 </button>
               </div>
-              <pre className="max-h-48 overflow-auto rounded bg-muted p-2 text-[10px] leading-tight">
-                {data.truncated ? data.text.slice(0, RAW_MAX_BYTES) + "\n… (truncated)" : data.text}
-              </pre>
+              {previewLoading ? (
+                <div className="flex items-center rounded bg-muted p-2 text-[10px] text-muted-foreground">
+                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> Loading preview…
+                </div>
+              ) : (
+                <pre className="max-h-48 overflow-auto rounded bg-muted p-2 text-[10px] leading-tight">
+                  {previewTruncated
+                    ? previewText.slice(0, RAW_PREVIEW_BYTES) + "\n… (truncated — download for full JSON)"
+                    : previewText}
+                </pre>
+              )}
             </>
           )}
         </div>
@@ -563,4 +618,5 @@ function RawPayload({ eventRowId, eventId }: { eventRowId: string; eventId: stri
     </div>
   );
 }
+
 
