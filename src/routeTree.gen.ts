@@ -56,6 +56,7 @@ import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
 import { Route as ApiPublicHooksProcessPaymentRemindersRouteImport } from './routes/api/public/hooks/process-payment-reminders'
 import { Route as ApiPublicHooksProcessExportJobsRouteImport } from './routes/api/public/hooks/process-export-jobs'
+import { Route as ApiAdminDrawsDrawIdPickRouteImport } from './routes/api/admin/draws.$drawId.pick'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -326,6 +327,11 @@ const ApiPublicHooksProcessExportJobsRoute =
     path: '/api/public/hooks/process-export-jobs',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiAdminDrawsDrawIdPickRoute = ApiAdminDrawsDrawIdPickRouteImport.update({
+  id: '/api/admin/draws/$drawId/pick',
+  path: '/api/admin/draws/$drawId/pick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -421,6 +428,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -471,6 +479,7 @@ export interface FileRoutesById {
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
+  '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -521,6 +530,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
+    | '/api/admin/draws/$drawId/pick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -568,6 +578,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
+    | '/api/admin/draws/$drawId/pick'
   id:
     | '__root__'
     | '/'
@@ -617,6 +628,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
+    | '/api/admin/draws/$drawId/pick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -628,6 +640,7 @@ export interface RootRouteChildren {
   ApiPublicHooksProcessPaymentRemindersRoute: typeof ApiPublicHooksProcessPaymentRemindersRoute
   ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
+  ApiAdminDrawsDrawIdPickRoute: typeof ApiAdminDrawsDrawIdPickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -961,6 +974,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksProcessExportJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/draws/$drawId/pick': {
+      id: '/api/admin/draws/$drawId/pick'
+      path: '/api/admin/draws/$drawId/pick'
+      fullPath: '/api/admin/draws/$drawId/pick'
+      preLoaderRoute: typeof ApiAdminDrawsDrawIdPickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1102,6 +1122,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksProcessPaymentRemindersRoute,
   ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
+  ApiAdminDrawsDrawIdPickRoute: ApiAdminDrawsDrawIdPickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

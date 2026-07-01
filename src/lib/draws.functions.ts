@@ -190,6 +190,18 @@ export const listAllDrawWinners = createServerFn({ method: "GET" })
 
 
 
+/**
+ * pickDrawWinners — admin-only, single-transaction winner selection.
+ *
+ * Backed by `public.pick_draw_winners(uuid, text)` which:
+ *   - re-checks `has_role(admin)` server-side,
+ *   - takes `SELECT … FOR UPDATE` on the draw row so concurrent picks
+ *     serialize instead of double-drawing,
+ *   - is idempotent: if the draw is already `completed` or already has
+ *     winners recorded, the existing winners are returned unchanged,
+ *   - is duplicate-safe at the storage layer via the unique constraints
+ *     `draw_winners_draw_customer_unique` and `draw_winners_draw_id_position_key`.
+ */
 export const pickDrawWinners = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => pickSchema.parse(i))
