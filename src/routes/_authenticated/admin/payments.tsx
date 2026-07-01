@@ -76,6 +76,8 @@ function AdminPaymentsPage() {
   const [selected, setSelected] = useState<AdminPaymentRow | null>(null);
   const [qDraft, setQDraft] = useState(search.q);
   const [exporting, setExporting] = useState(false);
+  const [reconcileOpen, setReconcileOpen] = useState(false);
+
 
   const listFn = useServerFn(listAdminPayments);
   const exportFn = useServerFn(exportAdminPayments);
