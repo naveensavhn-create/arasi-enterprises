@@ -2,20 +2,23 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldCheck, UserPlus, AlertTriangle, Loader2, Trash2 } from "lucide-react";
+import { ShieldCheck, UserPlus, AlertTriangle, Loader2, Trash2, History } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useSession, useCurrentRole } from "@/lib/auth";
 import {
   claimFirstAdmin,
   getAdminBootstrapStatus,
   listAdmins,
+  listAdminAuditLog,
   promoteToAdminByEmail,
   setUserRole,
 } from "@/lib/admin.functions";
+
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   head: () => ({ meta: [{ title: "Admin Access — Arasi Enterprises" }] }),
