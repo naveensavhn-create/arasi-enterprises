@@ -38,14 +38,47 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+        // Idempotency key: prefer Razorpay's delivery id header, then in-body id,
+        // finally a stable hash of the raw body so duplicates still collapse.
+        const headerEventId =
+          request.headers.get("x-razorpay-event-id") ??
+          request.headers.get("X-Razorpay-Event-Id");
+        const bodyEventId = (event as unknown as { id?: string }).id;
+        const eventId =
+          headerEventId ??
+          bodyEventId ??
+          `sha256:${createHmac("sha256", secret).update(body).digest("hex")}`;
+
         try {
           const eventType = event.event;
           const paymentEntity = event.payload?.payment?.entity;
           const orderEntity = event.payload?.order?.entity;
 
+
           const orderId = paymentEntity?.order_id ?? orderEntity?.id;
           if (!orderId) {
             return new Response("Missing order id", { status: 400 });
+          }
+
+          // Atomic idempotency guard: unique(event_id) makes duplicates fail
+          // insert. If already recorded, short-circuit before touching payments,
+          // installments, or memberships.
+          const { error: dupErr } = await supabaseAdmin
+            .from("razorpay_webhook_events")
+            .insert({
+              event_id: eventId,
+              event_type: eventType,
+              order_id: orderId,
+              raw: event as unknown as never,
+            });
+          if (dupErr) {
+            const code = (dupErr as { code?: string }).code;
+            if (code === "23505") {
+              // Duplicate delivery — already handled successfully.
+              return new Response("ok (duplicate)");
+            }
+            console.error("Webhook idempotency insert failed", dupErr);
+            return new Response("Server error", { status: 500 });
           }
 
           const { data: paymentRow, error: findErr } = await supabaseAdmin
@@ -59,6 +92,12 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
             // Still return 200 so Razorpay doesn't retry indefinitely
             return new Response("ok");
           }
+
+          // Link the webhook event to its payment for audit.
+          await supabaseAdmin
+            .from("razorpay_webhook_events")
+            .update({ payment_id: paymentRow.id })
+            .eq("event_id", eventId);
 
           if (eventType === "payment.captured" || eventType === "order.paid") {
             const paidAtSec = paymentEntity?.created_at ?? Math.floor(Date.now() / 1000);
