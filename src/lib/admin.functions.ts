@@ -236,19 +236,7 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
     return { ok: true, userId: targetId };
   });
 
-      actor_id: context.userId,
-      actor_email: actorEmail,
-      target_user_id: targetId,
-      target_email: data.email,
-      action: "promote",
-      role_before: before,
-      role_after: "admin",
-      reason: data.reason ?? null,
-      metadata: { already_admin: !!existing },
-    });
 
-    return { ok: true, userId: targetId };
-  });
 
 /**
  * Change a user's role (admin only). Safeguards against demoting the last admin.
