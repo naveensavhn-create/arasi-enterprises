@@ -888,3 +888,73 @@ export const getLastWebhookEvent = createServerFn({ method: "GET" })
       | { event_id: string; event_type: string; received_at: string; processed_at: string | null }
       | null;
   });
+
+/**
+ * Full webhook-event JSON payload for admins. Two modes:
+ *   - mode: "meta"     → returns byte size only (cheap probe for the UI).
+ *   - mode: "download" → returns the full JSON as a string, capped at
+ *                        WEBHOOK_PAYLOAD_MAX_BYTES. Oversized payloads throw
+ *                        a typed error so the UI can offer guidance rather
+ *                        than blindly buffering multi-MB JSON in the browser.
+ *
+ * The inline drawer preview keeps using its own 96 KB soft cap for display;
+ * this endpoint is the authenticated path used for the "Download full JSON"
+ * action and for oversized events where inline fetch is disabled.
+ */
+export const WEBHOOK_PAYLOAD_MAX_BYTES = 5 * 1024 * 1024; // 5 MB hard cap
+
+export const getWebhookEventPayload = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { eventRowId: string; mode?: "meta" | "download" }) =>
+    z
+      .object({
+        eventRowId: z.string().uuid(),
+        mode: z.enum(["meta", "download"]).default("meta"),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: row, error } = await context.supabase
+      .from("razorpay_webhook_events")
+      .select("id, event_id, event_type, raw")
+      .eq("id", data.eventRowId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Webhook event not found");
+
+    const text = row.raw == null ? "" : JSON.stringify(row.raw);
+    const bytes = new TextEncoder().encode(text).length;
+
+    if (data.mode === "meta") {
+      return {
+        eventRowId: row.id as string,
+        eventId: row.event_id as string,
+        eventType: row.event_type as string,
+        bytes,
+        maxBytes: WEBHOOK_PAYLOAD_MAX_BYTES,
+        oversized: bytes > WEBHOOK_PAYLOAD_MAX_BYTES,
+        empty: bytes === 0,
+      };
+    }
+
+    if (bytes > WEBHOOK_PAYLOAD_MAX_BYTES) {
+      // Typed sentinel: UI checks the message prefix to render a friendly error.
+      throw new Error(
+        `PAYLOAD_TOO_LARGE:${bytes}:${WEBHOOK_PAYLOAD_MAX_BYTES}`,
+      );
+    }
+
+    // Pretty-print for the download only (2-space indent). Meta uses compact.
+    const pretty = row.raw == null ? "" : JSON.stringify(row.raw, null, 2);
+    return {
+      eventRowId: row.id as string,
+      eventId: row.event_id as string,
+      eventType: row.event_type as string,
+      bytes,
+      maxBytes: WEBHOOK_PAYLOAD_MAX_BYTES,
+      oversized: false,
+      empty: bytes === 0,
+      json: pretty,
+    };
+  });
