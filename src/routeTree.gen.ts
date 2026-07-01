@@ -35,6 +35,7 @@ import { Route as AuthenticatedAdminSiteSettingsRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminRewardsRouteImport } from './routes/_authenticated/admin/rewards'
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin/reports'
+import { Route as AuthenticatedAdminRemindersRouteImport } from './routes/_authenticated/admin/reminders'
 import { Route as AuthenticatedAdminPromotersRouteImport } from './routes/_authenticated/admin/promoters'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin/plans'
 import { Route as AuthenticatedAdminPlanDeletionsRouteImport } from './routes/_authenticated/admin/plan-deletions'
@@ -197,6 +198,12 @@ const AuthenticatedAdminReportsRoute =
     path: '/reports',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminRemindersRoute =
+  AuthenticatedAdminRemindersRouteImport.update({
+    id: '/reminders',
+    path: '/reminders',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminPromotersRoute =
   AuthenticatedAdminPromotersRouteImport.update({
     id: '/promoters',
@@ -309,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/admin/reminders': typeof AuthenticatedAdminRemindersRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -351,6 +359,7 @@ export interface FileRoutesByTo {
   '/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/admin/reminders': typeof AuthenticatedAdminRemindersRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -395,6 +404,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/_authenticated/admin/reminders': typeof AuthenticatedAdminRemindersRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/_authenticated/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/admin/plan-deletions'
     | '/admin/plans'
     | '/admin/promoters'
+    | '/admin/reminders'
     | '/admin/reports'
     | '/admin/rewards'
     | '/admin/settings'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/admin/plan-deletions'
     | '/admin/plans'
     | '/admin/promoters'
+    | '/admin/reminders'
     | '/admin/reports'
     | '/admin/rewards'
     | '/admin/settings'
@@ -524,6 +536,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/plan-deletions'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/promoters'
+    | '/_authenticated/admin/reminders'
     | '/_authenticated/admin/reports'
     | '/_authenticated/admin/rewards'
     | '/_authenticated/admin/settings'
@@ -739,6 +752,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReportsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/reminders': {
+      id: '/_authenticated/admin/reminders'
+      path: '/reminders'
+      fullPath: '/admin/reminders'
+      preLoaderRoute: typeof AuthenticatedAdminRemindersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/promoters': {
       id: '/_authenticated/admin/promoters'
       path: '/promoters'
@@ -860,6 +880,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminPlanDeletionsRoute: typeof AuthenticatedAdminPlanDeletionsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminPromotersRoute: typeof AuthenticatedAdminPromotersRoute
+  AuthenticatedAdminRemindersRoute: typeof AuthenticatedAdminRemindersRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
   AuthenticatedAdminRewardsRoute: typeof AuthenticatedAdminRewardsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
@@ -882,6 +903,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminPlanDeletionsRoute: AuthenticatedAdminPlanDeletionsRoute,
     AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
     AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
+    AuthenticatedAdminRemindersRoute: AuthenticatedAdminRemindersRoute,
     AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
     AuthenticatedAdminRewardsRoute: AuthenticatedAdminRewardsRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
