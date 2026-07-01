@@ -274,6 +274,19 @@ function AdminSettings() {
           </div>
         </div>
 
+        {admins.data && admins.data.length === 1 && (
+          <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <div className="font-medium">Only one administrator remains.</div>
+              <div className="mt-0.5 opacity-90">
+                Revoking this account is blocked until you promote another user to admin.
+                This protects the system from becoming locked out.
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mt-4 divide-y divide-border rounded-lg border border-border">
           {admins.isLoading && (
             <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
@@ -282,6 +295,25 @@ function AdminSettings() {
           )}
           {admins.data?.map((a) => {
             const isSelf = a.userId === user?.id;
+            const isLastAdmin = (admins.data?.length ?? 0) <= 1;
+            const revokeBtn = (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={demote.isPending || isLastAdmin}
+                onClick={() => {
+                  setRevokeReason("");
+                  setRevokeTarget({
+                    userId: a.userId,
+                    email: a.email,
+                    fullName: a.fullName,
+                    isSelf,
+                  });
+                }}
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Revoke
+              </Button>
+            );
             return (
               <div key={a.userId} className="flex items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
@@ -292,6 +324,11 @@ function AdminSettings() {
                         You
                       </span>
                     )}
+                    {isLastAdmin && (
+                      <span className="ml-2 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                        Last admin
+                      </span>
+                    )}
                   </div>
                   {a.email && a.fullName && (
                     <div className="truncate text-xs text-muted-foreground">{a.email}</div>
@@ -300,22 +337,19 @@ function AdminSettings() {
                     Granted {new Date(a.grantedAt).toLocaleDateString()}
                   </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={demote.isPending}
-                  onClick={() => {
-                    const promptMsg = isSelf
-                      ? "Remove admin from your own account? You'll lose access to admin tools.\n\nReason (optional):"
-                      : `Revoke admin role from ${a.email ?? a.userId}?\n\nReason (optional):`;
-                    const reason = window.prompt(promptMsg);
-                    if (reason === null) return; // cancelled
-                    demote.mutate({ userId: a.userId, reason: reason.trim() || undefined });
-                  }}
-                >
-                  <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Revoke
-                </Button>
-
+                {isLastAdmin ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span tabIndex={0}>{revokeBtn}</span>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-xs">
+                      Promote another user to admin first — the system requires at least one
+                      administrator.
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  revokeBtn
+                )}
               </div>
             );
           })}
@@ -324,6 +358,81 @@ function AdminSettings() {
           )}
         </div>
       </div>
+
+      <AlertDialog
+        open={!!revokeTarget}
+        onOpenChange={(open) => {
+          if (!open && !demote.isPending) {
+            setRevokeTarget(null);
+            setRevokeReason("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-destructive" />
+              Revoke admin access?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <div>
+                  This will remove the admin role from{" "}
+                  <span className="font-medium text-foreground">
+                    {revokeTarget?.fullName || revokeTarget?.email || revokeTarget?.userId}
+                  </span>
+                  {revokeTarget?.isSelf ? " (your own account)" : ""} and downgrade them to{" "}
+                  <span className="font-medium text-foreground">customer</span>.
+                </div>
+                {revokeTarget?.isSelf && (
+                  <div className="rounded-md border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                    You will immediately lose access to every admin tool. Another admin will need
+                    to restore your role.
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="revoke-reason" className="text-xs">
+              Reason (recorded in audit log)
+            </Label>
+            <Textarea
+              id="revoke-reason"
+              rows={3}
+              maxLength={500}
+              placeholder="e.g. Employee departed — access no longer required"
+              value={revokeReason}
+              onChange={(e) => setRevokeReason(e.target.value)}
+              disabled={demote.isPending}
+            />
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={demote.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={demote.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!revokeTarget) return;
+                demote.mutate({
+                  userId: revokeTarget.userId,
+                  reason: revokeReason.trim() || undefined,
+                });
+              }}
+            >
+              {demote.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Revoking…</>
+              ) : (
+                "Revoke admin"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
         <div className="flex items-center gap-3">
