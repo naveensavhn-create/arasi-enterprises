@@ -24,6 +24,9 @@ export type KycProfile = {
   kyc_submitted_at: string | null;
   kyc_reviewed_at: string | null;
   kyc_review_notes: string | null;
+  referred_by_promoter_id?: string | null;
+  referred_by_name?: string | null;
+  referred_by_email?: string | null;
 };
 
 const KYC_COLUMNS =
