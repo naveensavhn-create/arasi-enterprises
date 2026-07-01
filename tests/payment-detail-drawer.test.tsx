@@ -243,4 +243,58 @@ describe("<PaymentDetailDrawer /> — invalid row surfaces", () => {
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(invalid.id);
     expect(toastCalls.some((t) => t.level === "success" && t.message === "Row ID copied")).toBe(true);
   });
+
+  it("renders every missing field with its remediation hint inside the alert", () => {
+    const invalid: AdminPaymentRow = {
+      ...validRow,
+      amount: -5,               // invalid amount
+      currency: "",             // missing currency
+      provider_payment_id: null, // paid without payment id
+      profile: null,            // missing customer name
+    };
+
+    renderWithClient(
+      <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
+    );
+
+    const alert = screen
+      .getByText("Incomplete payment record")
+      .closest('[role="alert"]') as HTMLElement;
+    const body = within(alert);
+
+    // Each missing field bullet renders label + hint copy in the same <li>.
+    const expected: Array<[RegExp, RegExp]> = [
+      [/Amount/i, /Reconcile with Razorpay dashboard/i],
+      [/Currency/i, /Currency code is empty/i],
+      [/Razorpay payment ID/i, /Marked paid without a Razorpay payment ID/i],
+      [/Customer name/i, /Linked profile is missing/i],
+    ];
+    for (const [label, hint] of expected) {
+      const bullet = body
+        .getAllByRole("listitem")
+        .find((li) => label.test(li.textContent ?? "") && hint.test(li.textContent ?? ""));
+      expect(bullet, `expected bullet matching ${label} + ${hint}`).toBeDefined();
+    }
+  });
+
+  it("does not block the drawer body — Customer and Amount blocks still render for invalid rows", () => {
+    const invalid: AdminPaymentRow = {
+      ...validRow,
+      provider_payment_id: null,
+      profile: null,
+    };
+
+    renderWithClient(
+      <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
+    );
+
+    // Alert is present…
+    expect(screen.getByText("Incomplete payment record")).toBeDefined();
+    // …and the drawer body sections still render with safe fallbacks.
+    expect(screen.getAllByText("Customer").length).toBeGreaterThan(0);
+    expect(screen.getByText("Unknown customer")).toBeDefined();
+    expect(screen.getAllByText("Amount").length).toBeGreaterThan(0);
+    // Amount value renders (row is a valid number here) rather than the drawer bailing out.
+    expect(screen.getByText(/1,500/)).toBeDefined();
+  });
 });
