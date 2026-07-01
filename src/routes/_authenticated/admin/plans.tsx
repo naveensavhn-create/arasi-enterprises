@@ -440,6 +440,13 @@ function AdminPlansPage() {
           })()}
         </AlertDialogContent>
       </AlertDialog>
+
+      <PlanAuditDrawer
+        planId={historyPlan?.id ?? null}
+        planName={historyPlan?.name}
+        open={!!historyPlan}
+        onOpenChange={(o) => !o && setHistoryPlan(null)}
+      />
     </div>
   );
 }
