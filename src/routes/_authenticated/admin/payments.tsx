@@ -231,7 +231,7 @@ function AdminPaymentsPage() {
                 </thead>
                 <tbody>
                   {filtered.map((r) => {
-                    const p = r.memberships?.profiles;
+                    const p = r.profile;
                     return (
                       <tr key={r.id} className="border-b last:border-0 align-top">
                         <td className="py-2 pr-4 text-muted-foreground whitespace-nowrap">
