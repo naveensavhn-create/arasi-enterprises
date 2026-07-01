@@ -196,6 +196,8 @@ function MembershipsAdminPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Membership #</TableHead>
+                <TableHead>ID No</TableHead>
+                <TableHead>Coupon</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Promoter</TableHead>
@@ -207,12 +209,14 @@ function MembershipsAdminPage() {
             </TableHeader>
             <TableBody>
               {membershipsQ.isLoading ? (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Loading…</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">Loading…</TableCell></TableRow>
               ) : rows.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">No memberships</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">No memberships</TableCell></TableRow>
               ) : rows.map((r: any) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-mono text-xs">{r.membership_number}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.member_display_id ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.coupon_no ?? <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell>
                     <div className="font-medium">{r.customer?.full_name ?? "—"}</div>
                     <div className="text-xs text-muted-foreground">{r.customer?.email}</div>
