@@ -256,6 +256,25 @@ function AdminPaymentsPage() {
             <Radio className={`h-3 w-3 ${liveConnected ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
             {liveConnected ? "Live" : paymentsPollingMs === 0 ? "Manual" : "Polling"}
           </Badge>
+          {lastWebhook ? (
+            <Badge
+              variant="outline"
+              className="gap-1.5 text-[10px] font-mono normal-case"
+              title={`Event ID: ${lastWebhook.event_id}\nType: ${lastWebhook.event_type}\nReceived: ${new Date(lastWebhook.received_at).toLocaleString()}${lastWebhook.processed_at ? `\nProcessed: ${new Date(lastWebhook.processed_at).toLocaleString()}` : "\nNot yet processed"}`}
+            >
+              <Webhook className="h-3 w-3 text-muted-foreground" />
+              <span className="hidden md:inline text-muted-foreground">Last webhook</span>
+              <span>{formatRelative(lastWebhook.processed_at ?? lastWebhook.received_at)}</span>
+              <span className="hidden lg:inline text-muted-foreground truncate max-w-[140px]">
+                · {lastWebhook.event_id.slice(-14)}
+              </span>
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1.5 text-[10px] normal-case text-muted-foreground">
+              <Webhook className="h-3 w-3" />
+              No webhooks yet
+            </Badge>
+          )}
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="hidden sm:inline">Poll every</span>
             <select
