@@ -11,7 +11,16 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (!data) throw new Error("Forbidden");
 }
 
-const SORT_COLUMNS = ["created_at", "paid_at", "amount", "status"] as const;
+const SORT_COLUMNS = [
+  "created_at",
+  "paid_at",
+  "amount",
+  "status",
+  "provider_order_id",
+  "provider_payment_id",
+  "customer_name",
+] as const;
+export type PaymentSortColumn = typeof SORT_COLUMNS[number];
 
 const baseFilterSchema = z.object({
   sortBy: z.enum(SORT_COLUMNS).default("created_at"),
@@ -129,9 +138,26 @@ async function fetchPaymentRows(
        provider_order_id, provider_payment_id, error_code, error_description,
        paid_at, created_at, customer_id, membership_id, installment_id,
        memberships:membership_id ( membership_number ),
-       installments:installment_id ( sequence, due_date )`,
-    )
-    .order(n.sortBy, { ascending: n.sortDir === "asc", nullsFirst: false });
+       installments:installment_id ( sequence, due_date ),
+       profiles:customer_id ( full_name, email )`,
+    );
+
+  // Sorting: customer_name sorts by the embedded profiles.full_name;
+  // everything else is a direct payments column. Secondary sort on
+  // created_at keeps ordering stable for ties.
+  if (n.sortBy === "customer_name") {
+    query = query.order("full_name", {
+      ascending: n.sortDir === "asc",
+      nullsFirst: false,
+      referencedTable: "profiles",
+    });
+    query = query.order("created_at", { ascending: false });
+  } else {
+    query = query.order(n.sortBy, { ascending: n.sortDir === "asc", nullsFirst: false });
+    if (n.sortBy !== "created_at") {
+      query = query.order("created_at", { ascending: false });
+    }
+  }
 
   if (n.status) query = query.eq("status", n.status);
   if (n.fromISO) query = query.gte("created_at", n.fromISO);
@@ -161,17 +187,6 @@ async function fetchPaymentRows(
   const { data: rows, error } = await query.range(fromIdx, toIdx);
   if (error) throw new Error(error.message);
 
-  const ids = Array.from(new Set((rows ?? []).map((r: any) => r.customer_id))).filter(Boolean);
-  const profMap = new Map<string, any>();
-  if (ids.length) {
-    const { data: profs, error: pErr } = await sb
-      .from("profiles")
-      .select("id, full_name, email")
-      .in("id", ids);
-    if (pErr) throw new Error(pErr.message);
-    for (const p of profs ?? []) profMap.set(p.id, p);
-  }
-
   // Latest reconciliation per payment (batched)
   const paymentIds = (rows ?? []).map((r: any) => r.id).filter(Boolean);
   const reconMap = new Map<string, AdminPaymentRow["reconciliation"]>();
@@ -194,13 +209,15 @@ async function fetchPaymentRows(
     }
   }
 
-  return (rows ?? []).map((r: any) => ({
-    ...r,
-    profile: profMap.get(r.customer_id)
-      ? { full_name: profMap.get(r.customer_id).full_name, email: profMap.get(r.customer_id).email }
-      : null,
-    reconciliation: reconMap.get(r.id) ?? null,
-  }));
+  return (rows ?? []).map((r: any) => {
+    const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+    const { profiles: _profiles, ...rest } = r;
+    return {
+      ...rest,
+      profile: p ? { full_name: p.full_name ?? null, email: p.email ?? null } : null,
+      reconciliation: reconMap.get(r.id) ?? null,
+    };
+  });
 }
 
 

@@ -19,7 +19,15 @@ import { toast } from "sonner";
 
 
 const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"] as const;
-const SORT_COLUMNS = ["created_at", "paid_at", "amount", "status"] as const;
+const SORT_COLUMNS = [
+  "created_at",
+  "paid_at",
+  "amount",
+  "status",
+  "provider_order_id",
+  "provider_payment_id",
+  "customer_name",
+] as const;
 type SortCol = typeof SORT_COLUMNS[number];
 
 const searchSchema = z.object({
@@ -524,10 +532,22 @@ function AdminPaymentsPage() {
                         Date{sortIcon("created_at")}
                       </button>
                     </th>
-                    <th className="py-2 pr-4 font-medium">Customer</th>
+                    <th className="py-2 pr-4 font-medium">
+                      <button className="hover:text-foreground" onClick={() => toggleSort("customer_name")}>
+                        Customer{sortIcon("customer_name")}
+                      </button>
+                    </th>
                     <th className="py-2 pr-4 font-medium">Membership</th>
                     <th className="py-2 pr-4 font-medium">Inst.</th>
-                    <th className="py-2 pr-4 font-medium">Order / Payment</th>
+                    <th className="py-2 pr-4 font-medium">
+                      <button className="hover:text-foreground" onClick={() => toggleSort("provider_order_id")}>
+                        Order{sortIcon("provider_order_id")}
+                      </button>
+                      {" / "}
+                      <button className="hover:text-foreground" onClick={() => toggleSort("provider_payment_id")}>
+                        Payment{sortIcon("provider_payment_id")}
+                      </button>
+                    </th>
                     <th className="py-2 pr-4 font-medium">Method</th>
                     <th className="py-2 pr-4 font-medium">
                       <button className="hover:text-foreground" onClick={() => toggleSort("amount")}>
