@@ -1320,6 +1320,10 @@ export type Database = {
           state: string
         }[]
       }
+      promoter_submit_referral_for_review: {
+        Args: { _note?: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["kyc_status"]
+      }
     }
     Enums: {
       app_role: "admin" | "promoter" | "customer"
