@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
               event_id: eventId,
               event_type: eventType,
               order_id: orderId,
-              raw: event as unknown as Record<string, unknown>,
+              raw: event as unknown as never,
             });
           if (dupErr) {
             const code = (dupErr as { code?: string }).code;
