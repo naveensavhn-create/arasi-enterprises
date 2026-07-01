@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSession, useCurrentRole, useSignOut } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { lastVisitedKey } from "@/lib/last-visited";
+import { useApplyUiPrefs, getUiPrefs } from "@/lib/ui-prefs";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -29,6 +30,9 @@ function AuthenticatedShell() {
   const signOut = useSignOut();
   const navigate = useNavigate();
 
+  // Apply saved UI preferences (density) to <html>.
+  useApplyUiPrefs();
+
   // Per-user persisted sidebar open state. Undefined until we know the user
   // so the provider doesn't flash the wrong state.
   const [open, setOpen] = useState<boolean | undefined>(undefined);
@@ -37,7 +41,12 @@ function AuthenticatedShell() {
     if (!user) return;
     try {
       const raw = localStorage.getItem(SIDEBAR_STORAGE_PREFIX + user.id);
-      setOpen(raw === null ? true : raw === "true");
+      if (raw === null) {
+        // No per-user value yet — fall back to the user's default preference.
+        setOpen(getUiPrefs().sidebarMode !== "collapsed");
+      } else {
+        setOpen(raw === "true");
+      }
     } catch {
       setOpen(true);
     }
