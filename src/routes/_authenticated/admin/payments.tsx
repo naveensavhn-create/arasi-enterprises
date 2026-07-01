@@ -240,6 +240,7 @@ function AdminPaymentsPage() {
                         className="cursor-pointer border-b align-top last:border-0 hover:bg-accent/50"
                         onClick={() => setSelected(r)}
                       >
+                        <td className="py-2 pr-4 text-muted-foreground whitespace-nowrap">
                           {new Date(r.paid_at ?? r.created_at).toLocaleString()}
                         </td>
                         <td className="py-2 pr-4">
