@@ -460,66 +460,162 @@ function AdminSettings() {
           </div>
         </div>
 
-        <div className="mt-4 overflow-hidden rounded-lg border border-border">
-          {audit.isLoading && (
-            <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading audit log…
-            </div>
-          )}
-          {audit.data && audit.data.length === 0 && (
-            <div className="p-4 text-sm text-muted-foreground">No role changes recorded yet.</div>
-          )}
-          {audit.data && audit.data.length > 0 && (
-            <div className="max-h-[420px] overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="px-3 py-2 font-medium">When</th>
-                    <th className="px-3 py-2 font-medium">Action</th>
-                    <th className="px-3 py-2 font-medium">Target</th>
-                    <th className="px-3 py-2 font-medium">Change</th>
-                    <th className="px-3 py-2 font-medium">Actor</th>
-                    <th className="px-3 py-2 font-medium">Reason</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {audit.data.map((row) => {
-                    const badge =
-                      row.action === "promote" || row.action === "bootstrap_claim"
-                        ? "bg-emerald-500/10 text-emerald-600"
-                        : row.action === "revoke"
-                          ? "bg-destructive/10 text-destructive"
-                          : "bg-primary/10 text-primary";
-                    return (
-                      <tr key={row.id} className="align-top">
-                        <td className="px-3 py-2 text-xs text-muted-foreground">
-                          {new Date(row.created_at).toLocaleString()}
-                        </td>
-                        <td className="px-3 py-2">
-                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${badge}`}>
-                            {row.action.replace("_", " ")}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-xs">
-                          <div className="font-medium">{row.target_email ?? row.target_user_id}</div>
-                        </td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground">
-                          {(row.role_before ?? "—")} → {(row.role_after ?? "—")}
-                        </td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground">
-                          {row.actor_email ?? row.actor_id}
-                        </td>
-                        <td className="px-3 py-2 text-xs text-muted-foreground">
-                          {row.reason || <span className="italic opacity-60">—</span>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {(() => {
+          const rows = audit.data ?? [];
+          const filtered = rows.filter((r) => {
+            if (fActor.trim()) {
+              const hay = `${r.actor_email ?? ""} ${r.actor_id ?? ""}`.toLowerCase();
+              if (!hay.includes(fActor.trim().toLowerCase())) return false;
+            }
+            if (fTarget.trim()) {
+              const hay = `${r.target_email ?? ""} ${r.target_user_id ?? ""}`.toLowerCase();
+              if (!hay.includes(fTarget.trim().toLowerCase())) return false;
+            }
+            if (fRole !== "all") {
+              if (r.role_before !== fRole && r.role_after !== fRole) return false;
+            }
+            if (fAction !== "all" && r.action !== fAction) return false;
+            if (fFrom) {
+              const from = new Date(fFrom + "T00:00:00").getTime();
+              if (new Date(r.created_at).getTime() < from) return false;
+            }
+            if (fTo) {
+              const to = new Date(fTo + "T23:59:59.999").getTime();
+              if (new Date(r.created_at).getTime() > to) return false;
+            }
+            return true;
+          });
+          const hasFilters =
+            fActor || fTarget || fRole !== "all" || fAction !== "all" || fFrom || fTo;
+
+          return (
+            <>
+              <div className="mt-4 grid gap-3 rounded-lg border border-border bg-muted/20 p-3 sm:grid-cols-2 lg:grid-cols-6">
+                <div className="space-y-1">
+                  <Label htmlFor="f-actor" className="text-[10px] uppercase tracking-wider text-muted-foreground">Actor</Label>
+                  <Input id="f-actor" placeholder="email or id" value={fActor} onChange={(e) => setFActor(e.target.value)} className="h-8" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="f-target" className="text-[10px] uppercase tracking-wider text-muted-foreground">Target</Label>
+                  <Input id="f-target" placeholder="email or id" value={fTarget} onChange={(e) => setFTarget(e.target.value)} className="h-8" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Role changed</Label>
+                  <Select value={fRole} onValueChange={setFRole}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any role</SelectItem>
+                      <SelectItem value="admin">admin</SelectItem>
+                      <SelectItem value="promoter">promoter</SelectItem>
+                      <SelectItem value="customer">customer</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Action</Label>
+                  <Select value={fAction} onValueChange={setFAction}>
+                    <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Any action</SelectItem>
+                      <SelectItem value="promote">promote</SelectItem>
+                      <SelectItem value="revoke">revoke</SelectItem>
+                      <SelectItem value="bootstrap_claim">bootstrap claim</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="f-from" className="text-[10px] uppercase tracking-wider text-muted-foreground">From</Label>
+                  <Input id="f-from" type="date" value={fFrom} onChange={(e) => setFFrom(e.target.value)} className="h-8" />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="f-to" className="text-[10px] uppercase tracking-wider text-muted-foreground">To</Label>
+                  <Input id="f-to" type="date" value={fTo} onChange={(e) => setFTo(e.target.value)} className="h-8" />
+                </div>
+                <div className="flex items-end justify-between gap-2 sm:col-span-2 lg:col-span-6">
+                  <div className="text-xs text-muted-foreground">
+                    Showing <span className="font-medium text-foreground">{filtered.length}</span> of {rows.length} entries
+                  </div>
+                  {hasFilters && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setFActor(""); setFTarget(""); setFRole("all");
+                        setFAction("all"); setFFrom(""); setFTo("");
+                      }}
+                    >
+                      <X className="mr-1 h-3.5 w-3.5" /> Clear filters
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 overflow-hidden rounded-lg border border-border">
+                {audit.isLoading && (
+                  <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading audit log…
+                  </div>
+                )}
+                {!audit.isLoading && rows.length === 0 && (
+                  <div className="p-4 text-sm text-muted-foreground">No role changes recorded yet.</div>
+                )}
+                {!audit.isLoading && rows.length > 0 && filtered.length === 0 && (
+                  <div className="p-4 text-sm text-muted-foreground">No entries match the current filters.</div>
+                )}
+                {filtered.length > 0 && (
+                  <div className="max-h-[420px] overflow-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-muted/40 text-left text-xs uppercase tracking-wider text-muted-foreground">
+                        <tr>
+                          <th className="px-3 py-2 font-medium">When</th>
+                          <th className="px-3 py-2 font-medium">Action</th>
+                          <th className="px-3 py-2 font-medium">Target</th>
+                          <th className="px-3 py-2 font-medium">Change</th>
+                          <th className="px-3 py-2 font-medium">Actor</th>
+                          <th className="px-3 py-2 font-medium">Reason</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {filtered.map((row) => {
+                          const badge =
+                            row.action === "promote" || row.action === "bootstrap_claim"
+                              ? "bg-emerald-500/10 text-emerald-600"
+                              : row.action === "revoke"
+                                ? "bg-destructive/10 text-destructive"
+                                : "bg-primary/10 text-primary";
+                          return (
+                            <tr key={row.id} className="align-top">
+                              <td className="px-3 py-2 text-xs text-muted-foreground">
+                                {new Date(row.created_at).toLocaleString()}
+                              </td>
+                              <td className="px-3 py-2">
+                                <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider ${badge}`}>
+                                  {row.action.replace("_", " ")}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-xs">
+                                <div className="font-medium">{row.target_email ?? row.target_user_id}</div>
+                              </td>
+                              <td className="px-3 py-2 text-xs text-muted-foreground">
+                                {(row.role_before ?? "—")} → {(row.role_after ?? "—")}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-muted-foreground">
+                                {row.actor_email ?? row.actor_id}
+                              </td>
+                              <td className="px-3 py-2 text-xs text-muted-foreground">
+                                {row.reason || <span className="italic opacity-60">—</span>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );
