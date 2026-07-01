@@ -278,20 +278,34 @@ function AdminPaymentsPage() {
       });
 
       if (result.rowCount === 0) {
-        toast.info("Nothing to export for current filters.");
+        toast.info("Nothing to export", {
+          description: "No payments match the current filters.",
+        });
         return;
       }
       saveCsvBlob(result.csv, result.filename);
-      toast.success(
-        scope === "page"
-          ? `Exported ${result.rowCount} row(s) from page ${search.page + 1}.`
-          : `Exported ${result.rowCount} row(s) matching current filters.`,
-      );
       if (result.capped) {
-        toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
+        // Cap hit → surface as a warning (not silent success) so admins know
+        // the file is truncated and can either narrow filters or switch to
+        // the async "Export all" path.
+        toast.warning(`Export truncated at ${result.rowCount.toLocaleString()} rows`, {
+          description:
+            "The 10,000-row inline limit was hit. Use 'Export all (async)' for the full result set.",
+          duration: 8000,
+        });
+      } else {
+        toast.success(
+          scope === "page"
+            ? `Exported ${result.rowCount.toLocaleString()} row(s) from page ${search.page + 1}.`
+            : `Exported ${result.rowCount.toLocaleString()} row(s) matching current filters.`,
+        );
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Export failed");
+      const msg = e instanceof Error ? e.message : "Export failed";
+      toast.error("Export failed", {
+        description: msg,
+        duration: 8000,
+      });
     } finally {
       setExporting(false);
     }
@@ -329,7 +343,11 @@ function AdminPaymentsPage() {
       queryClient.invalidateQueries({ queryKey: ["admin-export-jobs-header"] });
       return jobId;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to queue export");
+      const msg = e instanceof Error ? e.message : "Failed to queue export";
+      toast.error("Couldn't queue export", {
+        description: msg,
+        duration: 8000,
+      });
     } finally {
       setExporting(false);
     }
@@ -349,12 +367,15 @@ function AdminPaymentsPage() {
   const readyUnnotified = (myJobs ?? []).filter(
     (j) => j.status === "succeeded" && !j.notified_at,
   );
+  const failedUnnotified = (myJobs ?? []).filter(
+    (j) => (j.status === "failed" || j.status === "expired") && !j.notified_at,
+  );
   const anyActive = (myJobs ?? []).some(
     (j) => j.status === "queued" || j.status === "running",
   );
 
   useEffect(() => {
-    if (!readyUnnotified.length) return;
+    if (!readyUnnotified.length && !failedUnnotified.length) return;
     for (const j of readyUnnotified) {
       toast.success("Export ready to download", {
         description: `${(j.row_count ?? 0).toLocaleString()} rows`,
@@ -365,17 +386,40 @@ function AdminPaymentsPage() {
               const { url } = await getExportDownloadUrlFn({ data: { jobId: j.id } });
               window.location.href = url;
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Download failed");
+              toast.error("Download failed", {
+                description: e instanceof Error ? e.message : "Unknown error",
+              });
             }
           },
         },
       });
     }
-    markExportNotifiedFn({ data: { jobIds: readyUnnotified.map((j) => j.id) } })
+    for (const j of failedUnnotified) {
+      toast.error(
+        j.status === "expired" ? "Export expired" : "Export failed",
+        {
+          description:
+            j.error ??
+            (j.status === "expired"
+              ? "The file passed its retention window. Re-run the export."
+              : "The background job could not complete. Open Exports to retry."),
+          duration: 10000,
+          action: {
+            label: "Open Exports",
+            onClick: () => navigate({ to: "/admin/exports" }),
+          },
+        },
+      );
+    }
+    const ids = [...readyUnnotified, ...failedUnnotified].map((j) => j.id);
+    markExportNotifiedFn({ data: { jobIds: ids } })
       .then(() => queryClient.invalidateQueries({ queryKey: ["admin-export-jobs-header"] }))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readyUnnotified.map((j) => j.id).join(",")]);
+  }, [
+    readyUnnotified.map((j) => j.id).join(","),
+    failedUnnotified.map((j) => j.id).join(","),
+  ]);
 
 
   return (
