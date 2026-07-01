@@ -223,12 +223,10 @@ describe("<PaymentDetailDrawer /> — invalid row surfaces", () => {
     }
   });
 
-  it("copy-row-id button in the warning invokes a success toast", async () => {
+  it("copy-row-id button writes to clipboard and shows a success toast", async () => {
     const invalid: AdminPaymentRow = { ...validRow, provider_payment_id: null };
-    // clipboard shim
-    Object.assign(navigator, {
-      clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
-    });
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
 
     renderWithClient(
       <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
@@ -240,8 +238,65 @@ describe("<PaymentDetailDrawer /> — invalid row surfaces", () => {
     const copyBtn = within(alert).getByRole("button", { name: /copy/i });
     await userEvent.click(copyBtn);
 
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(invalid.id);
-    expect(toastCalls.some((t) => t.level === "success" && t.message === "Row ID copied")).toBe(true);
+    expect(writeText).toHaveBeenCalledWith(invalid.id);
+    const success = toastCalls.find(
+      (t) => t.level === "success" && t.message === "Row ID copied",
+    );
+    expect(success).toBeDefined();
+    expect(success!.opts).toMatchObject({
+      id: `payment-row-copy-${invalid.id}`,
+      description: invalid.id,
+    });
+  });
+
+  it("copy-row-id button shows an error toast when clipboard rejects", async () => {
+    const invalid: AdminPaymentRow = { ...validRow, provider_payment_id: null };
+    const writeText = vi.fn().mockRejectedValue(new Error("Permission denied"));
+    Object.assign(navigator, { clipboard: { writeText } });
+
+    renderWithClient(
+      <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
+    );
+
+    const alert = screen
+      .getByText("Incomplete payment record")
+      .closest('[role="alert"]') as HTMLElement;
+    await userEvent.click(within(alert).getByRole("button", { name: /copy/i }));
+
+    expect(writeText).toHaveBeenCalledWith(invalid.id);
+    const err = toastCalls.find(
+      (t) => t.level === "error" && t.message === "Couldn't copy row ID",
+    );
+    expect(err).toBeDefined();
+    expect(err!.opts).toMatchObject({
+      id: `payment-row-copy-${invalid.id}`,
+      description: "Permission denied",
+    });
+    // No spurious success toast
+    expect(toastCalls.some((t) => t.level === "success" && t.message === "Row ID copied")).toBe(false);
+  });
+
+  it("copy-row-id button shows an error toast when the Clipboard API is unavailable", async () => {
+    const invalid: AdminPaymentRow = { ...validRow, provider_payment_id: null };
+    // Remove clipboard entirely
+    Object.assign(navigator, { clipboard: undefined });
+
+    renderWithClient(
+      <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
+    );
+
+    const alert = screen
+      .getByText("Incomplete payment record")
+      .closest('[role="alert"]') as HTMLElement;
+    await userEvent.click(within(alert).getByRole("button", { name: /copy/i }));
+
+    const err = toastCalls.find(
+      (t) => t.level === "error" && t.message === "Couldn't copy row ID",
+    );
+    expect(err).toBeDefined();
+    expect((err!.opts as { description?: string }).description).toMatch(
+      /Clipboard API unavailable/i,
+    );
   });
 
   it("renders every missing field with its remediation hint inside the alert", () => {
