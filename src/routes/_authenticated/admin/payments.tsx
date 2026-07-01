@@ -651,7 +651,7 @@ function AdminPaymentsPage() {
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick status filters">
             <div className="flex flex-wrap gap-1.5">
-              {STATUSES.map((s) => {
+              {STATUS_FILTER_KEYS.map((s) => {
                 const meta = STATUS_META[s];
                 const active = search.status === s;
                 return (
