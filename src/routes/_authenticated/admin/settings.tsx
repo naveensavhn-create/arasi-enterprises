@@ -831,6 +831,121 @@ function AdminSettings() {
         })()}
       </div>
 
+      {/* Email notifications section */}
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div
+              className="grid h-9 w-9 place-items-center rounded-lg"
+              style={{ background: "var(--gradient-gold-value)", color: "var(--navy)" }}
+            >
+              <Mail className="h-4 w-4" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Role-change email notifications</h2>
+              <p className="text-xs text-muted-foreground">
+                Every promote and revoke triggers a branded email. Delivery attempts are logged
+                below.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[140px]">
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                Test template
+              </label>
+              <Select value={testKind} onValueChange={(v) => setTestKind(v as "promote" | "revoke")}>
+                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="promote">Promote</SelectItem>
+                  <SelectItem value="revoke">Revoke</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[220px]">
+              <label className="mb-1 block text-[11px] font-medium text-muted-foreground">
+                Recipient (optional)
+              </label>
+              <Input
+                type="email"
+                placeholder={user?.email ?? "you@example.com"}
+                value={testEmail}
+                onChange={(e) => setTestEmail(e.target.value)}
+                className="h-9"
+              />
+            </div>
+            <Button
+              onClick={() =>
+                sendTest.mutate({
+                  kind: testKind,
+                  recipientEmail: testEmail.trim() || undefined,
+                })
+              }
+              disabled={sendTest.isPending}
+              className="h-9"
+            >
+              {sendTest.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending…</>
+              ) : (
+                <><Send className="mr-2 h-4 w-4" /> Send test</>
+              )}
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 overflow-hidden rounded-xl border border-border">
+          {notifications.isLoading ? (
+            <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading notifications…
+            </div>
+          ) : (notifications.data ?? []).length === 0 ? (
+            <div className="p-6 text-sm text-muted-foreground">
+              No emails have been dispatched yet. Trigger a promote/revoke or send a test above.
+            </div>
+          ) : (
+            <div className="max-h-[420px] overflow-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="sticky top-0 bg-muted/60 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2">When</th>
+                    <th className="px-3 py-2">Recipient</th>
+                    <th className="px-3 py-2">Template</th>
+                    <th className="px-3 py-2">Status</th>
+                    <th className="px-3 py-2">Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(notifications.data ?? []).map((n) => (
+                    <tr key={n.id} className="border-t border-border/60 hover:bg-muted/30">
+                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
+                        {new Date(n.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-3 py-2 font-medium">{n.recipient_email}</td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {n.template_name}
+                        {n.is_test ? (
+                          <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
+                            Test
+                          </span>
+                        ) : null}
+                      </td>
+                      <td className="px-3 py-2"><StatusPill status={n.status} /></td>
+                      <td className="px-3 py-2 text-muted-foreground">
+                        {n.error_message
+                          ? <span className="text-destructive">{n.error_message}</span>
+                          : n.message_id ?? "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+
+
       <AuditDetailsDrawer
         row={selectedAudit}
         onClose={() => setSelectedAudit(null)}
