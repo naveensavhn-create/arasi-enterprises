@@ -285,33 +285,70 @@ export const listAdminPayments = createServerFn({ method: "GET" })
     const n = normalizeFilters(data);
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
     const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
+    const webhookPaymentIds = await resolveWebhookProcessedPaymentIds(sb, n);
 
     const fromIdx = data.page * data.pageSize;
     const toIdx = fromIdx + data.pageSize - 1;
 
-    const [rows, totalsRes] = await Promise.all([
-      fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, fromIdx, toIdx),
-      sb.rpc("admin_payments_totals", {
-        _status: n.status ?? null,
-        _from: n.fromISO ?? null,
-        _to: n.toISO ?? null,
-        _customer_ids: customerIds ?? null,
-        _membership_ids: membershipIds ?? null,
-        _q: n.q ?? null,
-        _order_id: n.orderId ?? null,
-        _payment_id: n.paymentId ?? null,
-        _customer_ids_exact: customerIdsExact ?? null,
-      }),
-    ]);
+    // In webhook-processed mode the date filter lives outside the payments
+    // table, so the created_at-based RPC totals would be wrong — compute
+    // totals over the resolved payment-id set directly.
+    const totalsPromise =
+      n.dateField === "webhook_processed" && webhookPaymentIds !== null
+        ? (async () => {
+            if (webhookPaymentIds.length === 0) {
+              return { total_count: 0, paid_count: 0, paid_sum: 0 };
+            }
+            let tq = sb.from("payments").select("amount, status", { count: "exact" });
+            tq = tq.in("id", webhookPaymentIds);
+            if (n.status) tq = tq.eq("status", n.status);
+            if (n.orderId) tq = tq.ilike("provider_order_id", `%${n.orderId}%`);
+            if (n.paymentId) tq = tq.ilike("provider_payment_id", `%${n.paymentId}%`);
+            if (customerIdsExact && customerIdsExact.length) tq = tq.in("customer_id", customerIdsExact);
+            const { data: agg, error, count } = await tq.limit(50_000);
+            if (error) throw new Error(error.message);
+            let paidCount = 0;
+            let paidSum = 0;
+            for (const r of agg ?? []) {
+              if (String((r as any).status) === "paid") {
+                paidCount += 1;
+                paidSum += Number((r as any).amount) || 0;
+              }
+            }
+            return { total_count: count ?? 0, paid_count: paidCount, paid_sum: paidSum };
+          })()
+        : sb
+            .rpc("admin_payments_totals", {
+              _status: n.status ?? null,
+              _from: n.fromISO ?? null,
+              _to: n.toISO ?? null,
+              _customer_ids: customerIds ?? null,
+              _membership_ids: membershipIds ?? null,
+              _q: n.q ?? null,
+              _order_id: n.orderId ?? null,
+              _payment_id: n.paymentId ?? null,
+              _customer_ids_exact: customerIdsExact ?? null,
+            })
+            .then((r: any) => {
+              if (r.error) throw new Error(r.error.message);
+              const t = Array.isArray(r.data) ? r.data[0] : r.data;
+              return {
+                total_count: Number(t?.total_count ?? 0),
+                paid_count: Number(t?.paid_count ?? 0),
+                paid_sum: Number(t?.paid_sum ?? 0),
+              };
+            });
 
-    if (totalsRes.error) throw new Error(totalsRes.error.message);
-    const totals = Array.isArray(totalsRes.data) ? totalsRes.data[0] : totalsRes.data;
+    const [rows, totals] = await Promise.all([
+      fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, webhookPaymentIds, fromIdx, toIdx),
+      totalsPromise,
+    ]);
 
     return {
       rows,
-      total: Number(totals?.total_count ?? 0),
-      paidCount: Number(totals?.paid_count ?? 0),
-      paidSum: Number(totals?.paid_sum ?? 0),
+      total: Number(totals.total_count ?? 0),
+      paidCount: Number(totals.paid_count ?? 0),
+      paidSum: Number(totals.paid_sum ?? 0),
       page: data.page,
       pageSize: data.pageSize,
     };
