@@ -70,24 +70,19 @@ describeIfDb("plan-delete DB trigger (integration)", () => {
   beforeAll(async () => {
     await client.connect();
 
-    // 1) Ephemeral customer profile (memberships.customer_id is NOT NULL and
-    //    references profiles(id), which in turn FKs auth.users). Insert into
-    //    auth.users directly with the service-role DB connection so the FK
-    //    chain is satisfied without touching real accounts.
-    const userInsert = await client.query<{ id: string }>(
-      `INSERT INTO auth.users (id, instance_id, aud, role, email, created_at, updated_at)
-       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated',
-               'authenticated', $1, now(), now())
-       RETURNING id`,
-      [`${runTag}@example.test`],
+    // 1) Reuse an existing profile as the membership customer. The pooled
+    //    connection cannot insert into `auth.users` (schema is admin-only),
+    //    and memberships.customer_id -> profiles(id) -> auth.users(id) via
+    //    FK, so we cannot synthesise a brand-new customer here.
+    const existing = await client.query<{ id: string }>(
+      `SELECT id FROM public.profiles ORDER BY created_at ASC LIMIT 1`,
     );
-    customerId = userInsert.rows[0].id;
-    await client.query(
-      `INSERT INTO public.profiles (id, full_name, email)
-       VALUES ($1, $2, $3)
-       ON CONFLICT (id) DO NOTHING`,
-      [customerId, `Test ${runTag}`, `${runTag}@example.test`],
-    );
+    if (existing.rowCount === 0) {
+      throw new Error(
+        "plan-delete integration test needs at least one profile in public.profiles",
+      );
+    }
+    customerId = existing.rows[0].id;
 
     // 2) Ephemeral active plan.
     const planInsert = await client.query<{ id: string }>(
