@@ -24,6 +24,7 @@ export type Database = {
           notes: string | null
           paid_amount: number
           paid_at: string | null
+          payment_id: string | null
           payment_reference: string | null
           sequence: number
           status: Database["public"]["Enums"]["installment_status"]
@@ -38,6 +39,7 @@ export type Database = {
           notes?: string | null
           paid_amount?: number
           paid_at?: string | null
+          payment_id?: string | null
           payment_reference?: string | null
           sequence: number
           status?: Database["public"]["Enums"]["installment_status"]
@@ -52,6 +54,7 @@ export type Database = {
           notes?: string | null
           paid_amount?: number
           paid_at?: string | null
+          payment_id?: string | null
           payment_reference?: string | null
           sequence?: number
           status?: Database["public"]["Enums"]["installment_status"]
@@ -63,6 +66,13 @@ export type Database = {
             columns: ["membership_id"]
             isOneToOne: false
             referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installments_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
             referencedColumns: ["id"]
           },
         ]
@@ -171,6 +181,87 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          customer_id: string
+          error_code: string | null
+          error_description: string | null
+          id: string
+          installment_id: string | null
+          membership_id: string
+          method: string | null
+          notes: Json | null
+          paid_at: string | null
+          provider: Database["public"]["Enums"]["payment_provider"]
+          provider_order_id: string | null
+          provider_payment_id: string | null
+          provider_signature: string | null
+          raw_webhook: Json | null
+          status: Database["public"]["Enums"]["payment_status"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          customer_id: string
+          error_code?: string | null
+          error_description?: string | null
+          id?: string
+          installment_id?: string | null
+          membership_id: string
+          method?: string | null
+          notes?: Json | null
+          paid_at?: string | null
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
+          provider_signature?: string | null
+          raw_webhook?: Json | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          customer_id?: string
+          error_code?: string | null
+          error_description?: string | null
+          id?: string
+          installment_id?: string | null
+          membership_id?: string
+          method?: string | null
+          notes?: Json | null
+          paid_at?: string | null
+          provider?: Database["public"]["Enums"]["payment_provider"]
+          provider_order_id?: string | null
+          provider_payment_id?: string | null
+          provider_signature?: string | null
+          raw_webhook?: Json | null
+          status?: Database["public"]["Enums"]["payment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -247,6 +338,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_installment_paid: {
+        Args: {
+          _installment_id: string
+          _paid_at?: string
+          _payment_id: string
+        }
+        Returns: undefined
+      }
       mark_overdue_installments: { Args: never; Returns: number }
     }
     Enums: {
@@ -258,6 +357,8 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "defaulted"
+      payment_provider: "razorpay" | "manual" | "cash"
+      payment_status: "created" | "attempted" | "paid" | "failed" | "refunded"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -394,6 +495,8 @@ export const Constants = {
         "cancelled",
         "defaulted",
       ],
+      payment_provider: ["razorpay", "manual", "cash"],
+      payment_status: ["created", "attempted", "paid", "failed", "refunded"],
     },
   },
 } as const
