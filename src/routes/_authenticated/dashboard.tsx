@@ -1,8 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Users, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
-import { useEffect } from "react";
 import { useSession, useCurrentRole } from "@/lib/auth";
-import { readLastVisited } from "@/lib/last-visited";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -15,7 +13,7 @@ const ROLE_META = {
   admin: {
     label: "Administrator",
     icon: ShieldCheck,
-    desc: "Full platform control coming next: customers, plans, payments, rewards, lucky draw, reports.",
+    desc: "Full platform control: customers, plans, payments, rewards, lucky draw, reports.",
   },
   promoter: {
     label: "Promoter",
@@ -33,16 +31,9 @@ function Dashboard() {
   const { user } = useSession();
   const { data: role } = useCurrentRole(user);
   const meta = role ? ROLE_META[role] : null;
-  const navigate = useNavigate();
 
-  // Resume at the last visited role page after login.
-  useEffect(() => {
-    if (!user || !role) return;
-    const last = readLastVisited(user.id, role);
-    if (last && last !== "/dashboard") {
-      navigate({ to: last, replace: true });
-    }
-  }, [user?.id, role, navigate]);
+
+
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
