@@ -493,12 +493,25 @@ function RegisterCustomerDialog({
 function CustomerDetailSheet({
   customer,
   onClose,
+  onSubmit,
+  submitting,
 }: {
   customer: ReferredCustomer | null;
   onClose: () => void;
+  onSubmit: (note: string) => void;
+  submitting: boolean;
 }) {
+  const [note, setNote] = useState("");
   return (
-    <Sheet open={!!customer} onOpenChange={(o) => !o && onClose()}>
+    <Sheet
+      open={!!customer}
+      onOpenChange={(o) => {
+        if (!o) {
+          setNote("");
+          onClose();
+        }
+      }}
+    >
       <SheetContent className="w-full sm:max-w-lg">
         {customer && (
           <>
@@ -534,15 +547,55 @@ function CustomerDetailSheet({
                 <Row label="Coupon No" value={customer.coupon_no} mono />
                 <Row label="Status" value={customer.membership_status} />
               </Section>
-              <Section title="KYC">
+              <Section title="KYC review">
                 <div className="flex items-center gap-2">
                   {kycBadge(customer.kyc_status)}
                   <span className="text-xs text-muted-foreground">
-                    {customer.kyc_submitted_at
-                      ? `Submitted ${new Date(customer.kyc_submitted_at).toLocaleDateString()}`
-                      : "Not submitted"}
+                    {customer.kyc_status === "pending" && customer.kyc_submitted_at
+                      ? `Submitted ${new Date(customer.kyc_submitted_at).toLocaleString()} — awaiting admin decision`
+                      : customer.kyc_status === "approved" && customer.kyc_reviewed_at
+                        ? `Approved ${new Date(customer.kyc_reviewed_at).toLocaleDateString()}`
+                        : customer.kyc_status === "rejected" && customer.kyc_reviewed_at
+                          ? `Rejected ${new Date(customer.kyc_reviewed_at).toLocaleDateString()} — please re-collect and resubmit`
+                          : "Not yet submitted for admin review"}
                   </span>
                 </div>
+                {customer.kyc_review_notes && (
+                  <p className="mt-2 rounded border border-dashed border-border bg-muted/40 p-2 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground">Admin note: </span>
+                    {customer.kyc_review_notes}
+                  </p>
+                )}
+                {(customer.kyc_status === "unsubmitted" || customer.kyc_status === "rejected") && (
+                  <div className="mt-3 space-y-2">
+                    <Label className="text-xs">Optional note to admin</Label>
+                    <Input
+                      value={note}
+                      maxLength={1000}
+                      placeholder="e.g. Customer has re-uploaded a clearer Aadhaar front"
+                      onChange={(e) => setNote(e.target.value)}
+                    />
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {customer.has_aadhaar_docs
+                          ? "Ready to submit for admin review."
+                          : "Customer must upload their Aadhaar number and front document first."}
+                      </span>
+                      <Button
+                        size="sm"
+                        disabled={!customer.has_aadhaar_docs || submitting}
+                        onClick={() => onSubmit(note.trim())}
+                      >
+                        {submitting ? (
+                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="mr-2 h-3.5 w-3.5" />
+                        )}
+                        Submit for review
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </Section>
               <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
