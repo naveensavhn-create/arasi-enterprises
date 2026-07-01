@@ -421,7 +421,9 @@ function AdminPaymentsPage() {
                         Status{sortIcon("status")}
                       </button>
                     </th>
+                    <th className="py-2 pr-4 font-medium">Reconciliation</th>
                   </tr>
+
                 </thead>
                 <tbody>
                   {rows.map((r) => {
@@ -474,7 +476,41 @@ function AdminPaymentsPage() {
                             </div>
                           )}
                         </td>
+                        <td className="py-2 pr-4">
+                          {r.reconciliation ? (
+                            <div className="flex flex-col gap-1">
+                              <Badge
+                                variant={
+                                  r.reconciliation.resolved_at
+                                    ? "outline"
+                                    : r.reconciliation.mismatch
+                                      ? "destructive"
+                                      : "secondary"
+                                }
+                                className="w-fit text-[10px]"
+                              >
+                                {r.reconciliation.resolved_at
+                                  ? "Resolved"
+                                  : r.reconciliation.mismatch
+                                    ? "Mismatch"
+                                    : "Matched"}
+                              </Badge>
+                              {r.reconciliation.mismatch && !r.reconciliation.resolved_at && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  stored: {r.reconciliation.stored_status ?? "—"} · provider:{" "}
+                                  {r.reconciliation.provider_status ?? "—"}
+                                </span>
+                              )}
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                {new Date(r.reconciliation.last_checked_at).toLocaleString()}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground">Never</span>
+                          )}
+                        </td>
                       </tr>
+
                     );
                   })}
                 </tbody>
