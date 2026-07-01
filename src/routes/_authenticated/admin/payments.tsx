@@ -35,6 +35,15 @@ import { toast } from "sonner";
 
 
 const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"] as const;
+type StatusKey = typeof STATUSES[number];
+const STATUS_META: Record<StatusKey, { label: string; dot: string; activeClass: string }> = {
+  all:       { label: "All",        dot: "bg-muted-foreground",   activeClass: "bg-primary text-primary-foreground border-primary" },
+  paid:      { label: "Succeeded",  dot: "bg-emerald-500",        activeClass: "bg-emerald-600 text-white border-emerald-600" },
+  created:   { label: "Pending",    dot: "bg-amber-500",          activeClass: "bg-amber-600 text-white border-amber-600" },
+  attempted: { label: "Attempted",  dot: "bg-sky-500",            activeClass: "bg-sky-600 text-white border-sky-600" },
+  failed:    { label: "Failed",     dot: "bg-red-500",            activeClass: "bg-red-600 text-white border-red-600" },
+  refunded:  { label: "Refunded",   dot: "bg-violet-500",         activeClass: "bg-violet-600 text-white border-violet-600" },
+};
 const SORT_COLUMNS = [
   "created_at",
   "paid_at",
