@@ -28,10 +28,12 @@ function PromoterCommissionsPage() {
     queryKey: ["promoter-commissions", session?.user.id],
     enabled: !!session?.user.id,
     queryFn: async (): Promise<Row[]> => {
-      const { data, error } = await supabase
-        .from("payments")
-        .select("id, amount, paid_at, created_at, membership_id, memberships!inner(membership_number, promoter_id)")
-        .filter("status::text", "eq", "paid")
+      const { data, error } = await applyPaymentStatusEq(
+        supabase
+          .from("payments")
+          .select("id, amount, paid_at, created_at, membership_id, memberships!inner(membership_number, promoter_id)"),
+        "paid",
+      )
         .eq("memberships.promoter_id", session!.user.id)
         .order("paid_at", { ascending: false });
       if (error) throw error;
