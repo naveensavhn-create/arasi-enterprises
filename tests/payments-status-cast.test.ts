@@ -87,24 +87,30 @@ describe("source audit: payments.status equality goes through the helper", () =>
     }
   }
 
-  it("no .eq(\"status\", ...) or .filter(\"status\", \"eq\", ...) callsite exists in src/**", () => {
-    const HELPER_FILE = resolve(SRC, "lib/payments.functions.ts");
-    // Patterns that would bypass applyPaymentStatusEq
+  it("no bare .eq/.filter on payments.status and no inline 'status::text' outside the helper", () => {
+    const HELPER_MODULE = resolve(SRC, "lib/payments/status-filter.ts");
+    // Patterns that would bypass the helper
     const badEq = /\.eq\(\s*["']status["']\s*,/;
     const badFilter = /\.filter\(\s*["']status["']\s*,\s*["']eq["']/;
+    // Inline hardcoded "status::text" strings are a second bypass vector:
+    // if someone copy-pastes the literal instead of importing the helper,
+    // a future rename (e.g. to "payment_status::text") desyncs callsites.
+    const inlineCastLiteral = /["']status::text["']/;
     const offenders: string[] = [];
     for (const file of walk(SRC)) {
-      if (file === HELPER_FILE) continue; // helper defines the correct form
+      if (file === HELPER_MODULE) continue; // helper defines the correct form
       const text = readFileSync(file, "utf8");
-      // Only flag matches in files that also touch the payments table, to
-      // avoid false positives on unrelated tables that happen to have a
-      // `status` column (e.g. installments, memberships).
       const touchesPayments = /from\(\s*["']payments["']\s*\)/.test(text);
-      if (!touchesPayments) continue;
-      if (badEq.test(text) || badFilter.test(text)) offenders.push(file);
+      if (touchesPayments && (badEq.test(text) || badFilter.test(text))) {
+        offenders.push(`${file} (bare status filter)`);
+      }
+      if (inlineCastLiteral.test(text)) {
+        offenders.push(`${file} (inline "status::text" literal)`);
+      }
     }
-    expect(offenders, `Bare payments.status equality found in:\n${offenders.join("\n")}`).toEqual([]);
+    expect(offenders, `Payments status filter bypass found in:\n${offenders.join("\n")}`).toEqual([]);
   });
+
 });
 
 // ---------------------------------------------------------------------------
