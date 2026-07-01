@@ -277,8 +277,8 @@ export const setUserRole = createServerFn({ method: "POST" })
 
 
     const before = await currentRole(supabaseAdmin, data.userId);
-    const actorEmail = await lookupEmail(supabaseAdmin, context.userId);
-    const targetEmail = await lookupEmail(supabaseAdmin, data.userId);
+    const actor = await lookupProfile(supabaseAdmin, context.userId);
+    const target = await lookupProfile(supabaseAdmin, data.userId);
 
     const { error: deleteError } = await supabaseAdmin
       .from("user_roles")
@@ -298,19 +298,44 @@ export const setUserRole = createServerFn({ method: "POST" })
           ? "promote"
           : "role_change";
 
-    await writeAudit(supabaseAdmin, {
+    const changedAt = new Date().toISOString();
+    const auditId = await writeAudit(supabaseAdmin, {
       actor_id: context.userId,
-      actor_email: actorEmail,
+      actor_email: actor.email,
       target_user_id: data.userId,
-      target_email: targetEmail,
+      target_email: target.email,
       action,
       role_before: before,
       role_after: data.role,
       reason: data.reason ?? null,
     });
 
+    // Fire-and-log email notification when the change is a promote or revoke.
+    if ((action === "promote" || action === "revoke") && target.email) {
+      try {
+        const { sendRoleChangeEmail } = await import("@/lib/email/send-role-change.server");
+        await sendRoleChangeEmail({
+          kind: action,
+          recipientEmail: target.email,
+          recipientName: target.fullName,
+          actorName: actor.fullName ?? actor.email ?? "Administrator",
+          actorEmail: actor.email ?? "unknown@arasienterprises.com",
+          previousRole: before ?? "customer",
+          newRole: data.role,
+          changedAt,
+          reason: data.reason,
+          targetUserId: data.userId,
+          auditId,
+          triggeredBy: context.userId,
+        });
+      } catch (e) {
+        console.error("[admin.setUserRole] email send failed", e);
+      }
+    }
+
     return { ok: true };
   });
+
 
 /**
  * List all admins (admin only).
