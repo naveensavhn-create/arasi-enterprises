@@ -223,6 +223,62 @@ export type Database = {
           },
         ]
       }
+      payment_reconciliations: {
+        Row: {
+          checked_by: string | null
+          created_at: string
+          id: string
+          mismatch: boolean
+          note: string | null
+          payment_id: string
+          provider_amount: number | null
+          provider_error: string | null
+          provider_method: string | null
+          provider_status: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          stored_status: string
+        }
+        Insert: {
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          mismatch?: boolean
+          note?: string | null
+          payment_id: string
+          provider_amount?: number | null
+          provider_error?: string | null
+          provider_method?: string | null
+          provider_status?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          stored_status: string
+        }
+        Update: {
+          checked_by?: string | null
+          created_at?: string
+          id?: string
+          mismatch?: boolean
+          note?: string | null
+          payment_id?: string
+          provider_amount?: number | null
+          provider_error?: string | null
+          provider_method?: string | null
+          provider_status?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          stored_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reconciliations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number

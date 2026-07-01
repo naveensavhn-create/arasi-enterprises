@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
+import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
 import { listAdminPayments, exportAdminPayments, type AdminPaymentRow } from "@/lib/payments.functions";
 import { toast } from "sonner";
+
 
 const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"] as const;
 const SORT_COLUMNS = ["created_at", "paid_at", "amount", "status"] as const;
@@ -74,6 +76,8 @@ function AdminPaymentsPage() {
   const [selected, setSelected] = useState<AdminPaymentRow | null>(null);
   const [qDraft, setQDraft] = useState(search.q);
   const [exporting, setExporting] = useState(false);
+  const [reconcileOpen, setReconcileOpen] = useState(false);
+
 
   const listFn = useServerFn(listAdminPayments);
   const exportFn = useServerFn(exportAdminPayments);
@@ -157,13 +161,22 @@ function AdminPaymentsPage() {
             All Razorpay transactions across the platform.
           </p>
         </div>
-        <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
-          {exporting
-            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            : <Download className="mr-2 h-4 w-4" />}
-          Export CSV
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setReconcileOpen(true)}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reconcile
+          </Button>
+          <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
+            {exporting
+              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              : <Download className="mr-2 h-4 w-4" />}
+            Export CSV
+          </Button>
+        </div>
       </div>
+
+
+
 
       <div className="grid gap-3 sm:grid-cols-3">
         <Card>
@@ -362,6 +375,18 @@ function AdminPaymentsPage() {
         open={!!selected}
         onOpenChange={(o) => !o && setSelected(null)}
       />
+
+      <ReconcileDialog
+        open={reconcileOpen}
+        onOpenChange={setReconcileOpen}
+        filters={{
+          status: search.status || undefined,
+          from: search.from || undefined,
+          to: search.to || undefined,
+          q: search.q || undefined,
+        }}
+      />
     </div>
+
   );
 }
