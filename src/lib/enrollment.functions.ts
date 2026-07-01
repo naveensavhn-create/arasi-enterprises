@@ -51,11 +51,12 @@ export const createEnrollmentOrder = createServerFn({ method: "POST" })
     if (!membershipId) {
       const { data: created, error: mErr } = await supabaseAdmin
         .from("memberships")
+        // membership_number + total_amount are filled by BEFORE INSERT trigger
         .insert({
           user_id: userId,
           plan_id: plan.id,
           status: "pending",
-        })
+        } as never)
         .select("id, membership_number")
         .single();
       if (mErr || !created) {
