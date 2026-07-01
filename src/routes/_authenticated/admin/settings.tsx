@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldCheck, UserPlus, AlertTriangle, Loader2, Trash2, History, ShieldAlert, X } from "lucide-react";
+import { ShieldCheck, UserPlus, AlertTriangle, Loader2, Trash2, History, ShieldAlert, X, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -43,6 +43,73 @@ export const Route = createFileRoute("/_authenticated/admin/settings")({
   head: () => ({ meta: [{ title: "Admin Access — Arasi Enterprises" }] }),
   component: AdminSettings,
 });
+
+type AuditRow = {
+  id: string;
+  created_at: string;
+  action: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  target_user_id: string | null;
+  target_email: string | null;
+  role_before: string | null;
+  role_after: string | null;
+  reason: string | null;
+};
+
+function csvCell(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  // Escape quotes; wrap in quotes if contains comma, quote, newline, or leading/trailing space
+  if (/[",\n\r]|^\s|\s$/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function exportAuditCsv(
+  rows: AuditRow[],
+  filters: { actor: string; target: string; role: string; action: string; from: string; to: string },
+) {
+  const headers = [
+    "timestamp_iso", "timestamp_local", "action",
+    "actor_email", "actor_id",
+    "target_email", "target_user_id",
+    "role_before", "role_after", "reason",
+  ];
+  const lines: string[] = [];
+  // Metadata comment rows (Excel treats leading # as text)
+  lines.push(`# Arasi Enterprises — Admin audit log export`);
+  lines.push(`# Generated: ${new Date().toISOString()}`);
+  lines.push(
+    `# Filters: actor=${filters.actor || "-"}, target=${filters.target || "-"}, role=${filters.role}, action=${filters.action}, from=${filters.from || "-"}, to=${filters.to || "-"}`,
+  );
+  lines.push(`# Rows: ${rows.length}`);
+  lines.push(headers.join(","));
+  for (const r of rows) {
+    lines.push([
+      r.created_at,
+      new Date(r.created_at).toLocaleString(),
+      r.action,
+      r.actor_email,
+      r.actor_id,
+      r.target_email,
+      r.target_user_id,
+      r.role_before,
+      r.role_after,
+      r.reason,
+    ].map(csvCell).join(","));
+  }
+  const csv = "\ufeff" + lines.join("\r\n"); // BOM for Excel UTF-8
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  a.href = url;
+  a.download = `arasi-admin-audit-log_${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 function AdminSettings() {
   const { user } = useSession();
@@ -598,23 +665,38 @@ function AdminSettings() {
                   <Label htmlFor="f-to" className="text-[10px] uppercase tracking-wider text-muted-foreground">To</Label>
                   <Input id="f-to" type="date" value={fTo} onChange={(e) => setFTo(e.target.value)} className="h-8" />
                 </div>
-                <div className="flex items-end justify-between gap-2 sm:col-span-2 lg:col-span-6">
+                <div className="flex flex-wrap items-end justify-between gap-2 sm:col-span-2 lg:col-span-6">
                   <div className="text-xs text-muted-foreground">
                     Showing <span className="font-medium text-foreground">{filtered.length}</span> of {rows.length} entries
                   </div>
-                  {hasFilters && (
+                  <div className="flex items-center gap-2">
+                    {hasFilters && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setFActor(""); setFTarget(""); setFRole("all");
+                          setFAction("all"); setFFrom(""); setFTo("");
+                        }}
+                      >
+                        <X className="mr-1 h-3.5 w-3.5" /> Clear filters
+                      </Button>
+                    )}
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      onClick={() => {
-                        setFActor(""); setFTarget(""); setFRole("all");
-                        setFAction("all"); setFFrom(""); setFTo("");
-                      }}
+                      disabled={filtered.length === 0}
+                      onClick={() => exportAuditCsv(filtered, {
+                        actor: fActor, target: fTarget, role: fRole,
+                        action: fAction, from: fFrom, to: fTo,
+                      })}
                     >
-                      <X className="mr-1 h-3.5 w-3.5" /> Clear filters
+                      <Download className="mr-1 h-3.5 w-3.5" />
+                      Export CSV{hasFilters ? ` (${filtered.length})` : ""}
                     </Button>
-                  )}
+                  </div>
                 </div>
+
               </div>
 
               <div className="mt-4 overflow-hidden rounded-lg border border-border">
