@@ -89,6 +89,20 @@ function AdminPlansPage() {
     },
   });
 
+  const { data: usage } = useQuery({
+    queryKey: ["admin-plans-usage"],
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data, error } = await supabase.from("memberships").select("plan_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of (data ?? []) as { plan_id: string | null }[]) {
+        if (row.plan_id) counts[row.plan_id] = (counts[row.plan_id] ?? 0) + 1;
+      }
+      return counts;
+    },
+  });
+  const usageFor = (id: string) => usage?.[id] ?? 0;
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
