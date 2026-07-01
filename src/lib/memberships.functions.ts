@@ -21,7 +21,7 @@ export const listMembershipsAdmin = createServerFn({ method: "GET" })
     let q = sb
       .from("memberships")
       .select(
-        "id, membership_number, user_id, plan_id, promoter_id, status, start_date, end_date, advance_paid, total_amount, paid_amount, notes, created_at",
+        "id, membership_number, member_display_id, coupon_no, user_id, plan_id, promoter_id, status, start_date, end_date, advance_paid, total_amount, paid_amount, notes, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(500);
