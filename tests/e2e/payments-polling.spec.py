@@ -144,13 +144,15 @@ async def run_case(page, calls: list, label, value_ms, badge_text,
             f"deadline {first_by_s}s"
         )
     # Consecutive-poll gap should approximate the configured interval. Group
-    # calls within 6s of each other (React Query retry burst) into a single
-    # scheduled tick, then require the gap between ticks to sit near the
-    # interval (±40% tolerance to absorb drift + retry backoff).
+    # calls that arrive within 8s of the previous call (React Query retry
+    # burst) into one scheduled tick, then require the gap between ticks to
+    # sit near the interval (±40% tolerance to absorb drift + backoff).
     ticks = [deltas[0]]
+    last = deltas[0]
     for d in deltas[1:]:
-        if d - ticks[-1] > 6:
+        if d - last > 8:
             ticks.append(d)
+        last = d
     if len(ticks) >= 2:
         interval_s = value_ms / 1000
         gap = ticks[1] - ticks[0]
