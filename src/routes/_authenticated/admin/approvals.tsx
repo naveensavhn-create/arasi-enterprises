@@ -293,10 +293,15 @@ function ReviewDrawer({
 }: {
   row: KycProfile | null;
   onClose: () => void;
-  onDecide: (approve: boolean, notes: string | null) => void;
+  onDecide: (
+    approve: boolean,
+    notes: string | null,
+    assignRole: "promoter" | "customer" | null,
+  ) => void;
   pending: boolean;
 }) {
   const [notes, setNotes] = useState("");
+  const [assignRole, setAssignRole] = useState<"promoter" | "customer">("customer");
   const signFn = useServerFn(getKycSignedUrl);
   const [frontUrl, setFrontUrl] = useState<string | null>(null);
   const [backUrl, setBackUrl] = useState<string | null>(null);
