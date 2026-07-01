@@ -13,6 +13,22 @@ export async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (!data) throw new Error("Forbidden");
 }
 
+/**
+ * `payments.status` is a Postgres enum (`payment_status`). PostgREST on
+ * PG15/16 rejects a plain `.eq("status", ...)` with an operator error
+ * ("operator does not exist: payment_status = text") unless the column is
+ * cast to text first. Route every equality filter on the payments status
+ * column through this helper so a future callsite cannot re-introduce the
+ * bug. If you need `.in(...)` or `.neq(...)`, add a sibling helper here
+ * — do NOT call `.eq("status", ...)` directly on the payments table.
+ */
+export function applyPaymentStatusEq<
+  Q extends { filter: (col: string, op: string, v: unknown) => Q },
+>(query: Q, status: string | null | undefined): Q {
+  if (!status) return query;
+  return query.filter("status::text", "eq", status);
+}
+
 const SORT_COLUMNS = [
   "created_at",
   "paid_at",
@@ -202,7 +218,7 @@ async function fetchPaymentRows(
     }
   }
 
-  if (n.status) query = query.filter("status::text", "eq", n.status);
+  query = applyPaymentStatusEq(query, n.status);
   // Date range: applies to payments.created_at unless the admin picked
   // "webhook processed", in which case the caller resolved a list of
   // payment IDs whose webhook events landed in the range.
@@ -310,7 +326,7 @@ export const listAdminPayments = createServerFn({ method: "GET" })
             }
             let tq = sb.from("payments").select("amount, status", { count: "exact" });
             tq = tq.in("id", webhookPaymentIds);
-            if (n.status) tq = tq.filter("status::text", "eq", n.status);
+            tq = applyPaymentStatusEq(tq, n.status);
             if (n.orderId) tq = tq.ilike("provider_order_id", `%${n.orderId}%`);
             if (n.paymentId) tq = tq.ilike("provider_payment_id", `%${n.paymentId}%`);
             if (customerIdsExact && customerIdsExact.length) tq = tq.in("customer_id", customerIdsExact);
@@ -845,7 +861,7 @@ export const reconcilePayments = createServerFn({ method: "POST" })
       .select("id, status, amount, provider_order_id, provider_payment_id, customer_id, membership_id, currency")
       .order("created_at", { ascending: false })
       .limit(data.limit);
-    if (n.status) query = query.filter("status::text", "eq", n.status);
+    query = applyPaymentStatusEq(query, n.status);
     if (n.fromISO) query = query.gte("created_at", n.fromISO);
     if (n.toISO) query = query.lt("created_at", n.toISO);
     if (n.q) {
