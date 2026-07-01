@@ -118,33 +118,70 @@ export const listDrawWinners = createServerFn({ method: "POST" })
  * The DB unique constraint `draw_winners_draw_customer_unique` guarantees a
  * customer can appear at most once per draw.
  */
+export type DrawResultRow = {
+  id: string;
+  draw_id: string;
+  entry_id: string;
+  customer_id: string;
+  position: number;
+  prize: string;
+  drawn_at: string;
+  seed: string | null;
+  draw_name: string;
+  draw_status: string;
+  winners_count: number;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+};
+
 export const listAllDrawWinners = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<DrawResultRow[]> => {
     await assertAdmin(context);
-    const { data, error } = await context.supabase
+    const { data: winners, error } = await context.supabase
       .from("draw_winners")
-      .select(
-        "id, draw_id, entry_id, customer_id, position, prize, drawn_at, seed, " +
-          "draws:draw_id(name, prize, status, winners_count), " +
-          "profiles:customer_id(full_name, email, phone)",
-      )
+      .select("id, draw_id, entry_id, customer_id, position, prize, drawn_at, seed")
       .order("drawn_at", { ascending: false })
-      .order("position", { ascending: true });
+      .order("position", { ascending: true })
+      .limit(1000);
     if (error) throw new Error(error.message);
-    return ((data ?? []) as unknown) as Array<{
-      id: string;
-      draw_id: string;
-      entry_id: string;
-      customer_id: string;
-      position: number;
-      prize: string;
-      drawn_at: string;
-      seed: string | null;
-      draws: { name: string; prize: string; status: string; winners_count: number } | null;
-      profiles: { full_name: string | null; email: string | null; phone: string | null } | null;
+    const rows = (winners ?? []) as Array<{
+      id: string; draw_id: string; entry_id: string; customer_id: string;
+      position: number; prize: string; drawn_at: string; seed: string | null;
     }>;
+    if (rows.length === 0) return [];
+    const drawIds = Array.from(new Set(rows.map((r) => r.draw_id)));
+    const custIds = Array.from(new Set(rows.map((r) => r.customer_id)));
+    const [drawsRes, profRes] = await Promise.all([
+      context.supabase.from("draws").select("id, name, status, winners_count").in("id", drawIds),
+      context.supabase.from("profiles").select("id, full_name, email, phone").in("id", custIds),
+    ]);
+    if (drawsRes.error) throw new Error(drawsRes.error.message);
+    if (profRes.error) throw new Error(profRes.error.message);
+    const drawMap = new Map<string, { name: string; status: string; winners_count: number }>(
+      ((drawsRes.data ?? []) as Array<{ id: string; name: string; status: string; winners_count: number }>)
+        .map((d) => [d.id, { name: d.name, status: d.status, winners_count: d.winners_count }]),
+    );
+    const profMap = new Map<string, { full_name: string | null; email: string | null; phone: string | null }>(
+      ((profRes.data ?? []) as Array<{ id: string; full_name: string | null; email: string | null; phone: string | null }>)
+        .map((p) => [p.id, { full_name: p.full_name, email: p.email, phone: p.phone }]),
+    );
+    return rows.map((r) => {
+      const d = drawMap.get(r.draw_id);
+      const p = profMap.get(r.customer_id);
+      return {
+        ...r,
+        draw_name: d?.name ?? "(deleted draw)",
+        draw_status: d?.status ?? "unknown",
+        winners_count: d?.winners_count ?? 0,
+        customer_name: p?.full_name ?? null,
+        customer_email: p?.email ?? null,
+        customer_phone: p?.phone ?? null,
+      };
+    });
   });
+
 
 
 export const pickDrawWinners = createServerFn({ method: "POST" })
