@@ -74,7 +74,7 @@ export const listPlanDeletionAudit = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     let mapped: PlanDeletionRow[] = (raw ?? []).map((r) => {
-      const m = (r.metadata ?? {}) as Record<string, unknown>;
+      const m = (r.metadata ?? {}) as Record<string, JsonValue>;
       const counts = (m.counts ?? {}) as PlanDeletionRow["counts"];
       const dbErr = (m.db_error ?? null) as { message?: string } | null;
       return {
