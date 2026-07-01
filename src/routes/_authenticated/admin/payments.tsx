@@ -375,6 +375,18 @@ function AdminPaymentsPage() {
         open={!!selected}
         onOpenChange={(o) => !o && setSelected(null)}
       />
+
+      <ReconcileDialog
+        open={reconcileOpen}
+        onOpenChange={setReconcileOpen}
+        filters={{
+          status: search.status || undefined,
+          from: search.from || undefined,
+          to: search.to || undefined,
+          q: search.q || undefined,
+        }}
+      />
     </div>
+
   );
 }
