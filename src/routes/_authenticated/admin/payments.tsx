@@ -89,9 +89,43 @@ export const Route = createFileRoute("/_authenticated/admin/payments")({
   head: () => ({ meta: [{ title: "Payments — Admin" }] }),
   validateSearch: zodValidator(searchSchema),
   component: AdminPaymentsPage,
+  errorComponent: PaymentsRouteError,
+  notFoundComponent: () => (
+    <div className="p-6 text-sm text-muted-foreground">Page not found.</div>
+  ),
 });
 
-function formatRelative(iso: string): string {
+function PaymentsRouteError({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  const info = toDisplayablePostgrestError(error);
+  return (
+    <div className="p-6">
+      <Alert variant="destructive" role="alert" aria-live="assertive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Couldn't load the payments ledger</AlertTitle>
+        <AlertDescription className="space-y-2">
+          <p className="text-sm">{info.message}</p>
+          {(info.code || info.hint || info.details) && (
+            <ul className="text-xs font-mono opacity-90 space-y-0.5">
+              {info.code && <li>code: {info.code}</li>}
+              {info.hint && <li>hint: {info.hint}</li>}
+              {info.details && <li>details: {info.details}</li>}
+            </ul>
+          )}
+          <div className="pt-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { reset(); router.invalidate(); }}
+            >
+              <RefreshCw className="mr-2 h-3.5 w-3.5" /> Retry
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+}
   const then = new Date(iso).getTime();
   if (!Number.isFinite(then)) return "—";
   const diff = Math.max(0, Date.now() - then);
