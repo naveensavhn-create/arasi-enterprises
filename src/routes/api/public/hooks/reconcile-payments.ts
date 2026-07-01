@@ -59,7 +59,8 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         const { data: payments, error } = await supabaseAdmin
           .from("payments")
           .select("id, provider_order_id, provider_payment_id, status, created_at")
-          .in("status", statuses as any)
+          // payments.status is an enum; cast to text so PG15/16 accepts the IN filter.
+          .filter("status::text", "in", `(${statuses.join(",")})`)
           .gte("created_at", sinceISO)
           .order("created_at", { ascending: false })
           .limit(maxPayments);
