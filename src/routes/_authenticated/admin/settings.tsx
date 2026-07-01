@@ -44,6 +44,73 @@ export const Route = createFileRoute("/_authenticated/admin/settings")({
   component: AdminSettings,
 });
 
+type AuditRow = {
+  id: string;
+  created_at: string;
+  action: string;
+  actor_id: string | null;
+  actor_email: string | null;
+  target_user_id: string | null;
+  target_email: string | null;
+  role_before: string | null;
+  role_after: string | null;
+  reason: string | null;
+};
+
+function csvCell(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  // Escape quotes; wrap in quotes if contains comma, quote, newline, or leading/trailing space
+  if (/[",\n\r]|^\s|\s$/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function exportAuditCsv(
+  rows: AuditRow[],
+  filters: { actor: string; target: string; role: string; action: string; from: string; to: string },
+) {
+  const headers = [
+    "timestamp_iso", "timestamp_local", "action",
+    "actor_email", "actor_id",
+    "target_email", "target_user_id",
+    "role_before", "role_after", "reason",
+  ];
+  const lines: string[] = [];
+  // Metadata comment rows (Excel treats leading # as text)
+  lines.push(`# Arasi Enterprises — Admin audit log export`);
+  lines.push(`# Generated: ${new Date().toISOString()}`);
+  lines.push(
+    `# Filters: actor=${filters.actor || "-"}, target=${filters.target || "-"}, role=${filters.role}, action=${filters.action}, from=${filters.from || "-"}, to=${filters.to || "-"}`,
+  );
+  lines.push(`# Rows: ${rows.length}`);
+  lines.push(headers.join(","));
+  for (const r of rows) {
+    lines.push([
+      r.created_at,
+      new Date(r.created_at).toLocaleString(),
+      r.action,
+      r.actor_email,
+      r.actor_id,
+      r.target_email,
+      r.target_user_id,
+      r.role_before,
+      r.role_after,
+      r.reason,
+    ].map(csvCell).join(","));
+  }
+  const csv = "\ufeff" + lines.join("\r\n"); // BOM for Excel UTF-8
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+  a.href = url;
+  a.download = `arasi-admin-audit-log_${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function AdminSettings() {
   const { user } = useSession();
   const { data: role, isLoading: roleLoading } = useCurrentRole(user);
