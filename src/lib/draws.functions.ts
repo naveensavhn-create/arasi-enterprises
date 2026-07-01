@@ -111,6 +111,42 @@ export const listDrawWinners = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
+/**
+ * listAllDrawWinners — Admin results view.
+ * Returns every recorded winner across all draws, hydrated with draw metadata
+ * and the winner's profile (name/email) plus the exact drawn_at timestamp.
+ * The DB unique constraint `draw_winners_draw_customer_unique` guarantees a
+ * customer can appear at most once per draw.
+ */
+export const listAllDrawWinners = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase
+      .from("draw_winners")
+      .select(
+        "id, draw_id, entry_id, customer_id, position, prize, drawn_at, seed, " +
+          "draws:draw_id(name, prize, status, winners_count), " +
+          "profiles:customer_id(full_name, email, phone)",
+      )
+      .order("drawn_at", { ascending: false })
+      .order("position", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (data ?? []) as Array<{
+      id: string;
+      draw_id: string;
+      entry_id: string;
+      customer_id: string;
+      position: number;
+      prize: string;
+      drawn_at: string;
+      seed: string | null;
+      draws: { name: string; prize: string; status: string; winners_count: number } | null;
+      profiles: { full_name: string | null; email: string | null; phone: string | null } | null;
+    }>;
+  });
+
+
 export const pickDrawWinners = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => pickSchema.parse(i))
