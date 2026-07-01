@@ -381,6 +381,8 @@ function RegisterCustomerDialog({
     city: string | null;
     state: string | null;
     postal_code: string | null;
+    referral_note: string | null;
+    referral_source: string | null;
     send_invite: boolean;
   }) => void;
   submitting: boolean;
@@ -392,6 +394,8 @@ function RegisterCustomerDialog({
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pin, setPin] = useState("");
+  const [note, setNote] = useState("");
+  const [source, setSource] = useState("");
 
   const reset = () => {
     setEmail("");
@@ -401,7 +405,10 @@ function RegisterCustomerDialog({
     setCity("");
     setState("");
     setPin("");
+    setNote("");
+    setSource("");
   };
+
 
   return (
     <Dialog
