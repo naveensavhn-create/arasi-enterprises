@@ -64,11 +64,16 @@ function Dashboard() {
         </div>
       </div>
 
+      <div className="mt-8">
+        <KycStatusCard />
+      </div>
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <PlaceholderCard title="Memberships" body="Coming in the next module." />
         <PlaceholderCard title="Payments" body="Razorpay integration lands next." />
         <PlaceholderCard title="Rewards & Lucky Draw" body="Wired after payments." />
       </div>
+
 
       <div className="mt-8 rounded-xl border border-dashed border-border bg-card p-6">
         <h2 className="text-sm font-semibold">Sidebar shell is live</h2>
