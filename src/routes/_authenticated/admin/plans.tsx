@@ -31,6 +31,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 import { deletePlanAudited } from "@/lib/plans.functions";
+import { BLOCKING_STATUSES, computePlanUsage, usageFor } from "@/lib/plans-precheck";
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
