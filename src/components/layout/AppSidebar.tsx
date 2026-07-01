@@ -136,7 +136,28 @@ export function AppSidebar({ role }: { role: AppRole | null | undefined }) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent
+        aria-label={role ? `${role} navigation` : "Navigation"}
+        onKeyDown={(e) => {
+          if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
+          const container = e.currentTarget;
+          const links = Array.from(
+            container.querySelectorAll<HTMLAnchorElement>('a[data-sidebar="menu-button"], a[href]')
+          ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+          if (!links.length) return;
+          const active = document.activeElement as HTMLElement | null;
+          const idx = active ? links.indexOf(active as HTMLAnchorElement) : -1;
+          let next = idx;
+          if (e.key === "ArrowDown") next = idx < 0 ? 0 : (idx + 1) % links.length;
+          else if (e.key === "ArrowUp") next = idx <= 0 ? links.length - 1 : idx - 1;
+          else if (e.key === "Home") next = 0;
+          else if (e.key === "End") next = links.length - 1;
+          if (next !== idx) {
+            e.preventDefault();
+            links[next]?.focus();
+          }
+        }}
+      >
         {groups.map((group) => (
           <SidebarGroup key={group.label}>
             {!collapsed && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
