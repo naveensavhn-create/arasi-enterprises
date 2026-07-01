@@ -154,14 +154,19 @@ export const setKycDecision = createServerFn({ method: "POST" })
         userId: z.string().uuid(),
         approve: z.boolean(),
         notes: z.string().trim().max(500).optional().nullable(),
+        assignRole: z.enum(["promoter", "customer"]).optional().nullable(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    if (data.assignRole && !data.approve) {
+      throw new Error("Role can only be assigned when approving KYC");
+    }
     const { error } = await context.supabase.rpc("admin_set_kyc_decision" as any, {
       _user_id: data.userId,
       _approve: data.approve,
       _notes: data.notes ?? null,
+      _assign_role: data.assignRole ?? null,
     } as any);
     if (error) throw new Error(error.message);
     return { ok: true };

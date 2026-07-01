@@ -1160,10 +1160,20 @@ export type Database = {
         Args: { _promoter_id: string; _user_id: string }
         Returns: undefined
       }
-      admin_set_kyc_decision: {
-        Args: { _approve: boolean; _notes?: string; _user_id: string }
-        Returns: undefined
-      }
+      admin_set_kyc_decision:
+        | {
+            Args: { _approve: boolean; _notes?: string; _user_id: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              _approve: boolean
+              _assign_role?: Database["public"]["Enums"]["app_role"]
+              _notes?: string
+              _user_id: string
+            }
+            Returns: undefined
+          }
       auto_pick_due_draws: { Args: never; Returns: number }
       claim_due_reminder_jobs: {
         Args: { _limit?: number }
