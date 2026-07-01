@@ -13,6 +13,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPromoterRouteRouteImport } from './routes/_authenticated/promoter/route'
 import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/customer/route'
@@ -57,6 +58,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   '/_authenticated/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/_authenticated/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/_authenticated/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/customer'
     | '/promoter'
     | '/dashboard'
+    | '/settings'
     | '/admin/customers'
     | '/admin/lucky-draw'
     | '/admin/memberships'
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/customer'
     | '/promoter'
     | '/dashboard'
+    | '/settings'
     | '/admin/customers'
     | '/admin/lucky-draw'
     | '/admin/memberships'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/_authenticated/customer'
     | '/_authenticated/promoter'
     | '/_authenticated/dashboard'
+    | '/_authenticated/settings'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/lucky-draw'
     | '/_authenticated/admin/memberships'
@@ -429,6 +441,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -692,6 +711,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCustomerRouteRoute: typeof AuthenticatedCustomerRouteRouteWithChildren
   AuthenticatedPromoterRouteRoute: typeof AuthenticatedPromoterRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -699,6 +719,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCustomerRouteRoute: AuthenticatedCustomerRouteRouteWithChildren,
   AuthenticatedPromoterRouteRoute: AuthenticatedPromoterRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
