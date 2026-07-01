@@ -448,19 +448,27 @@ function AdminPaymentsPage() {
             <CreditCard className="h-4 w-4" /> Transactions
             {isFetching && !isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap gap-1">
-              {STATUSES.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSearch({ status: s, page: 0 })}
-                  className={`rounded-md border px-2.5 py-1 text-xs capitalize ${
-                    search.status === s ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick status filters">
+            <div className="flex flex-wrap gap-1.5">
+              {STATUSES.map((s) => {
+                const meta = STATUS_META[s];
+                const active = search.status === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    aria-pressed={active}
+                    title={`Filter by ${meta.label}`}
+                    onClick={() => setSearch({ status: s, page: 0 })}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      active ? meta.activeClass : "bg-background hover:bg-accent"
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-white/90" : meta.dot}`} />
+                    {meta.label}
+                  </button>
+                );
+              })}
             </div>
             <select
               value={search.dateField}
