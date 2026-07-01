@@ -249,7 +249,9 @@ export const exportAdminPayments = createServerFn({ method: "GET" })
     const sb: any = context.supabase;
     const n = normalizeFilters(data);
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
-    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, 0, data.limit - 1);
+    const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
+    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, 0, data.limit - 1);
+
 
     // Build history map by scanning webhook events for the exported payments.
     const orderIds = Array.from(new Set(rows.map((r) => r.provider_order_id).filter(Boolean))) as string[];
