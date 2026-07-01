@@ -5,6 +5,23 @@ import {
   type PaymentStatus,
 } from "@/lib/payments/status-filter";
 
+/**
+ * JSON error helper — every rejection sent to callers follows this shape so
+ * cron / operators can grep on `code` and `error` without regexing prose.
+ */
+function jsonError(
+  status: number,
+  code: string,
+  detail: Record<string, unknown> & { message: string },
+): Response {
+  return new Response(
+    JSON.stringify({ ok: false, error: code, ...detail }),
+    { status, headers: { "Content-Type": "application/json" } },
+  );
+}
+
+
+
 
 /**
  * Daily reconciliation cron.
