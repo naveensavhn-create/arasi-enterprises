@@ -40,10 +40,13 @@ function PlanDeletionsPage() {
     [q, actor, plan, status, from, to, page],
   );
 
+  const refetchInterval = useListRefetchInterval();
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "plan-deletions", filters],
     queryFn: () => fetchList({ data: filters }),
+    refetchInterval,
   });
+
 
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;
