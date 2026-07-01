@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   buildPlanDeletionAuditEntry,
   computeDeletionCounts,
+  parseBlockingCountFromTriggerError,
 } from "@/lib/plan-deletion-audit";
 
 const deleteSchema = z.object({ planId: z.string().uuid() });
@@ -79,13 +80,32 @@ export const deletePlanAudited = createServerFn({ method: "POST" })
         rawCounts[s] = count ?? 0;
       }),
     );
-    const counts = computeDeletionCounts(rawCounts);
+    let counts = computeDeletionCounts(rawCounts);
 
     // Attempt delete — trigger may still raise if blocking > 0
     const { error: deleteErr } = await supabaseAdmin
       .from("membership_plans")
       .delete()
       .eq("id", data.planId);
+
+    // If the trigger blocked us but our pre-count says 0 blocking (race:
+    // a new pending/active membership was inserted between the count
+    // query and the delete), recover the count from the trigger message
+    // so the audit log and UI show a truthful number instead of 0.
+    if (deleteErr) {
+      const parsedBlocking = parseBlockingCountFromTriggerError(deleteErr.message);
+      if (parsedBlocking !== null && parsedBlocking > counts.blocking) {
+        // Attribute the delta to `active` — the trigger doesn't distinguish
+        // pending vs active, and `active` is the safer default to display.
+        const delta = parsedBlocking - counts.blocking;
+        counts = computeDeletionCounts({
+          pending: rawCounts.pending,
+          active: rawCounts.active + delta,
+          cancelled: rawCounts.cancelled,
+          completed: rawCounts.completed,
+        });
+      }
+    }
 
     const entry = buildPlanDeletionAuditEntry({
       actorId: context.userId,
