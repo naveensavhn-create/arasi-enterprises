@@ -20,14 +20,9 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, Send } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/email-preview")({
-  beforeLoad: async () => {
-    const role = await getMyRole();
-    if (role !== "admin") throw new Error("FORBIDDEN");
-  },
-  errorComponent: ({ error }) =>
-    error.message === "FORBIDDEN" ? <Forbidden /> : <div className="p-6 text-sm text-destructive">{error.message}</div>,
   component: EmailPreviewPage,
 });
+
 
 type Kind = "promote" | "revoke";
 type Role = "admin" | "promoter" | "customer";
