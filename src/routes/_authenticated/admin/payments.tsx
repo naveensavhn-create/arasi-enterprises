@@ -22,7 +22,7 @@ import { useEffect, useRef, useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
 import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
-import { listAdminPayments, exportAdminPayments, getLastWebhookEvent } from "@/lib/payments.functions";
+import { listAdminPayments, exportAdminPaymentsCsv, getLastWebhookEvent } from "@/lib/payments.functions";
 import {
   validateAdminPaymentRowShape,
   ADMIN_PAYMENT_ROW_FIELD_LABELS,
@@ -87,11 +87,6 @@ export const Route = createFileRoute("/_authenticated/admin/payments")({
   component: AdminPaymentsPage,
 });
 
-function csvEscape(v: unknown): string {
-  const s = v == null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
 function formatRelative(iso: string): string {
   const then = new Date(iso).getTime();
   if (!Number.isFinite(then)) return "—";
@@ -106,47 +101,12 @@ function formatRelative(iso: string): string {
   return `${d}d ago`;
 }
 
-type ExportRow = Awaited<ReturnType<typeof exportAdminPayments>>[number];
-
-function downloadCSV(rows: ExportRow[]) {
-  const headers = [
-    "Created", "Paid At", "Razorpay Order ID", "Razorpay Payment ID",
-    "Status", "Method", "Provider", "Amount", "Currency",
-    "Customer Name", "Customer Email",
-    "Membership #", "Installment #", "Installment Due Date",
-    "Order Paid At", "Authorized At", "Captured At", "Failed At", "Refunded At",
-    "First Event At", "Last Event At", "Webhook Event Count",
-    "Error",
-  ];
-  const lines = [headers.join(",")];
-  for (const r of rows) {
-    const h = r.status_history;
-    lines.push([
-      r.created_at, r.paid_at ?? "",
-      r.provider_order_id ?? "", r.provider_payment_id ?? "",
-      r.status, r.method ?? "", r.provider,
-      r.amount, r.currency,
-      r.profile?.full_name ?? "",
-      r.profile?.email ?? "",
-      r.memberships?.membership_number ?? "",
-      r.installments?.sequence ?? (r.installment_id ? "" : "advance"),
-      r.installments?.due_date ?? "",
-      h.order_created_at ?? "",
-      h.authorized_at ?? "",
-      h.captured_at ?? "",
-      h.failed_at ?? "",
-      h.refunded_at ?? "",
-      h.first_event_at ?? "",
-      h.last_event_at ?? "",
-      h.event_count,
-      r.error_code ? `${r.error_code}: ${r.error_description ?? ""}` : "",
-    ].map(csvEscape).join(","));
-  }
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+function saveCsvBlob(csv: string, filename: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `payments-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -167,7 +127,7 @@ function AdminPaymentsPage() {
 
   const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
-  const exportFn = useServerFn(exportAdminPayments);
+  const exportCsvFn = useServerFn(exportAdminPaymentsCsv);
   const lastWebhookFn = useServerFn(getLastWebhookEvent);
 
   const { data: lastWebhook } = useQuery({
@@ -291,13 +251,10 @@ function AdminPaymentsPage() {
   const onExport = async (scope: "page" | "filtered") => {
     setExporting(true);
     try {
-      // "page" respects the current filters AND the visible page window
-      // (page * pageSize .. +pageSize). "filtered" exports every row that
-      // matches the current filters, capped at 10,000.
-      const limit = scope === "page" ? search.pageSize : 10_000;
-      const offsetRows = scope === "page" ? search.page * search.pageSize : 0;
-
-      const all = await exportFn({
+      // CSV is built server-side against the same authenticated filter set
+      // used to render the ledger — the client can't tamper with the rows,
+      // add unfiltered records, or bypass the 10k cap.
+      const result = await exportCsvFn({
         data: {
           sortBy: search.sortBy,
           sortDir: search.sortDir,
@@ -309,22 +266,23 @@ function AdminPaymentsPage() {
           orderId: search.orderId || undefined,
           paymentId: search.paymentId || undefined,
           customer: search.customer || undefined,
-          limit: offsetRows + limit,
+          scope,
+          page: search.page,
+          pageSize: search.pageSize,
         },
       });
 
-      const slice = scope === "page" ? all.slice(offsetRows, offsetRows + limit) : all;
-      if (slice.length === 0) {
+      if (result.rowCount === 0) {
         toast.info("Nothing to export for current filters.");
         return;
       }
-      downloadCSV(slice);
+      saveCsvBlob(result.csv, result.filename);
       toast.success(
         scope === "page"
-          ? `Exported ${slice.length} row(s) from page ${search.page + 1}.`
-          : `Exported ${slice.length} row(s) matching current filters.`,
+          ? `Exported ${result.rowCount} row(s) from page ${search.page + 1}.`
+          : `Exported ${result.rowCount} row(s) matching current filters.`,
       );
-      if (scope === "filtered" && all.length >= 10_000) {
+      if (result.capped) {
         toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
       }
     } catch (e) {

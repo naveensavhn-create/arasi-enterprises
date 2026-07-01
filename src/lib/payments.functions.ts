@@ -49,6 +49,13 @@ const exportSchema = baseFilterSchema.extend({
   limit: z.number().int().min(1).max(10_000).default(5000),
 });
 
+const CSV_HARD_CAP = 10_000;
+const exportCsvSchema = baseFilterSchema.extend({
+  scope: z.enum(["page", "filtered"]).default("filtered"),
+  page: z.number().int().min(0).default(0),
+  pageSize: z.number().int().min(5).max(200).default(25),
+});
+
 /**
  * The row shape, Zod schema, and validation helpers live in the shared
  * client-safe module `@/lib/payments/validate-row` so both the ledger and
@@ -384,94 +391,172 @@ function emptyHistory(): StatusHistoryTimestamps {
   };
 }
 
+async function buildExportRows(
+  sb: any,
+  filters: z.infer<typeof baseFilterSchema>,
+  offset: number,
+  limit: number,
+): Promise<AdminPaymentExportRow[]> {
+  const n = normalizeFilters(filters);
+  const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
+  const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
+  const webhookPaymentIds = await resolveWebhookProcessedPaymentIds(sb, n);
+  const rows = await fetchPaymentRows(
+    sb, n, customerIds, membershipIds, customerIdsExact, webhookPaymentIds,
+    offset, offset + limit - 1,
+  );
+
+  const orderIds = Array.from(new Set(rows.map((r) => r.provider_order_id).filter(Boolean))) as string[];
+  const paymentIds = Array.from(new Set(rows.map((r) => r.provider_payment_id).filter(Boolean))) as string[];
+
+  const historyByOrder = new Map<string, StatusHistoryTimestamps>();
+  const historyByPayment = new Map<string, StatusHistoryTimestamps>();
+
+  if (orderIds.length || paymentIds.length) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const CHUNK = 200;
+    const orderChunks: string[][] = [];
+    for (let i = 0; i < orderIds.length; i += CHUNK) orderChunks.push(orderIds.slice(i, i + CHUNK));
+    const paymentChunks: string[][] = [];
+    for (let i = 0; i < paymentIds.length; i += CHUNK) paymentChunks.push(paymentIds.slice(i, i + CHUNK));
+
+    const runs: Array<PromiseLike<any>> = [];
+    for (const oc of orderChunks) {
+      runs.push(
+        supabaseAdmin
+          .from("razorpay_webhook_events")
+          .select("event_type, received_at, order_id, payment_id")
+          .in("order_id", oc),
+      );
+    }
+    for (const pc of paymentChunks) {
+      runs.push(
+        supabaseAdmin
+          .from("razorpay_webhook_events")
+          .select("event_type, received_at, order_id, payment_id")
+          .in("payment_id", pc),
+      );
+    }
+    const results = await Promise.all(runs);
+    for (const res of results) {
+      if (res.error) throw new Error(res.error.message);
+      for (const ev of res.data ?? []) {
+        const et = (ev.event_type ?? "").toLowerCase();
+        const ts = ev.received_at as string;
+        const targets: StatusHistoryTimestamps[] = [];
+        if (ev.order_id) {
+          let h = historyByOrder.get(ev.order_id);
+          if (!h) { h = emptyHistory(); historyByOrder.set(ev.order_id, h); }
+          targets.push(h);
+        }
+        if (ev.payment_id) {
+          let h = historyByPayment.get(ev.payment_id);
+          if (!h) { h = emptyHistory(); historyByPayment.set(ev.payment_id, h); }
+          targets.push(h);
+        }
+        for (const h of targets) {
+          h.event_count += 1;
+          if (!h.first_event_at || ts < h.first_event_at) h.first_event_at = ts;
+          if (!h.last_event_at || ts > h.last_event_at) h.last_event_at = ts;
+          if (et.includes("order.paid") && (!h.order_created_at || ts < h.order_created_at)) h.order_created_at = ts;
+          if (et.includes("payment.authorized") && (!h.authorized_at || ts < h.authorized_at)) h.authorized_at = ts;
+          if (et.includes("payment.captured") && (!h.captured_at || ts < h.captured_at)) h.captured_at = ts;
+          if (et.includes("payment.failed") && (!h.failed_at || ts < h.failed_at)) h.failed_at = ts;
+          if (et.includes("refund") && (!h.refunded_at || ts < h.refunded_at)) h.refunded_at = ts;
+        }
+      }
+    }
+  }
+
+  return rows.map((r) => {
+    const h =
+      (r.provider_payment_id && historyByPayment.get(r.provider_payment_id)) ||
+      (r.provider_order_id && historyByOrder.get(r.provider_order_id)) ||
+      emptyHistory();
+    return { ...r, status_history: h };
+  });
+}
+
 export const exportAdminPayments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => exportSchema.parse(d ?? {}))
   .handler(async ({ data, context }): Promise<AdminPaymentExportRow[]> => {
     await assertAdmin(context);
-    const sb: any = context.supabase;
-    const n = normalizeFilters(data);
-    const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
-    const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
-    const webhookPaymentIds = await resolveWebhookProcessedPaymentIds(sb, n);
-    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, webhookPaymentIds, 0, data.limit - 1);
+    return buildExportRows(context.supabase, data, 0, data.limit);
+  });
 
+/* ---------- Server-side CSV generation (tamper-proof) ---------- */
 
-    // Build history map by scanning webhook events for the exported payments.
-    const orderIds = Array.from(new Set(rows.map((r) => r.provider_order_id).filter(Boolean))) as string[];
-    const paymentIds = Array.from(new Set(rows.map((r) => r.provider_payment_id).filter(Boolean))) as string[];
+function csvEscape(v: unknown): string {
+  const s = v == null ? "" : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
 
-    const historyByOrder = new Map<string, StatusHistoryTimestamps>();
-    const historyByPayment = new Map<string, StatusHistoryTimestamps>();
+const CSV_HEADERS = [
+  "Created", "Paid At", "Razorpay Order ID", "Razorpay Payment ID",
+  "Status", "Method", "Provider", "Amount", "Currency",
+  "Customer Name", "Customer Email",
+  "Membership #", "Installment #", "Installment Due Date",
+  "Order Paid At", "Authorized At", "Captured At", "Failed At", "Refunded At",
+  "First Event At", "Last Event At", "Webhook Event Count",
+  "Error",
+] as const;
 
-    if (orderIds.length || paymentIds.length) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const filters: string[] = [];
-      if (paymentIds.length) filters.push(`payment_id.in.(${paymentIds.join(",")})`);
-      if (orderIds.length) filters.push(`order_id.in.(${orderIds.map((o) => `"${o}"`).join(",")})`);
+function rowsToCsv(rows: AdminPaymentExportRow[]): string {
+  const lines: string[] = [CSV_HEADERS.join(",")];
+  for (const r of rows) {
+    const h = r.status_history;
+    lines.push([
+      r.created_at, r.paid_at ?? "",
+      r.provider_order_id ?? "", r.provider_payment_id ?? "",
+      r.status, r.method ?? "", r.provider,
+      r.amount, r.currency,
+      r.profile?.full_name ?? "",
+      r.profile?.email ?? "",
+      r.memberships?.membership_number ?? "",
+      r.installments?.sequence ?? (r.installment_id ? "" : "advance"),
+      r.installments?.due_date ?? "",
+      h.order_created_at ?? "",
+      h.authorized_at ?? "",
+      h.captured_at ?? "",
+      h.failed_at ?? "",
+      h.refunded_at ?? "",
+      h.first_event_at ?? "",
+      h.last_event_at ?? "",
+      h.event_count,
+      r.error_code ? `${r.error_code}: ${r.error_description ?? ""}` : "",
+    ].map(csvEscape).join(","));
+  }
+  // CRLF is safer for Excel; also include UTF-8 BOM for consistent decoding.
+  return "\uFEFF" + lines.join("\r\n") + "\r\n";
+}
 
-      // Chunk to avoid oversize OR clauses.
-      const CHUNK = 200;
-      const orderChunks: string[][] = [];
-      for (let i = 0; i < orderIds.length; i += CHUNK) orderChunks.push(orderIds.slice(i, i + CHUNK));
-      const paymentChunks: string[][] = [];
-      for (let i = 0; i < paymentIds.length; i += CHUNK) paymentChunks.push(paymentIds.slice(i, i + CHUNK));
+export type ExportPaymentsCsvResult = {
+  csv: string;
+  filename: string;
+  rowCount: number;
+  capped: boolean;
+  scope: "page" | "filtered";
+};
 
-      const runs: Array<PromiseLike<any>> = [];
-      for (const oc of orderChunks) {
-        runs.push(
-          supabaseAdmin
-            .from("razorpay_webhook_events")
-            .select("event_type, received_at, order_id, payment_id")
-            .in("order_id", oc),
-        );
-      }
-      for (const pc of paymentChunks) {
-        runs.push(
-          supabaseAdmin
-            .from("razorpay_webhook_events")
-            .select("event_type, received_at, order_id, payment_id")
-            .in("payment_id", pc),
-        );
-      }
-      const results = await Promise.all(runs);
-      for (const res of results) {
-        if (res.error) throw new Error(res.error.message);
-        for (const ev of res.data ?? []) {
-          const et = (ev.event_type ?? "").toLowerCase();
-          const ts = ev.received_at as string;
-          const targets: StatusHistoryTimestamps[] = [];
-          if (ev.order_id) {
-            let h = historyByOrder.get(ev.order_id);
-            if (!h) { h = emptyHistory(); historyByOrder.set(ev.order_id, h); }
-            targets.push(h);
-          }
-          if (ev.payment_id) {
-            let h = historyByPayment.get(ev.payment_id);
-            if (!h) { h = emptyHistory(); historyByPayment.set(ev.payment_id, h); }
-            targets.push(h);
-          }
-          for (const h of targets) {
-            h.event_count += 1;
-            if (!h.first_event_at || ts < h.first_event_at) h.first_event_at = ts;
-            if (!h.last_event_at || ts > h.last_event_at) h.last_event_at = ts;
-            if (et.includes("order.paid") && (!h.order_created_at || ts < h.order_created_at)) h.order_created_at = ts;
-            if (et.includes("payment.authorized") && (!h.authorized_at || ts < h.authorized_at)) h.authorized_at = ts;
-            if (et.includes("payment.captured") && (!h.captured_at || ts < h.captured_at)) h.captured_at = ts;
-            if (et.includes("payment.failed") && (!h.failed_at || ts < h.failed_at)) h.failed_at = ts;
-            if (et.includes("refund") && (!h.refunded_at || ts < h.refunded_at)) h.refunded_at = ts;
-          }
-        }
-      }
-    }
-
-    return rows.map((r) => {
-      const h =
-        (r.provider_payment_id && historyByPayment.get(r.provider_payment_id)) ||
-        (r.provider_order_id && historyByOrder.get(r.provider_order_id)) ||
-        emptyHistory();
-      return { ...r, status_history: h };
-    });
+export const exportAdminPaymentsCsv = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => exportCsvSchema.parse(d ?? {}))
+  .handler(async ({ data, context }): Promise<ExportPaymentsCsvResult> => {
+    await assertAdmin(context);
+    const offset = data.scope === "page" ? data.page * data.pageSize : 0;
+    const limit = data.scope === "page" ? data.pageSize : CSV_HARD_CAP;
+    const rows = await buildExportRows(context.supabase, data, offset, limit);
+    const csv = rowsToCsv(rows);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const suffix = data.scope === "page" ? `-page-${data.page + 1}` : "-filtered";
+    return {
+      csv,
+      filename: `payments-${stamp}${suffix}.csv`,
+      rowCount: rows.length,
+      capped: data.scope === "filtered" && rows.length >= CSV_HARD_CAP,
+      scope: data.scope,
+    };
   });
 
 /* ---------- Per-installment webhook timeline ---------- */
