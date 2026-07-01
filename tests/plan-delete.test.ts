@@ -85,12 +85,6 @@ describeIfDb("plan-delete DB trigger (integration)", () => {
     customerId = existing.rows[0].id;
 
     // 2) Ephemeral active plan. `total_value` is a generated column — omit it.
-    //    A pre-existing `trg_log_plan_change` audit trigger references a
-    //    column that doesn't exist on this project's `membership_plans`, so
-    //    inserts fail unless we bypass user triggers for the seed step. We
-    //    re-enable them immediately so the delete-blocking trigger under
-    //    test still fires.
-    await client.query(`SET session_replication_role = replica`);
     const planInsert = await client.query<{ id: string }>(
       `INSERT INTO public.membership_plans
          (name, description, advance_amount, monthly_installment, duration_months,
@@ -99,7 +93,6 @@ describeIfDb("plan-delete DB trigger (integration)", () => {
        RETURNING id`,
       [`Test Plan ${runTag}`],
     );
-    await client.query(`SET session_replication_role = origin`);
     planId = planInsert.rows[0].id;
   });
 
