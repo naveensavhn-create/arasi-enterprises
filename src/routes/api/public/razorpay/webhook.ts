@@ -65,11 +65,49 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
             .eq("provider_order_id", orderId)
             .maybeSingle();
 
+          const orderId = paymentEntity?.order_id ?? orderEntity?.id;
+          if (!orderId) {
+            return new Response("Missing order id", { status: 400 });
+          }
+
+          // Atomic idempotency guard: unique(event_id) makes duplicates fail
+          // insert. If already recorded, short-circuit before touching payments,
+          // installments, or memberships.
+          const { error: dupErr } = await supabaseAdmin
+            .from("razorpay_webhook_events")
+            .insert({
+              event_id: eventId,
+              event_type: eventType,
+              order_id: orderId,
+              raw: event as unknown as Record<string, unknown>,
+            });
+          if (dupErr) {
+            const code = (dupErr as { code?: string }).code;
+            if (code === "23505") {
+              // Duplicate delivery — already handled successfully.
+              return new Response("ok (duplicate)");
+            }
+            console.error("Webhook idempotency insert failed", dupErr);
+            return new Response("Server error", { status: 500 });
+          }
+
+          const { data: paymentRow, error: findErr } = await supabaseAdmin
+            .from("payments")
+            .select("id, installment_id, membership_id, status")
+            .eq("provider_order_id", orderId)
+            .maybeSingle();
+
           if (findErr || !paymentRow) {
             console.warn("Razorpay webhook: no payment row for order", orderId);
             // Still return 200 so Razorpay doesn't retry indefinitely
             return new Response("ok");
           }
+
+          // Link the webhook event to its payment for audit.
+          await supabaseAdmin
+            .from("razorpay_webhook_events")
+            .update({ payment_id: paymentRow.id })
+            .eq("event_id", eventId);
 
           if (eventType === "payment.captured" || eventType === "order.paid") {
             const paidAtSec = paymentEntity?.created_at ?? Math.floor(Date.now() / 1000);
