@@ -416,11 +416,24 @@ function AdminPaymentsPage() {
                 </button>
               ))}
             </div>
+            <select
+              value={search.dateField}
+              onChange={(e) =>
+                setSearch({ dateField: e.target.value as "created" | "webhook_processed", page: 0 })
+              }
+              className="h-8 rounded-md border bg-background px-2 text-xs"
+              title="Which date the range applies to"
+              aria-label="Date field"
+            >
+              <option value="created">Payment created</option>
+              <option value="webhook_processed">Webhook processed</option>
+            </select>
             <Input
               type="date"
               value={search.from}
               onChange={(e) => setSearch({ from: e.target.value, page: 0 })}
               className="h-8 w-40 text-xs"
+              aria-label={search.dateField === "webhook_processed" ? "Webhook processed from" : "Created from"}
             />
             <span className="text-xs text-muted-foreground">to</span>
             <Input
@@ -428,6 +441,7 @@ function AdminPaymentsPage() {
               value={search.to}
               onChange={(e) => setSearch({ to: e.target.value, page: 0 })}
               className="h-8 w-40 text-xs"
+              aria-label={search.dateField === "webhook_processed" ? "Webhook processed to" : "Created to"}
             />
             <form
               onSubmit={(e) => {
