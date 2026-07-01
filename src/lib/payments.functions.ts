@@ -848,7 +848,7 @@ export const reconcilePayments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
     z.object({
-      status: z.string().optional(),
+      status: paymentStatusFilterSchema,
       from: z.string().optional(),
       to: z.string().optional(),
       q: z.string().optional(),
