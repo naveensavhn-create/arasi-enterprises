@@ -1,0 +1,194 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { useSession } from "@/lib/auth";
+import { listOpenDrawsForCustomer } from "@/lib/draws.functions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Trophy, CalendarClock, Ticket, Loader2, Gift, Crown, Frown } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/customer/draw-results")({
+  head: () => ({
+    meta: [
+      { title: "My Draw Results — Arasi" },
+      {
+        name: "description",
+        content:
+          "See your lucky-draw results: winner status, entry position, prize, and drawn-at timestamp for every completed Arasi draw.",
+      },
+    ],
+  }),
+  component: CustomerDrawResultsPage,
+});
+
+function fmt(iso: string | null | undefined) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function CustomerDrawResultsPage() {
+  const { session } = useSession();
+  const listFn = useServerFn(listOpenDrawsForCustomer);
+
+  const q = useQuery({
+    queryKey: ["customer-draw-results", session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: () => listFn(),
+  });
+
+  const allDraws = q.data ?? [];
+  const results = allDraws
+    .filter((d) => d.status === "completed" && (d.myEntry || d.myWin))
+    .sort((a, b) => {
+      const at = new Date(a.drawn_at ?? 0).getTime();
+      const bt = new Date(b.drawn_at ?? 0).getTime();
+      return bt - at;
+    });
+
+  const wins = results.filter((d) => d.myWin);
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+            <Trophy className="h-6 w-6 text-primary" />
+            My Draw Results
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Winner status, your entry position, prize, and drawn-at timestamp for every completed draw you entered.
+          </p>
+        </div>
+        <Button asChild variant="outline" size="sm">
+          <Link to="/customer/lucky-draw">
+            <Ticket className="h-4 w-4 mr-2" />
+            Browse open draws
+          </Link>
+        </Button>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Completed draws entered</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{results.length}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Wins</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold flex items-center gap-2">
+            {wins.length}
+            {wins.length > 0 && <Crown className="h-5 w-5 text-primary" />}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Latest result</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {results[0] ? fmt(results[0].drawn_at) : "No completed draws yet"}
+          </CardContent>
+        </Card>
+      </div>
+
+      {q.isLoading && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" /> Loading your results…
+        </div>
+      )}
+      {q.isError && (
+        <Card>
+          <CardContent className="py-6 text-sm text-destructive">
+            Could not load your draw results. Please refresh in a moment.
+          </CardContent>
+        </Card>
+      )}
+
+      {!q.isLoading && results.length === 0 && (
+        <Card>
+          <CardContent className="py-10 text-center space-y-3">
+            <Gift className="h-10 w-10 text-muted-foreground mx-auto" />
+            <div className="text-base font-medium">No completed draw results yet</div>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Once a draw you've entered is drawn by our team, your entry position and winner status will appear here.
+            </p>
+            <Button asChild size="sm">
+              <Link to="/customer/lucky-draw">Join a lucky draw</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid gap-4">
+        {results.map((d) => {
+          const won = !!d.myWin;
+          const entryNo = d.myEntry?.entry_number ?? null;
+          return (
+            <Card key={d.id} className={won ? "border-primary/60" : undefined}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      {won ? <Crown className="h-5 w-5 text-primary" /> : <Frown className="h-5 w-5 text-muted-foreground" />}
+                      {d.name}
+                    </CardTitle>
+                    {d.description && (
+                      <p className="text-sm text-muted-foreground mt-1">{d.description}</p>
+                    )}
+                  </div>
+                  <Badge variant={won ? "default" : "secondary"}>
+                    {won ? "Winner" : "Not selected"}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Prize</div>
+                    <div className="font-medium mt-0.5">{d.prize}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">Your entry #</div>
+                    <div className="font-medium mt-0.5">
+                      {entryNo != null ? `#${entryNo}` : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                      {won ? "Winning position" : "Position"}
+                    </div>
+                    <div className="font-medium mt-0.5">
+                      {won ? `#${d.myWin!.position}` : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      <CalendarClock className="h-3.5 w-3.5" /> Drawn at
+                    </div>
+                    <div className="font-medium mt-0.5">{fmt(d.drawn_at ?? d.myWin?.drawn_at ?? null)}</div>
+                  </div>
+                </div>
+                {won && (
+                  <>
+                    <Separator />
+                    <div className="text-sm text-primary flex items-center gap-2">
+                      <Trophy className="h-4 w-4" />
+                      Congratulations! Our team will contact you about prize fulfillment.
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

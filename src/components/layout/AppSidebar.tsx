@@ -122,6 +122,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Payment History", url: "/customer/payments", icon: Receipt },
         { title: "Rewards", url: "/customer/rewards", icon: Gift },
         { title: "Lucky Draw", url: "/customer/lucky-draw", icon: Ticket },
+        { title: "My Draw Results", url: "/customer/draw-results", icon: Trophy },
         { title: "Referrals", url: "/customer/referrals", icon: Share2 },
       ],
     },
