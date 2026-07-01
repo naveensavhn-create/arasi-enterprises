@@ -101,6 +101,10 @@ function AdminLuckyDrawPage() {
       prizeValue?: number | null;
       winnersCount: number;
       requiresActiveMembership: boolean;
+      opensAt?: string | null;
+      closesAt?: string | null;
+      drawAt?: string | null;
+      mode: "manual" | "automated";
     }) => create({ data: input }),
     onSuccess: () => {
       toast.success("Draw created");
@@ -109,6 +113,7 @@ function AdminLuckyDrawPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const statusMut = useMutation({
     mutationFn: (v: { id: string; status: Draw["status"] }) => setStatus({ data: v }),
