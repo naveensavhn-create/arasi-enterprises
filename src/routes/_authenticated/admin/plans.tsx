@@ -30,6 +30,7 @@ import { Loader2, Package, Plus, Pencil, Trash2, History } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
+import { deletePlanAudited } from "@/lib/plans.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
@@ -182,44 +183,34 @@ function AdminPlansPage() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("membership_plans").delete().eq("id", id);
-      if (error) {
-        // Trigger `prevent_plan_delete_with_memberships` raises
-        //   "Cannot delete plan: N active enrollment(s) still reference this plan. …"
-        // Detect it and surface a clear, count-aware message.
-        const raw = `${error.message ?? ""} ${(error as any).details ?? ""} ${(error as any).hint ?? ""}`;
-        const isTriggerBlock =
-          (error as any).code === "23503" ||
-          /active enrollment|prevent_plan_delete_with_memberships|still reference this plan/i.test(raw);
-        if (isTriggerBlock) {
-          const m = raw.match(/(\d+)\s+active enrollment/i);
-          const count = m ? Number(m[1]) : null;
-          const suffix =
-            count !== null
-              ? `${count} active enrollment${count === 1 ? "" : "s"} (pending or active)`
-              : "one or more active enrollments";
-          const err = new Error(
-            `Cannot delete this plan: ${suffix} still reference it. Deactivate the plan instead.`,
-          ) as Error & { blockedCount?: number | null };
-          err.blockedCount = count;
-          throw err;
-        }
-        throw new Error(error.message);
+      // Server fn records the attempt (blocked or successful) in admin_audit_log
+      // with actor details + per-status enrollment counts, then returns a
+      // structured result rather than throwing on trigger blocks.
+      const res = await deletePlanAudited({ data: { planId: id } });
+      if (!res.success) {
+        const err = new Error(
+          `Cannot delete this plan: ${res.counts.blocking} active enrollment${res.counts.blocking === 1 ? "" : "s"} (pending or active) still reference it. Deactivate the plan instead.`,
+        ) as Error & { blockedCount?: number | null };
+        err.blockedCount = res.counts.blocking;
+        throw err;
       }
+      return res;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-plans"] });
       qc.invalidateQueries({ queryKey: ["admin-plans-usage"] });
-      toast.success("Plan deleted");
+      qc.invalidateQueries({ queryKey: ["admin-audit"] });
+      toast.success("Plan deleted", { description: "Attempt recorded in the audit log." });
     },
     onError: (e) => {
-      // Refresh usage so the confirm dialog re-renders in "blocked" mode next open.
       qc.invalidateQueries({ queryKey: ["admin-plans-usage"] });
+      qc.invalidateQueries({ queryKey: ["admin-audit"] });
       const message = e instanceof Error ? e.message : "Delete failed";
-      const blockedCount = (e as any)?.blockedCount as number | null | undefined;
+      const blockedCount = (e as { blockedCount?: number | null } | null)?.blockedCount;
       if (typeof blockedCount === "number") {
         toast.error(message, {
-          description: "Existing memberships would be orphaned. Use ‘Deactivate plan’ to stop new enrollments while preserving history.",
+          description:
+            "Attempt recorded in the audit log. Use ‘Deactivate plan’ to stop new enrollments while preserving history.",
         });
       } else {
         toast.error(message);
