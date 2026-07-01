@@ -215,14 +215,18 @@ function CustomerLuckyDrawPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-3">
                       <div className="flex items-center gap-1">
                         <CalendarClock className="h-3.5 w-3.5" /> Opens: {fmtDate(d.opens_at)}
                       </div>
                       <div className="flex items-center gap-1">
                         <CalendarClock className="h-3.5 w-3.5" /> Closes: {fmtDate(d.closes_at)}
                       </div>
+                      <div className="flex items-center gap-1">
+                        <Trophy className="h-3.5 w-3.5" /> Draw date: {fmtDate((d as unknown as { draw_at: string | null }).draw_at)}
+                      </div>
                     </div>
+
 
                     <Separator />
 

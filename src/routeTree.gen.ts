@@ -20,6 +20,7 @@ import { Route as AuthenticatedPromoterRouteRouteImport } from './routes/_authen
 import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/customer/route'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedPromoterPortfolioRouteImport } from './routes/_authenticated/promoter/portfolio'
+import { Route as AuthenticatedPromoterLuckyDrawRouteImport } from './routes/_authenticated/promoter/lucky-draw'
 import { Route as AuthenticatedPromoterCustomersRouteImport } from './routes/_authenticated/promoter/customers'
 import { Route as AuthenticatedPromoterCommissionsRouteImport } from './routes/_authenticated/promoter/commissions'
 import { Route as AuthenticatedPromoterCollectionsRouteImport } from './routes/_authenticated/promoter/collections'
@@ -107,6 +108,12 @@ const AuthenticatedPromoterPortfolioRoute =
   AuthenticatedPromoterPortfolioRouteImport.update({
     id: '/portfolio',
     path: '/portfolio',
+    getParentRoute: () => AuthenticatedPromoterRouteRoute,
+  } as any)
+const AuthenticatedPromoterLuckyDrawRoute =
+  AuthenticatedPromoterLuckyDrawRouteImport.update({
+    id: '/lucky-draw',
+    path: '/lucky-draw',
     getParentRoute: () => AuthenticatedPromoterRouteRoute,
   } as any)
 const AuthenticatedPromoterCustomersRoute =
@@ -332,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/promoter/collections': typeof AuthenticatedPromoterCollectionsRoute
   '/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
+  '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -375,6 +383,7 @@ export interface FileRoutesByTo {
   '/promoter/collections': typeof AuthenticatedPromoterCollectionsRoute
   '/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
+  '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -420,6 +429,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/collections': typeof AuthenticatedPromoterCollectionsRoute
   '/_authenticated/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/_authenticated/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
+  '/_authenticated/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -465,6 +475,7 @@ export interface FileRouteTypes {
     | '/promoter/collections'
     | '/promoter/commissions'
     | '/promoter/customers'
+    | '/promoter/lucky-draw'
     | '/promoter/portfolio'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/reconcile-payments'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/promoter/collections'
     | '/promoter/commissions'
     | '/promoter/customers'
+    | '/promoter/lucky-draw'
     | '/promoter/portfolio'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/reconcile-payments'
@@ -552,6 +564,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/collections'
     | '/_authenticated/promoter/commissions'
     | '/_authenticated/promoter/customers'
+    | '/_authenticated/promoter/lucky-draw'
     | '/_authenticated/promoter/portfolio'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/reconcile-payments'
@@ -645,6 +658,13 @@ declare module '@tanstack/react-router' {
       path: '/portfolio'
       fullPath: '/promoter/portfolio'
       preLoaderRoute: typeof AuthenticatedPromoterPortfolioRouteImport
+      parentRoute: typeof AuthenticatedPromoterRouteRoute
+    }
+    '/_authenticated/promoter/lucky-draw': {
+      id: '/_authenticated/promoter/lucky-draw'
+      path: '/lucky-draw'
+      fullPath: '/promoter/lucky-draw'
+      preLoaderRoute: typeof AuthenticatedPromoterLuckyDrawRouteImport
       parentRoute: typeof AuthenticatedPromoterRouteRoute
     }
     '/_authenticated/promoter/customers': {
@@ -947,6 +967,7 @@ interface AuthenticatedPromoterRouteRouteChildren {
   AuthenticatedPromoterCollectionsRoute: typeof AuthenticatedPromoterCollectionsRoute
   AuthenticatedPromoterCommissionsRoute: typeof AuthenticatedPromoterCommissionsRoute
   AuthenticatedPromoterCustomersRoute: typeof AuthenticatedPromoterCustomersRoute
+  AuthenticatedPromoterLuckyDrawRoute: typeof AuthenticatedPromoterLuckyDrawRoute
   AuthenticatedPromoterPortfolioRoute: typeof AuthenticatedPromoterPortfolioRoute
 }
 
@@ -957,6 +978,7 @@ const AuthenticatedPromoterRouteRouteChildren: AuthenticatedPromoterRouteRouteCh
     AuthenticatedPromoterCommissionsRoute:
       AuthenticatedPromoterCommissionsRoute,
     AuthenticatedPromoterCustomersRoute: AuthenticatedPromoterCustomersRoute,
+    AuthenticatedPromoterLuckyDrawRoute: AuthenticatedPromoterLuckyDrawRoute,
     AuthenticatedPromoterPortfolioRoute: AuthenticatedPromoterPortfolioRoute,
   }
 

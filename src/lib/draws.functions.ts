@@ -10,9 +10,12 @@ const createDrawSchema = z.object({
   winnersCount: z.number().int().min(1).max(1000).default(1),
   opensAt: z.string().datetime().optional().nullable(),
   closesAt: z.string().datetime().optional().nullable(),
+  drawAt: z.string().datetime().optional().nullable(),
+  mode: z.enum(["manual", "automated"]).default("manual"),
   planId: z.string().uuid().optional().nullable(),
   requiresActiveMembership: z.boolean().default(true),
 });
+
 
 const idSchema = z.object({ id: z.string().uuid() });
 const pickSchema = z.object({ drawId: z.string().uuid(), seed: z.string().max(200).optional().nullable() });
@@ -50,6 +53,8 @@ export const createDraw = createServerFn({ method: "POST" })
         winners_count: data.winnersCount,
         opens_at: data.opensAt ?? null,
         closes_at: data.closesAt ?? null,
+        draw_at: data.drawAt ?? null,
+        mode: data.mode,
         plan_id: data.planId ?? null,
         requires_active_membership: data.requiresActiveMembership,
         created_by: context.userId,
@@ -59,6 +64,7 @@ export const createDraw = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return row;
   });
+
 
 export const setDrawStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -250,12 +256,12 @@ export const listOpenDrawsForCustomer = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data: draws, error } = await context.supabase
       .from("draws")
-      .select("id, name, description, prize, prize_value, status, opens_at, closes_at, winners_count, plan_id, requires_active_membership, drawn_at")
+      .select("id, name, description, prize, prize_value, status, mode, opens_at, closes_at, draw_at, winners_count, plan_id, requires_active_membership, drawn_at")
       .in("status", ["scheduled", "open", "closed", "completed"])
       .order("created_at", { ascending: false })
       .limit(50);
     if (error) throw new Error(error.message);
-    const list = (draws ?? []) as Array<{ id: string; name: string; description: string | null; prize: string; prize_value: number | null; status: string; opens_at: string | null; closes_at: string | null; winners_count: number; plan_id: string | null; requires_active_membership: boolean; drawn_at: string | null }>;
+    const list = (draws ?? []) as Array<{ id: string; name: string; description: string | null; prize: string; prize_value: number | null; status: string; mode: string; opens_at: string | null; closes_at: string | null; draw_at: string | null; winners_count: number; plan_id: string | null; requires_active_membership: boolean; drawn_at: string | null }>;
     const ids = list.map((d) => d.id);
     const [entriesRes, winsRes] = await Promise.all([
       ids.length
@@ -283,6 +289,54 @@ export const listOpenDrawsForCustomer = createServerFn({ method: "GET" })
       myWin: winByDraw.get(d.id) ?? null,
     }));
   });
+
+/**
+ * listDrawsForPromoter — Read-only feed of active/recent draws with the
+ * public winner list per draw (name only, no PII). Promoters need visibility
+ * into upcoming schedules and announced winners for their customers.
+ */
+export const listDrawsForPromoter = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const [isPromoter, isAdmin] = await Promise.all([
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "promoter" }),
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+    ]);
+    if (!isPromoter.data && !isAdmin.data) throw new Error("Forbidden");
+
+    const { data: draws, error } = await context.supabase
+      .from("draws")
+      .select("id, name, description, prize, prize_value, status, mode, opens_at, closes_at, draw_at, drawn_at, winners_count, requires_active_membership")
+      .in("status", ["scheduled", "open", "closed", "completed"])
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (error) throw new Error(error.message);
+    const list = (draws ?? []) as Array<Record<string, unknown> & { id: string }>;
+    const ids = list.map((d) => d.id);
+    if (ids.length === 0) return [];
+
+    const { data: winners, error: wErr } = await context.supabase
+      .from("draw_winners")
+      .select("id, draw_id, customer_id, position, prize, drawn_at")
+      .in("draw_id", ids)
+      .order("position", { ascending: true });
+    if (wErr) throw new Error(wErr.message);
+    const custIds = Array.from(new Set(((winners ?? []) as Array<{ customer_id: string }>).map((w) => w.customer_id)));
+    const { data: profs } = custIds.length
+      ? await context.supabase.from("profiles").select("id, full_name").in("id", custIds)
+      : { data: [] as Array<{ id: string; full_name: string | null }> };
+    const nameById = new Map<string, string>(
+      ((profs ?? []) as Array<{ id: string; full_name: string | null }>).map((p) => [p.id, p.full_name ?? "Member"]),
+    );
+    const winnersByDraw = new Map<string, Array<{ position: number; name: string; prize: string; drawn_at: string }>>();
+    for (const w of (winners ?? []) as Array<{ draw_id: string; customer_id: string; position: number; prize: string; drawn_at: string }>) {
+      const arr = winnersByDraw.get(w.draw_id) ?? [];
+      arr.push({ position: w.position, name: nameById.get(w.customer_id) ?? "Member", prize: w.prize, drawn_at: w.drawn_at });
+      winnersByDraw.set(w.draw_id, arr);
+    }
+    return list.map((d) => ({ ...d, winners: winnersByDraw.get(d.id) ?? [] }));
+  });
+
 
 /**
  * createDrawEntry

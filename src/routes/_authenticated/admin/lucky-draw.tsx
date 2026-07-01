@@ -101,6 +101,10 @@ function AdminLuckyDrawPage() {
       prizeValue?: number | null;
       winnersCount: number;
       requiresActiveMembership: boolean;
+      opensAt?: string | null;
+      closesAt?: string | null;
+      drawAt?: string | null;
+      mode: "manual" | "automated";
     }) => create({ data: input }),
     onSuccess: () => {
       toast.success("Draw created");
@@ -109,6 +113,7 @@ function AdminLuckyDrawPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const statusMut = useMutation({
     mutationFn: (v: { id: string; status: Draw["status"] }) => setStatus({ data: v }),
@@ -329,6 +334,10 @@ function CreateDrawDialog({
     prizeValue?: number | null;
     winnersCount: number;
     requiresActiveMembership: boolean;
+    opensAt?: string | null;
+    closesAt?: string | null;
+    drawAt?: string | null;
+    mode: "manual" | "automated";
   }) => void;
   pending: boolean;
 }) {
@@ -338,13 +347,19 @@ function CreateDrawDialog({
   const [prizeValue, setPrizeValue] = useState<string>("");
   const [winnersCount, setWinnersCount] = useState(1);
   const [requiresActive, setRequiresActive] = useState(true);
+  const [opensAt, setOpensAt] = useState<string>("");
+  const [closesAt, setClosesAt] = useState<string>("");
+  const [drawAt, setDrawAt] = useState<string>("");
+  const [mode, setMode] = useState<"manual" | "automated">("manual");
+
+  const toIso = (v: string) => (v ? new Date(v).toISOString() : null);
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-lg">
       <DialogHeader>
         <DialogTitle>Create a draw</DialogTitle>
       </DialogHeader>
-      <div className="space-y-3">
+      <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-1">
         <div className="space-y-1.5">
           <Label htmlFor="d-name">Name</Label>
           <Input id="d-name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -375,15 +390,40 @@ function CreateDrawDialog({
             />
           </div>
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="d-opens">Opens at</Label>
+            <Input id="d-opens" type="datetime-local" value={opensAt} onChange={(e) => setOpensAt(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="d-closes">Closes at</Label>
+            <Input id="d-closes" type="datetime-local" value={closesAt} onChange={(e) => setClosesAt(e.target.value)} />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="d-drawat">Draw date & time</Label>
+          <Input id="d-drawat" type="datetime-local" value={drawAt} onChange={(e) => setDrawAt(e.target.value)} />
+          <p className="text-xs text-muted-foreground">
+            Shown to customers and promoters. For automated draws, winners are picked at this time.
+          </p>
+        </div>
+
         <div className="space-y-1.5">
           <Label htmlFor="d-desc">Description</Label>
-          <Textarea
-            id="d-desc"
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
+          <Textarea id="d-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
         </div>
+
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <div className="text-sm font-medium">Automated draw</div>
+            <div className="text-xs text-muted-foreground">
+              Randomly picks winners at the scheduled draw time. Turn off to pick winners manually.
+            </div>
+          </div>
+          <Switch checked={mode === "automated"} onCheckedChange={(v) => setMode(v ? "automated" : "manual")} />
+        </div>
+
         <div className="flex items-center justify-between rounded-md border p-3">
           <div>
             <div className="text-sm font-medium">Require active membership</div>
@@ -405,6 +445,10 @@ function CreateDrawDialog({
               prizeValue: prizeValue ? Number(prizeValue) : null,
               winnersCount,
               requiresActiveMembership: requiresActive,
+              opensAt: toIso(opensAt),
+              closesAt: toIso(closesAt),
+              drawAt: toIso(drawAt),
+              mode,
             })
           }
         >
@@ -414,6 +458,7 @@ function CreateDrawDialog({
     </DialogContent>
   );
 }
+
 
 function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () => void }) {
   const entriesFn = useServerFn(listDrawEntries);

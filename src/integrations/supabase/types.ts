@@ -164,8 +164,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string | null
+          draw_at: string | null
           drawn_at: string | null
           id: string
+          mode: string
           name: string
           opens_at: string | null
           plan_id: string | null
@@ -182,8 +184,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          draw_at?: string | null
           drawn_at?: string | null
           id?: string
+          mode?: string
           name: string
           opens_at?: string | null
           plan_id?: string | null
@@ -200,8 +204,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string | null
+          draw_at?: string | null
           drawn_at?: string | null
           id?: string
+          mode?: string
           name?: string
           opens_at?: string | null
           plan_id?: string | null
@@ -1146,6 +1152,7 @@ export type Database = {
         Args: { _approve: boolean; _notes?: string; _user_id: string }
         Returns: undefined
       }
+      auto_pick_due_draws: { Args: never; Returns: number }
       count_active_admins: { Args: never; Returns: number }
       current_user_role: {
         Args: never
