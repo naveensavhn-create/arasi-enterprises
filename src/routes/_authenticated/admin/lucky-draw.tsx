@@ -94,7 +94,14 @@ function AdminLuckyDrawPage() {
   const [selected, setSelected] = useState<Draw | null>(null);
 
   const createMut = useMutation({
-    mutationFn: (input: Parameters<typeof create>[0]["data"]) => create({ data: input }),
+    mutationFn: (input: {
+      name: string;
+      description?: string | null;
+      prize: string;
+      prizeValue?: number | null;
+      winnersCount: number;
+      requiresActiveMembership: boolean;
+    }) => create({ data: input }),
     onSuccess: () => {
       toast.success("Draw created");
       setOpenCreate(false);
