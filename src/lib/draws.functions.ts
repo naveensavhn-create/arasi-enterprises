@@ -200,8 +200,10 @@ export const listOpenDrawsForCustomer = createServerFn({ method: "GET" })
             .in("draw_id", ids)
         : Promise.resolve({ data: [], error: null }),
     ]);
-    const entryByDraw = new Map(((entriesRes.data ?? []) as Array<{ draw_id: string }>).map((e) => [e.draw_id, e]));
-    const winByDraw = new Map(((winsRes.data ?? []) as Array<{ draw_id: string }>).map((w) => [w.draw_id, w]));
+    type EntryRow = { id: string; draw_id: string; entry_number: number; eligible: boolean; disqualified_reason: string | null; created_at: string; membership_id: string | null };
+    type WinRow = { id: string; draw_id: string; position: number; prize: string; drawn_at: string };
+    const entryByDraw = new Map<string, EntryRow>(((entriesRes.data ?? []) as EntryRow[]).map((e) => [e.draw_id, e]));
+    const winByDraw = new Map<string, WinRow>(((winsRes.data ?? []) as WinRow[]).map((w) => [w.draw_id, w]));
     return list.map((d) => ({
       ...d,
       myEntry: entryByDraw.get(d.id) ?? null,
