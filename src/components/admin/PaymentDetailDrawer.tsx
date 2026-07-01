@@ -131,6 +131,19 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
 
   const [eventsPage, setEventsPage] = useState(0);
 
+  // Surface a missing-field toast the first time the drawer opens with a row
+  // that fails runtime validation. Keyed on (open, row.id) so re-renders don't
+  // spam and each newly-opened invalid row still notifies exactly once.
+  useEffect(() => {
+    if (!open || !row) return;
+    const v = validateAdminPaymentRowShape(row);
+    if (v.ok) return;
+    const labels = v.missing.map((m) => FIELD_LABELS[m]).join(", ");
+    toast.warning(`Payment row is missing: ${labels}`, {
+      id: `payment-row-missing-${row.id}`,
+    });
+  }, [open, row]);
+
   const { data: eventsResult, isLoading: eventsLoading } = useQuery({
     queryKey: ["payment-webhook-events", orderId, paymentId, eventsPage],
     enabled: open && (!!orderId || !!paymentId),
