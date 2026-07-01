@@ -136,7 +136,28 @@ export function AppSidebar({ role }: { role: AppRole | null | undefined }) {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent
+        aria-label={role ? `${role} navigation` : "Navigation"}
+        onKeyDown={(e) => {
+          if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Home" && e.key !== "End") return;
+          const container = e.currentTarget;
+          const links = Array.from(
+            container.querySelectorAll<HTMLAnchorElement>('a[data-sidebar="menu-button"], a[href]')
+          ).filter((el) => !el.hasAttribute("disabled") && el.offsetParent !== null);
+          if (!links.length) return;
+          const active = document.activeElement as HTMLElement | null;
+          const idx = active ? links.indexOf(active as HTMLAnchorElement) : -1;
+          let next = idx;
+          if (e.key === "ArrowDown") next = idx < 0 ? 0 : (idx + 1) % links.length;
+          else if (e.key === "ArrowUp") next = idx <= 0 ? links.length - 1 : idx - 1;
+          else if (e.key === "Home") next = 0;
+          else if (e.key === "End") next = links.length - 1;
+          if (next !== idx) {
+            e.preventDefault();
+            links[next]?.focus();
+          }
+        }}
+      >
         {groups.map((group) => (
           <SidebarGroup key={group.label}>
             {!collapsed && <SidebarGroupLabel>{group.label}</SidebarGroupLabel>}
@@ -151,8 +172,13 @@ export function AppSidebar({ role }: { role: AppRole | null | undefined }) {
                         isActive={active}
                         tooltip={item.title}
                       >
-                        <Link to={item.url} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4 shrink-0" />
+                        <Link
+                          to={item.url}
+                          aria-label={item.title}
+                          aria-current={active ? "page" : undefined}
+                          className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+                        >
+                          <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                           <span>{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
