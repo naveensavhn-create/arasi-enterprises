@@ -28,6 +28,38 @@ function fmt(ts: string) {
   try { return new Date(ts).toLocaleString(); } catch { return ts; }
 }
 
+function csvEscape(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function downloadWinnersCsv(rows: DrawResultRow[]) {
+  const headers = [
+    "draw_name", "draw_status", "position", "prize", "drawn_at",
+    "customer_name", "customer_email", "customer_phone", "customer_id",
+    "entry_id", "draw_id",
+  ];
+  const lines = [headers.join(",")];
+  for (const r of rows) {
+    lines.push([
+      r.draw_name, r.draw_status, r.position, r.prize, r.drawn_at,
+      r.customer_name ?? "", r.customer_email ?? "", r.customer_phone ?? "", r.customer_id,
+      r.entry_id, r.draw_id,
+    ].map(csvEscape).join(","));
+  }
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const ts = new Date().toISOString().replace(/[:.]/g, "-");
+  a.href = url;
+  a.download = `draw-winners-${ts}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 function DrawResultsPage() {
   const fn = useServerFn(listAllDrawWinners);
   const { data = [], isLoading, error } = useQuery({
