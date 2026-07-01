@@ -33,6 +33,7 @@ import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminPromotersRouteImport } from './routes/_authenticated/admin/promoters'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin/plans'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin/payments'
+import { Route as AuthenticatedAdminMembershipsRouteImport } from './routes/_authenticated/admin/memberships'
 import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authenticated/admin/lucky-draw'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
@@ -173,6 +174,12 @@ const AuthenticatedAdminPaymentsRoute =
     path: '/payments',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminMembershipsRoute =
+  AuthenticatedAdminMembershipsRouteImport.update({
+    id: '/memberships',
+    path: '/memberships',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminLuckyDrawRoute =
   AuthenticatedAdminLuckyDrawRouteImport.update({
     id: '/lucky-draw',
@@ -202,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
+  '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
@@ -230,6 +238,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
+  '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
@@ -260,6 +269,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
+  '/_authenticated/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/promoters': typeof AuthenticatedAdminPromotersRoute
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/customers'
     | '/admin/lucky-draw'
+    | '/admin/memberships'
     | '/admin/payments'
     | '/admin/plans'
     | '/admin/promoters'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/admin/customers'
     | '/admin/lucky-draw'
+    | '/admin/memberships'
     | '/admin/payments'
     | '/admin/plans'
     | '/admin/promoters'
@@ -347,6 +359,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/lucky-draw'
+    | '/_authenticated/admin/memberships'
     | '/_authenticated/admin/payments'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/promoters'
@@ -544,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPaymentsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/memberships': {
+      id: '/_authenticated/admin/memberships'
+      path: '/memberships'
+      fullPath: '/admin/memberships'
+      preLoaderRoute: typeof AuthenticatedAdminMembershipsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/lucky-draw': {
       id: '/_authenticated/admin/lucky-draw'
       path: '/lucky-draw'
@@ -571,6 +591,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminLuckyDrawRoute: typeof AuthenticatedAdminLuckyDrawRoute
+  AuthenticatedAdminMembershipsRoute: typeof AuthenticatedAdminMembershipsRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminPromotersRoute: typeof AuthenticatedAdminPromotersRoute
@@ -583,6 +604,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
   {
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
     AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,
+    AuthenticatedAdminMembershipsRoute: AuthenticatedAdminMembershipsRoute,
     AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
     AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
     AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
