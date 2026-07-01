@@ -85,33 +85,50 @@ export function CustomerDashboardBody() {
     queryKey: ["customer-dash-membership", userId],
     enabled: !!userId,
     queryFn: async (): Promise<MembershipRow[]> => {
+      if (!userId) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("memberships")
         .select(
-          "id, membership_number, member_display_id, coupon_no, status, start_date, end_date, advance_paid, total_amount, paid_amount, membership_plans(name, monthly_installment, duration_months)",
+          "id, membership_number, member_display_id, coupon_no, status, start_date, end_date, advance_paid, total_amount, paid_amount, user_id, membership_plans(name, monthly_installment, duration_months)",
         )
-        .eq("user_id", userId!)
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as MembershipRow[];
+      const rows = (data ?? []) as unknown as MembershipRow[];
+      // Defense-in-depth: RLS restricts this already, but reject any row
+      // whose user_id does not match the signed-in user before rendering.
+      const foreign = rows.find((r) => r.user_id !== userId);
+      if (foreign) {
+        throw new Error("Authorization check failed: membership does not belong to current user");
+      }
+      return rows;
     },
   });
 
   const membership = membershipsQ.data?.[0];
 
   const installmentsQ = useQuery({
-    queryKey: ["customer-dash-installments", membership?.id],
-    enabled: !!membership?.id,
+    queryKey: ["customer-dash-installments", membership?.id, userId],
+    enabled: !!membership?.id && !!userId && membership?.user_id === userId,
     queryFn: async (): Promise<Installment[]> => {
+      if (!userId || !membership || membership.user_id !== userId) {
+        throw new Error("Not authorized to view these installments");
+      }
       const { data, error } = await supabase
         .from("installments")
         .select("id, sequence, due_date, amount, status, paid_at, membership_id")
-        .eq("membership_id", membership!.id)
+        .eq("membership_id", membership.id)
         .order("sequence", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as Installment[];
+      const rows = (data ?? []) as Installment[];
+      const foreign = rows.find((r) => r.membership_id !== membership.id);
+      if (foreign) {
+        throw new Error("Authorization check failed: installment does not belong to current membership");
+      }
+      return rows;
     },
   });
+
 
   if (membershipsQ.isLoading) {
     return <DashboardSkeleton />;
