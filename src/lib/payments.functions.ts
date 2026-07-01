@@ -22,12 +22,16 @@ const SORT_COLUMNS = [
 ] as const;
 export type PaymentSortColumn = typeof SORT_COLUMNS[number];
 
+const DATE_FIELDS = ["created", "webhook_processed"] as const;
+export type PaymentDateField = typeof DATE_FIELDS[number];
+
 const baseFilterSchema = z.object({
   sortBy: z.enum(SORT_COLUMNS).default("created_at"),
   sortDir: z.enum(["asc", "desc"]).default("desc"),
   status: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  dateField: z.enum(DATE_FIELDS).default("created"),
   q: z.string().optional(),
   orderId: z.string().optional(),
   paymentId: z.string().optional(),
@@ -118,7 +122,46 @@ function normalizeFilters(f: Filters) {
   const orderId = f.orderId?.trim() || undefined;
   const paymentId = f.paymentId?.trim() || undefined;
   const customer = f.customer?.trim() || undefined;
-  return { q, status, fromISO, toISO, orderId, paymentId, customer, sortBy: f.sortBy, sortDir: f.sortDir };
+  return {
+    q, status, fromISO, toISO, orderId, paymentId, customer,
+    sortBy: f.sortBy, sortDir: f.sortDir,
+    dateField: f.dateField ?? "created",
+  };
+}
+
+/**
+ * When the admin filters by "webhook processed" date, we resolve the set of
+ * payment IDs whose linked razorpay_webhook_events fall in [from, to] and
+ * then filter payments by that set. Returns `null` when no date range is
+ * active in this mode (caller applies the regular created_at bounds instead).
+ */
+async function resolveWebhookProcessedPaymentIds(
+  sb: any,
+  n: ReturnType<typeof normalizeFilters>,
+): Promise<string[] | null> {
+  if (n.dateField !== "webhook_processed") return null;
+  if (!n.fromISO && !n.toISO) return null;
+  let evq = sb
+    .from("razorpay_webhook_events")
+    .select("order_id, payment_id")
+    .not("processed_at", "is", null);
+  if (n.fromISO) evq = evq.gte("processed_at", n.fromISO);
+  if (n.toISO) evq = evq.lt("processed_at", n.toISO);
+  const { data: evs, error } = await evq.limit(50_000);
+  if (error) throw new Error(error.message);
+  const orderIds = Array.from(new Set((evs ?? []).map((e: any) => e.order_id).filter(Boolean))) as string[];
+  const providerPaymentIds = Array.from(new Set((evs ?? []).map((e: any) => e.payment_id).filter(Boolean))) as string[];
+  if (!orderIds.length && !providerPaymentIds.length) return [];
+  const orParts: string[] = [];
+  if (orderIds.length) orParts.push(`provider_order_id.in.(${orderIds.map((o) => `"${o}"`).join(",")})`);
+  if (providerPaymentIds.length) orParts.push(`provider_payment_id.in.(${providerPaymentIds.map((p) => `"${p}"`).join(",")})`);
+  const { data: pays, error: pErr } = await sb
+    .from("payments")
+    .select("id")
+    .or(orParts.join(","))
+    .limit(50_000);
+  if (pErr) throw new Error(pErr.message);
+  return (pays ?? []).map((p: any) => p.id as string);
 }
 
 
@@ -128,6 +171,7 @@ async function fetchPaymentRows(
   customerIds: string[] | undefined,
   membershipIds: string[] | undefined,
   customerIdsExact: string[] | undefined,
+  webhookPaymentIds: string[] | null,
   fromIdx: number,
   toIdx: number,
 ): Promise<AdminPaymentRow[]> {
@@ -160,8 +204,19 @@ async function fetchPaymentRows(
   }
 
   if (n.status) query = query.eq("status", n.status);
-  if (n.fromISO) query = query.gte("created_at", n.fromISO);
-  if (n.toISO) query = query.lt("created_at", n.toISO);
+  // Date range: applies to payments.created_at unless the admin picked
+  // "webhook processed", in which case the caller resolved a list of
+  // payment IDs whose webhook events landed in the range.
+  if (n.dateField === "webhook_processed" && webhookPaymentIds !== null) {
+    if (webhookPaymentIds.length === 0) {
+      query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+    } else {
+      query = query.in("id", webhookPaymentIds);
+    }
+  } else {
+    if (n.fromISO) query = query.gte("created_at", n.fromISO);
+    if (n.toISO) query = query.lt("created_at", n.toISO);
+  }
   if (n.orderId) query = query.ilike("provider_order_id", `%${n.orderId}%`);
   if (n.paymentId) query = query.ilike("provider_payment_id", `%${n.paymentId}%`);
   if (n.customer) {
@@ -230,33 +285,70 @@ export const listAdminPayments = createServerFn({ method: "GET" })
     const n = normalizeFilters(data);
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
     const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
+    const webhookPaymentIds = await resolveWebhookProcessedPaymentIds(sb, n);
 
     const fromIdx = data.page * data.pageSize;
     const toIdx = fromIdx + data.pageSize - 1;
 
-    const [rows, totalsRes] = await Promise.all([
-      fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, fromIdx, toIdx),
-      sb.rpc("admin_payments_totals", {
-        _status: n.status ?? null,
-        _from: n.fromISO ?? null,
-        _to: n.toISO ?? null,
-        _customer_ids: customerIds ?? null,
-        _membership_ids: membershipIds ?? null,
-        _q: n.q ?? null,
-        _order_id: n.orderId ?? null,
-        _payment_id: n.paymentId ?? null,
-        _customer_ids_exact: customerIdsExact ?? null,
-      }),
-    ]);
+    // In webhook-processed mode the date filter lives outside the payments
+    // table, so the created_at-based RPC totals would be wrong — compute
+    // totals over the resolved payment-id set directly.
+    const totalsPromise =
+      n.dateField === "webhook_processed" && webhookPaymentIds !== null
+        ? (async () => {
+            if (webhookPaymentIds.length === 0) {
+              return { total_count: 0, paid_count: 0, paid_sum: 0 };
+            }
+            let tq = sb.from("payments").select("amount, status", { count: "exact" });
+            tq = tq.in("id", webhookPaymentIds);
+            if (n.status) tq = tq.eq("status", n.status);
+            if (n.orderId) tq = tq.ilike("provider_order_id", `%${n.orderId}%`);
+            if (n.paymentId) tq = tq.ilike("provider_payment_id", `%${n.paymentId}%`);
+            if (customerIdsExact && customerIdsExact.length) tq = tq.in("customer_id", customerIdsExact);
+            const { data: agg, error, count } = await tq.limit(50_000);
+            if (error) throw new Error(error.message);
+            let paidCount = 0;
+            let paidSum = 0;
+            for (const r of agg ?? []) {
+              if (String((r as any).status) === "paid") {
+                paidCount += 1;
+                paidSum += Number((r as any).amount) || 0;
+              }
+            }
+            return { total_count: count ?? 0, paid_count: paidCount, paid_sum: paidSum };
+          })()
+        : sb
+            .rpc("admin_payments_totals", {
+              _status: n.status ?? null,
+              _from: n.fromISO ?? null,
+              _to: n.toISO ?? null,
+              _customer_ids: customerIds ?? null,
+              _membership_ids: membershipIds ?? null,
+              _q: n.q ?? null,
+              _order_id: n.orderId ?? null,
+              _payment_id: n.paymentId ?? null,
+              _customer_ids_exact: customerIdsExact ?? null,
+            })
+            .then((r: any) => {
+              if (r.error) throw new Error(r.error.message);
+              const t = Array.isArray(r.data) ? r.data[0] : r.data;
+              return {
+                total_count: Number(t?.total_count ?? 0),
+                paid_count: Number(t?.paid_count ?? 0),
+                paid_sum: Number(t?.paid_sum ?? 0),
+              };
+            });
 
-    if (totalsRes.error) throw new Error(totalsRes.error.message);
-    const totals = Array.isArray(totalsRes.data) ? totalsRes.data[0] : totalsRes.data;
+    const [rows, totals] = await Promise.all([
+      fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, webhookPaymentIds, fromIdx, toIdx),
+      totalsPromise,
+    ]);
 
     return {
       rows,
-      total: Number(totals?.total_count ?? 0),
-      paidCount: Number(totals?.paid_count ?? 0),
-      paidSum: Number(totals?.paid_sum ?? 0),
+      total: Number(totals.total_count ?? 0),
+      paidCount: Number(totals.paid_count ?? 0),
+      paidSum: Number(totals.paid_sum ?? 0),
       page: data.page,
       pageSize: data.pageSize,
     };
@@ -299,7 +391,8 @@ export const exportAdminPayments = createServerFn({ method: "GET" })
     const n = normalizeFilters(data);
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
     const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
-    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, 0, data.limit - 1);
+    const webhookPaymentIds = await resolveWebhookProcessedPaymentIds(sb, n);
+    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, webhookPaymentIds, 0, data.limit - 1);
 
 
     // Build history map by scanning webhook events for the exported payments.
@@ -609,6 +702,7 @@ export const reconcilePayments = createServerFn({ method: "POST" })
       from: data.from,
       to: data.to,
       q: data.q,
+      dateField: "created",
     });
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
 

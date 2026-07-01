@@ -38,6 +38,7 @@ const searchSchema = z.object({
   status: fallback(z.string(), "all").default("all"),
   from: fallback(z.string(), "").default(""),
   to: fallback(z.string(), "").default(""),
+  dateField: fallback(z.enum(["created", "webhook_processed"]), "created").default("created"),
   q: fallback(z.string(), "").default(""),
   orderId: fallback(z.string(), "").default(""),
   paymentId: fallback(z.string(), "").default(""),
@@ -147,7 +148,7 @@ function AdminPaymentsPage() {
     queryKey: [
       "admin-payments",
       search.page, search.pageSize, search.sortBy, search.sortDir,
-      search.status, search.from, search.to, search.q,
+      search.status, search.from, search.to, search.dateField, search.q,
       search.orderId, search.paymentId, search.customer,
     ],
     queryFn: () =>
@@ -160,6 +161,7 @@ function AdminPaymentsPage() {
           status: search.status || undefined,
           from: search.from || undefined,
           to: search.to || undefined,
+          dateField: search.dateField,
           q: search.q || undefined,
           orderId: search.orderId || undefined,
           paymentId: search.paymentId || undefined,
@@ -261,6 +263,7 @@ function AdminPaymentsPage() {
           status: search.status || undefined,
           from: search.from || undefined,
           to: search.to || undefined,
+          dateField: search.dateField,
           q: search.q || undefined,
           orderId: search.orderId || undefined,
           paymentId: search.paymentId || undefined,
@@ -413,11 +416,24 @@ function AdminPaymentsPage() {
                 </button>
               ))}
             </div>
+            <select
+              value={search.dateField}
+              onChange={(e) =>
+                setSearch({ dateField: e.target.value as "created" | "webhook_processed", page: 0 })
+              }
+              className="h-8 rounded-md border bg-background px-2 text-xs"
+              title="Which date the range applies to"
+              aria-label="Date field"
+            >
+              <option value="created">Payment created</option>
+              <option value="webhook_processed">Webhook processed</option>
+            </select>
             <Input
               type="date"
               value={search.from}
               onChange={(e) => setSearch({ from: e.target.value, page: 0 })}
               className="h-8 w-40 text-xs"
+              aria-label={search.dateField === "webhook_processed" ? "Webhook processed from" : "Created from"}
             />
             <span className="text-xs text-muted-foreground">to</span>
             <Input
@@ -425,6 +441,7 @@ function AdminPaymentsPage() {
               value={search.to}
               onChange={(e) => setSearch({ to: e.target.value, page: 0 })}
               className="h-8 w-40 text-xs"
+              aria-label={search.dateField === "webhook_processed" ? "Webhook processed to" : "Created to"}
             />
             <form
               onSubmit={(e) => {
@@ -505,7 +522,7 @@ function AdminPaymentsPage() {
                   setQDraft(""); setOrderDraft(""); setPaymentDraft(""); setCustomerDraft("");
                   setSearch({
                     q: "", orderId: "", paymentId: "", customer: "",
-                    status: "all", from: "", to: "", page: 0,
+                    status: "all", from: "", to: "", dateField: "created", page: 0,
                   });
                 }}
               >
