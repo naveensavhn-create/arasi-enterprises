@@ -125,7 +125,38 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
                 "activate_membership_after_advance",
                 { _payment_id: paymentRow.id },
               );
-              if (actErr) console.error("activate_membership_after_advance failed", actErr);
+              if (actErr) {
+                console.error("activate_membership_after_advance failed", actErr);
+              } else {
+                // Fire the "membership activated" confirmation email.
+                // Failures here must NOT fail the webhook (Razorpay would retry
+                // and we'd re-process the payment). Log and move on.
+                try {
+                  const { sendMembershipActivatedEmail } = await import(
+                    "@/lib/email/send-membership-activated.server"
+                  );
+                  const result = await sendMembershipActivatedEmail({
+                    membershipId: paymentRow.membership_id,
+                    triggeringPaymentId: paymentRow.id,
+                  });
+                  if (result.status === "failed") {
+                    console.error(
+                      "membership-activated email failed",
+                      result.error,
+                    );
+                  } else {
+                    console.log(
+                      `membership-activated email ${result.status}`,
+                      { membershipId: paymentRow.membership_id },
+                    );
+                  }
+                } catch (emailErr) {
+                  console.error(
+                    "membership-activated email dispatch threw",
+                    emailErr,
+                  );
+                }
+              }
             }
           } else if (eventType === "payment.failed") {
             await supabaseAdmin
