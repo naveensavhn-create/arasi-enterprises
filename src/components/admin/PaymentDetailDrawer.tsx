@@ -254,23 +254,38 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
           return (
           <div className="mt-4 space-y-5">
             {missing.length > 0 && (
-              <Alert variant="destructive">
+              <Alert
+                variant="destructive"
+                id="payment-invalid-row-alert"
+                aria-labelledby="payment-invalid-row-alert-title"
+                aria-describedby="payment-invalid-row-alert-hints"
+              >
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Incomplete payment record</AlertTitle>
+                <AlertTitle id="payment-invalid-row-alert-title">Incomplete payment record</AlertTitle>
                 <AlertDescription>
                   <p className="text-xs">
                     This row is missing required data. Missing values are shown
                     as <span className="font-medium">“{UNAVAILABLE_LABEL}”</span> below —
                     verify with the provider before acting on it.
                   </p>
-                  <ul className="mt-2 list-inside list-disc text-xs">
+                  <ul
+                    id="payment-invalid-row-alert-hints"
+                    aria-label="Missing required fields"
+                    className="mt-2 list-inside list-disc text-xs"
+                  >
                     {missing.map((f) => (
-                      <li key={f}>
+                      <li
+                        key={f}
+                        data-field={f}
+                        aria-label={`${FIELD_LABELS[f]}: ${HINTS[f]}`}
+                        aria-describedby="payment-invalid-row-alert-title"
+                      >
                         <span className="font-medium">{FIELD_LABELS[f]}</span>
                         <span className="opacity-80"> — {HINTS[f]}</span>
                       </li>
                     ))}
                   </ul>
+
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
                     <span className="opacity-80">Row ID:</span>
                     <span className="font-mono">{row.id}</span>
