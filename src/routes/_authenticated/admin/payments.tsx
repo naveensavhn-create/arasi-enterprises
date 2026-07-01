@@ -271,9 +271,15 @@ function AdminPaymentsPage() {
       : <ArrowDown className="ml-1 inline h-3 w-3" />;
   };
 
-  const onExport = async () => {
+  const onExport = async (scope: "page" | "filtered") => {
     setExporting(true);
     try {
+      // "page" respects the current filters AND the visible page window
+      // (page * pageSize .. +pageSize). "filtered" exports every row that
+      // matches the current filters, capped at 10,000.
+      const limit = scope === "page" ? search.pageSize : 10_000;
+      const offsetRows = scope === "page" ? search.page * search.pageSize : 0;
+
       const all = await exportFn({
         data: {
           sortBy: search.sortBy,
@@ -286,12 +292,22 @@ function AdminPaymentsPage() {
           orderId: search.orderId || undefined,
           paymentId: search.paymentId || undefined,
           customer: search.customer || undefined,
-          limit: 10_000,
+          limit: offsetRows + limit,
         },
       });
 
-      downloadCSV(all);
-      if (all.length >= 10_000) {
+      const slice = scope === "page" ? all.slice(offsetRows, offsetRows + limit) : all;
+      if (slice.length === 0) {
+        toast.info("Nothing to export for current filters.");
+        return;
+      }
+      downloadCSV(slice);
+      toast.success(
+        scope === "page"
+          ? `Exported ${slice.length} row(s) from page ${search.page + 1}.`
+          : `Exported ${slice.length} row(s) matching current filters.`,
+      );
+      if (scope === "filtered" && all.length >= 10_000) {
         toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
       }
     } catch (e) {
@@ -300,6 +316,7 @@ function AdminPaymentsPage() {
       setExporting(false);
     }
   };
+
 
   return (
     <div className="space-y-4">
