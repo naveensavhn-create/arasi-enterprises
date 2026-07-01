@@ -53,8 +53,8 @@ function downloadCSV(rows: Row[]) {
       r.created_at, r.paid_at ?? "", r.provider_order_id ?? "",
       r.provider_payment_id ?? "", r.status, r.method ?? "",
       r.amount, r.currency,
-      r.memberships?.profiles?.full_name ?? "",
-      r.memberships?.profiles?.email ?? "",
+      r.profile?.full_name ?? "",
+      r.profile?.email ?? "",
       r.memberships?.membership_number ?? "",
       r.installments?.sequence ?? (r.installment_id ? "" : "advance"),
       r.installments?.due_date ?? "",
@@ -123,8 +123,8 @@ function AdminPaymentsPage() {
         r.provider_order_id?.toLowerCase().includes(s) ||
         r.provider_payment_id?.toLowerCase().includes(s) ||
         r.memberships?.membership_number?.toLowerCase().includes(s) ||
-        r.memberships?.profiles?.email?.toLowerCase().includes(s) ||
-        r.memberships?.profiles?.full_name?.toLowerCase().includes(s)
+        r.profile?.email?.toLowerCase().includes(s) ||
+        r.profile?.full_name?.toLowerCase().includes(s)
       );
     });
   }, [data, q, status, from, to]);
