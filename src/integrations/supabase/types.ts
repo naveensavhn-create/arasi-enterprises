@@ -719,6 +719,7 @@ export type Database = {
           membership_id: string | null
           phone: string | null
           postal_code: string | null
+          referred_by_promoter_id: string | null
           state: string | null
           status: string
           updated_at: string
@@ -746,6 +747,7 @@ export type Database = {
           membership_id?: string | null
           phone?: string | null
           postal_code?: string | null
+          referred_by_promoter_id?: string | null
           state?: string | null
           status?: string
           updated_at?: string
@@ -773,6 +775,7 @@ export type Database = {
           membership_id?: string | null
           phone?: string | null
           postal_code?: string | null
+          referred_by_promoter_id?: string | null
           state?: string | null
           status?: string
           updated_at?: string
@@ -1004,8 +1007,19 @@ export type Database = {
           kyc_submitted_at: string
           phone: string
           postal_code: string
+          referred_by_email: string
+          referred_by_name: string
+          referred_by_promoter_id: string
           role: Database["public"]["Enums"]["app_role"]
           state: string
+        }[]
+      }
+      admin_list_promoters: {
+        Args: never
+        Returns: {
+          email: string
+          full_name: string
+          id: string
         }[]
       }
       admin_list_users: {
@@ -1039,6 +1053,10 @@ export type Database = {
           paid_sum: number
           total_count: number
         }[]
+      }
+      admin_set_customer_promoter: {
+        Args: { _promoter_id: string; _user_id: string }
+        Returns: undefined
       }
       admin_set_kyc_decision: {
         Args: { _approve: boolean; _notes?: string; _user_id: string }
@@ -1085,6 +1103,30 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      promoter_list_my_customers: {
+        Args: never
+        Returns: {
+          aadhaar_address: string
+          address_line1: string
+          address_line2: string
+          city: string
+          country: string
+          coupon_no: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          kyc_reviewed_at: string
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
+          kyc_submitted_at: string
+          member_display_id: string
+          membership_number: string
+          membership_status: string
+          phone: string
+          postal_code: string
+          state: string
+        }[]
       }
     }
     Enums: {
