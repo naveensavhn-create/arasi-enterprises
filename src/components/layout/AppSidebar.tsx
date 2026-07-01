@@ -70,13 +70,14 @@ const NAV: Record<AppRole, NavGroup[]> = {
     {
       label: "System",
       items: [
+        { title: "Users", url: "/admin/users", icon: Users },
+        { title: "Site Settings", url: "/admin/site-settings", icon: SlidersHorizontal },
         { title: "Admin Settings", url: "/admin/settings", icon: Settings },
         { title: "Email Preview", url: "/admin/email-preview", icon: Send },
         { title: "Membership Emails", url: "/admin/membership-emails", icon: Mail },
         { title: "Plan Deletions", url: "/admin/plan-deletions", icon: ShieldCheck },
         { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
       ],
-
     },
   ],
   promoter: [
