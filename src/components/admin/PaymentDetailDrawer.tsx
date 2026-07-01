@@ -15,8 +15,6 @@ import { Loader2, Copy, ExternalLink, ChevronLeft, ChevronRight, Download } from
 import { toast } from "sonner";
 import type { AdminPaymentRow } from "@/lib/payments.functions";
 
-export type PaymentDetailRow = AdminPaymentRow;
-
 const EVENTS_PAGE_SIZE = 10;
 const RAW_MAX_BYTES = 96 * 1024; // 96 KB inline cap; larger payloads must be downloaded
 
