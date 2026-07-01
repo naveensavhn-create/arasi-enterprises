@@ -588,19 +588,38 @@ function AdminPaymentsPage() {
                 <tbody>
                   {rows.map((r) => {
                     const p = r.profile;
+                    const validation = validateAdminPaymentRowShape(r);
+                    const invalid = !validation.ok;
                     return (
                       <tr
                         key={r.id}
                         className="cursor-pointer border-b align-top last:border-0 hover:bg-accent/50"
-                        onClick={() => setSelected(r)}
+                        onClick={() => {
+                          if (invalid) {
+                            const labels = validation.missing
+                              .map((m) => ADMIN_PAYMENT_ROW_FIELD_LABELS[m])
+                              .join(", ");
+                            toast.warning(`Payment row is missing: ${labels}`);
+                          }
+                          setSelected(r);
+                        }}
                       >
                         <td className="py-2 pr-4 text-muted-foreground whitespace-nowrap">
                           {new Date(r.paid_at ?? r.created_at).toLocaleString()}
                         </td>
                         <td className="py-2 pr-4">
-                          <div className="font-medium">{p?.full_name ?? "—"}</div>
+                          <div className="flex items-center gap-1.5 font-medium">
+                            {invalid && (
+                              <AlertTriangle
+                                className="h-3.5 w-3.5 text-amber-500"
+                                aria-label={`Incomplete: ${validation.missing.map((m) => ADMIN_PAYMENT_ROW_FIELD_LABELS[m]).join(", ")}`}
+                              />
+                            )}
+                            <span>{p?.full_name ?? "—"}</span>
+                          </div>
                           <div className="text-xs text-muted-foreground">{p?.email ?? ""}</div>
                         </td>
+
                         <td className="py-2 pr-4 font-mono text-xs">
                           {r.memberships?.membership_number ?? "—"}
                         </td>
