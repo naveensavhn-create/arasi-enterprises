@@ -19,6 +19,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Guard payments.status filters (require ::text cast)
+        run: bun run check:payment-status-filters
+
       - name: Run tests with coverage
         run: bun run test:coverage -- --reporter=default --reporter=junit --outputFile=./test-report.junit.xml
 

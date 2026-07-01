@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "check:payment-status-filters": "node scripts/check-payment-status-filters.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
