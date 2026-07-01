@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSession, useCurrentRole, useSignOut } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { lastVisitedKey } from "@/lib/last-visited";
-import { useApplyUiPrefs, getUiPrefs } from "@/lib/ui-prefs";
+import { useApplyUiPrefs, getUiPrefs, useSyncUiPrefsWithServer } from "@/lib/ui-prefs";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -32,6 +32,8 @@ function AuthenticatedShell() {
 
   // Apply saved UI preferences (density) to <html>.
   useApplyUiPrefs();
+  // Sync UI prefs to the signed-in user so they follow across devices.
+  useSyncUiPrefsWithServer(user?.id ?? null);
 
   // Per-user persisted sidebar open state. Undefined until we know the user
   // so the provider doesn't flash the wrong state.
