@@ -32,6 +32,7 @@ function InstallmentsPage() {
   const phone = session?.user.phone ?? undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fullName = (session?.user.user_metadata as any)?.full_name as string | undefined;
+  const [timelineId, setTimelineId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["my-installments", session?.user.id],
