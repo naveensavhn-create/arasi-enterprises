@@ -282,7 +282,14 @@ function PromoterCustomersPage() {
         onSubmit={(payload) => registerMut.mutate({ data: payload } as any)}
       />
 
-      <CustomerDetailSheet customer={selected} onClose={() => setSelected(null)} />
+      <CustomerDetailSheet
+        customer={selected}
+        onClose={() => setSelected(null)}
+        submitting={submitMut.isPending}
+        onSubmit={(note) =>
+          selected && submitMut.mutate({ userId: selected.id, note: note || null })
+        }
+      />
 
       <Dialog open={!!issuedCreds} onOpenChange={(o) => !o && setIssuedCreds(null)}>
         <DialogContent>
