@@ -153,7 +153,7 @@ type RawAuditRow = {
  * Tolerant of malformed metadata: missing counts default to 0.
  */
 export function mapPlanDeletionAuditRow(row: RawAuditRow): PlanDeletionRowView {
-  const m = ((row.metadata ?? {}) as Record<string, unknown>) ?? {};
+  const m = (row.metadata ?? {}) as Record<string, unknown>;
   const rawCounts = (m.counts ?? {}) as Partial<PlanDeletionCounts>;
   const dbErr = m.db_error as { message?: string | null } | null | undefined;
 
