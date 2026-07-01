@@ -11,7 +11,16 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
   if (!data) throw new Error("Forbidden");
 }
 
-const SORT_COLUMNS = ["created_at", "paid_at", "amount", "status"] as const;
+const SORT_COLUMNS = [
+  "created_at",
+  "paid_at",
+  "amount",
+  "status",
+  "provider_order_id",
+  "provider_payment_id",
+  "customer_name",
+] as const;
+export type PaymentSortColumn = typeof SORT_COLUMNS[number];
 
 const baseFilterSchema = z.object({
   sortBy: z.enum(SORT_COLUMNS).default("created_at"),
