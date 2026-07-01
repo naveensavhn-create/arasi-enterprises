@@ -56,7 +56,10 @@ describe("plan-delete UI precheck (unit)", () => {
 });
 
 describeIfDb("plan-delete DB trigger (integration)", () => {
-  const client = new Client({ connectionString: DB_URL });
+  // Supabase's pooler presents a certificate that is not in Node's default
+  // trust store; the connection is already TLS-encrypted, so disable strict
+  // verification for this test-only client.
+  const client = new Client({ connectionString: DB_URL, ssl: { rejectUnauthorized: false } });
 
   // Namespaced test IDs so parallel runs and leftover data never collide.
   const runTag = `vitest-plan-delete-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
