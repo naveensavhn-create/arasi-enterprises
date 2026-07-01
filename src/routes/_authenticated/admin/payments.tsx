@@ -263,6 +263,7 @@ function AdminPaymentsPage() {
           status: search.status || undefined,
           from: search.from || undefined,
           to: search.to || undefined,
+          dateField: search.dateField,
           q: search.q || undefined,
           orderId: search.orderId || undefined,
           paymentId: search.paymentId || undefined,
