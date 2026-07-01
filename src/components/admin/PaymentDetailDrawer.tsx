@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -10,11 +11,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Copy, ExternalLink } from "lucide-react";
+import { Loader2, Copy, ExternalLink, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { toast } from "sonner";
 import type { AdminPaymentRow } from "@/lib/payments.functions";
 
 export type PaymentDetailRow = AdminPaymentRow;
+
+const EVENTS_PAGE_SIZE = 10;
+const RAW_MAX_BYTES = 96 * 1024; // 96 KB inline cap; larger payloads must be downloaded
+
 
 
 type WebhookEvent = {
@@ -26,8 +31,8 @@ type WebhookEvent = {
   status: string | null;
   received_at: string;
   processed_at: string | null;
-  raw: unknown;
 };
+
 
 type MembershipRow = {
   id: string;
@@ -90,15 +95,22 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
   const membershipId = row?.membership_id ?? null;
   const installmentId = row?.installment_id ?? null;
 
-  const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ["payment-webhook-events", orderId, paymentId],
+  const [eventsPage, setEventsPage] = useState(0);
+
+  const { data: eventsResult, isLoading: eventsLoading } = useQuery({
+    queryKey: ["payment-webhook-events", orderId, paymentId, eventsPage],
     enabled: open && (!!orderId || !!paymentId),
-    queryFn: async (): Promise<WebhookEvent[]> => {
+    queryFn: async (): Promise<{ rows: WebhookEvent[]; total: number }> => {
+      const from = eventsPage * EVENTS_PAGE_SIZE;
+      const to = from + EVENTS_PAGE_SIZE - 1;
       let q = supabase
         .from("razorpay_webhook_events")
-        .select("id, event_id, event_type, order_id, payment_id, status, received_at, processed_at, raw")
+        .select(
+          "id, event_id, event_type, order_id, payment_id, status, received_at, processed_at",
+          { count: "exact" },
+        )
         .order("received_at", { ascending: false })
-        .limit(50);
+        .range(from, to);
       if (orderId && paymentId) {
         q = q.or(`order_id.eq.${orderId},payment_id.eq.${paymentId}`);
       } else if (orderId) {
@@ -106,11 +118,16 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
       } else if (paymentId) {
         q = q.eq("payment_id", paymentId);
       }
-      const { data, error } = await q;
+      const { data, error, count } = await q;
       if (error) throw error;
-      return (data ?? []) as WebhookEvent[];
+      return { rows: (data ?? []) as WebhookEvent[], total: count ?? 0 };
     },
   });
+
+  const events = eventsResult?.rows;
+  const eventsTotal = eventsResult?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(eventsTotal / EVENTS_PAGE_SIZE));
+
 
   const { data: membership } = useQuery({
     queryKey: ["payment-membership", membershipId],
@@ -279,10 +296,41 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
 
             {/* Webhook events */}
             <section>
-              <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold">
-                Webhook events
-                {events && <Badge variant="secondary" className="text-[10px]">{events.length}</Badge>}
-              </h3>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  Webhook events
+                  {eventsTotal > 0 && (
+                    <Badge variant="secondary" className="text-[10px]">{eventsTotal}</Badge>
+                  )}
+                </h3>
+                {eventsTotal > EVENTS_PAGE_SIZE && (
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      disabled={eventsPage === 0 || eventsLoading}
+                      onClick={() => setEventsPage((p) => Math.max(0, p - 1))}
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </Button>
+                    <span>
+                      {eventsPage + 1} / {totalPages}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      disabled={eventsPage + 1 >= totalPages || eventsLoading}
+                      onClick={() => setEventsPage((p) => p + 1)}
+                      aria-label="Next page"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="rounded-lg border">
                 {eventsLoading ? (
                   <div className="flex items-center justify-center p-4 text-xs text-muted-foreground">
@@ -311,23 +359,101 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
                             Processed {new Date(e.processed_at).toLocaleString()}
                           </div>
                         )}
-                        <details className="mt-1">
-                          <summary className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
-                            Raw payload
-                          </summary>
-                          <pre className="mt-1 max-h-48 overflow-auto rounded bg-muted p-2 text-[10px] leading-tight">
-                            {JSON.stringify(e.raw, null, 2)}
-                          </pre>
-                        </details>
+                        <RawPayload eventRowId={e.id} eventId={e.event_id} />
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
             </section>
+
           </div>
         )}
       </SheetContent>
     </Sheet>
   );
 }
+
+function RawPayload({ eventRowId, eventId }: { eventRowId: string; eventId: string }) {
+  const [open, setOpen] = useState(false);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["webhook-event-raw", eventRowId],
+    enabled: open,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("razorpay_webhook_events")
+        .select("raw")
+        .eq("id", eventRowId)
+        .maybeSingle();
+      if (error) throw error;
+      const raw = data?.raw ?? null;
+      const text = raw == null ? "" : JSON.stringify(raw, null, 2);
+      const bytes = new Blob([text]).size;
+      return { text, bytes, truncated: bytes > RAW_MAX_BYTES };
+    },
+  });
+
+  const downloadFull = () => {
+    if (!data?.text) return;
+    const blob = new Blob([data.text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `webhook-${eventId}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {open ? "▾ Hide raw payload" : "▸ Raw payload"}
+      </button>
+      {open && (
+        <div className="mt-1">
+          {isLoading ? (
+            <div className="flex items-center rounded bg-muted p-2 text-[10px] text-muted-foreground">
+              <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> Loading payload…
+            </div>
+          ) : error ? (
+            <p className="rounded bg-muted p-2 text-[10px] text-destructive">
+              Failed to load payload.
+            </p>
+          ) : !data || !data.text ? (
+            <p className="rounded bg-muted p-2 text-[10px] text-muted-foreground">
+              No payload stored.
+            </p>
+          ) : (
+            <>
+              <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+                <span>
+                  {(data.bytes / 1024).toFixed(1)} KB
+                  {data.truncated && " • truncated preview"}
+                </span>
+                <button
+                  type="button"
+                  onClick={downloadFull}
+                  className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 hover:bg-accent"
+                >
+                  <Download className="h-3 w-3" /> Download full JSON
+                </button>
+              </div>
+              <pre className="max-h-48 overflow-auto rounded bg-muted p-2 text-[10px] leading-tight">
+                {data.truncated ? data.text.slice(0, RAW_MAX_BYTES) + "\n… (truncated)" : data.text}
+              </pre>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
