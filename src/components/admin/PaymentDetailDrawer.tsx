@@ -14,7 +14,8 @@ import { Separator } from "@/components/ui/separator";
 import { Loader2, Copy, ExternalLink, ChevronLeft, ChevronRight, Download, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { AdminPaymentRow } from "@/lib/payments.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { getWebhookEventPayload, type AdminPaymentRow } from "@/lib/payments.functions";
 
 /**
  * Runtime validation of the ledger row before the drawer renders it.
