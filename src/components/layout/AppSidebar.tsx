@@ -151,8 +151,13 @@ export function AppSidebar({ role }: { role: AppRole | null | undefined }) {
                         isActive={active}
                         tooltip={item.title}
                       >
-                        <Link to={item.url} className="flex items-center gap-2">
-                          <item.icon className="h-4 w-4 shrink-0" />
+                        <Link
+                          to={item.url}
+                          aria-label={item.title}
+                          aria-current={active ? "page" : undefined}
+                          className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar"
+                        >
+                          <item.icon className="h-4 w-4 shrink-0" aria-hidden="true" />
                           <span>{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
