@@ -1,9 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   applyPaymentStatusEq,
-  coercePaymentStatuses,
+  isPaymentStatus,
   type PaymentStatus,
 } from "@/lib/payments/status-filter";
+
+/**
+ * JSON error helper — every rejection sent to callers follows this shape so
+ * cron / operators can grep on `code` and `error` without regexing prose.
+ */
+function jsonError(
+  status: number,
+  code: string,
+  detail: Record<string, unknown> & { message: string },
+): Response {
+  return new Response(
+    JSON.stringify({ ok: false, error: code, ...detail }),
+    { status, headers: { "Content-Type": "application/json" } },
+  );
+}
+
+
 
 
 /**
@@ -32,7 +49,7 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         let body: {
           lookbackDays?: number;
           maxPayments?: number;
-          statuses?: string[];
+          statuses?: unknown;
         } = {};
         try {
           const raw = await request.text();
@@ -43,16 +60,57 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
 
         const lookbackDays = Math.min(Math.max(body.lookbackDays ?? 7, 1), 90);
         const maxPayments = Math.min(Math.max(body.maxPayments ?? 200, 1), 1000);
-        // In-scope by default: anything not yet in a terminal state, plus
-        // recently-paid rows (catches refunds/chargebacks that flipped on the
-        // provider side after we recorded "paid"). "pending" is not a
-        // payment_status enum value, so it's dropped by coercion — the
-        // effective default becomes ["created","attempted","paid","failed"].
-        const requested = coercePaymentStatuses(body.statuses);
-        const statuses: PaymentStatus[] =
-          requested.length > 0
-            ? requested
-            : ["created", "attempted", "paid", "failed"];
+
+        // Strict validation of caller-supplied statuses. We reject invalid
+        // input with a 400 BEFORE issuing any PostgREST query so a
+        // typo/stale caller (e.g. body.statuses = ["pending"]) surfaces
+        // loudly instead of silently reconciling zero rows.
+        //
+        // `statuses` is optional; omitted / null / [] falls back to the
+        // in-scope default. Anything present must be an array of valid
+        // `payment_status` enum values.
+        const DEFAULT_STATUSES: PaymentStatus[] = [
+          "created",
+          "attempted",
+          "paid",
+          "failed",
+        ];
+        let statuses: PaymentStatus[] = DEFAULT_STATUSES;
+        if (body.statuses !== undefined && body.statuses !== null) {
+          if (!Array.isArray(body.statuses)) {
+            return jsonError(400, "INVALID_STATUSES", {
+              message:
+                "`statuses` must be an array of payment_status values.",
+              received: typeof body.statuses,
+            });
+          }
+          const invalid = body.statuses.filter((v) => !isPaymentStatus(v));
+          if (invalid.length > 0) {
+            return jsonError(400, "INVALID_PAYMENT_STATUS", {
+              message:
+                "One or more `statuses` values are not valid payment_status enum members.",
+              invalid,
+              allowed: [
+                "created",
+                "attempted",
+                "paid",
+                "failed",
+                "refunded",
+              ],
+            });
+          }
+          if (body.statuses.length > 0) {
+            // De-dupe while preserving order.
+            const seen = new Set<PaymentStatus>();
+            statuses = [];
+            for (const v of body.statuses as PaymentStatus[]) {
+              if (!seen.has(v)) {
+                seen.add(v);
+                statuses.push(v);
+              }
+            }
+          }
+        }
 
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
