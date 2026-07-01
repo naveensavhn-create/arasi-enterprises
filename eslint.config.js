@@ -35,7 +35,9 @@ export default tseslint.config(
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
     },
+  },
   // Payments-status guard: forbid raw `.eq("status", ...)` on payments
+
   // queries. Every payments-status filter MUST go through
   // `applyPaymentStatusEq` (or its `In`/`NotIn` siblings) in
   // `src/lib/payments/status-filter.ts` so the required `status::text` cast
