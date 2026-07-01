@@ -186,7 +186,7 @@ export type PlanDeletionRowView = {
   id: string;
   created_at: string;
   action: PlanDeletionAction;
-  actor_id: string;
+  actor_id: string | null;
   actor_email: string | null;
   plan_id: string | null;
   plan_name: string | null;
@@ -199,7 +199,7 @@ type RawAuditRow = {
   id: string;
   created_at: string;
   action: string;
-  actor_id: string;
+  actor_id: string | null;
   actor_email: string | null;
   metadata: unknown;
 };
