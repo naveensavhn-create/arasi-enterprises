@@ -124,7 +124,10 @@ const NAV: Record<AppRole, NavGroup[]> = {
     },
     {
       label: "System",
-      items: [{ title: "Preferences", url: "/settings", icon: SlidersHorizontal }],
+      items: [
+        { title: "Profile & KYC", url: "/kyc", icon: IdCard },
+        { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
+      ],
     },
   ],
 };
