@@ -421,7 +421,9 @@ function AdminPaymentsPage() {
                         Status{sortIcon("status")}
                       </button>
                     </th>
+                    <th className="py-2 pr-4 font-medium">Reconciliation</th>
                   </tr>
+
                 </thead>
                 <tbody>
                   {rows.map((r) => {
