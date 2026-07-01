@@ -53,6 +53,8 @@ export const createDraw = createServerFn({ method: "POST" })
         winners_count: data.winnersCount,
         opens_at: data.opensAt ?? null,
         closes_at: data.closesAt ?? null,
+        draw_at: data.drawAt ?? null,
+        mode: data.mode,
         plan_id: data.planId ?? null,
         requires_active_membership: data.requiresActiveMembership,
         created_by: context.userId,
@@ -62,6 +64,7 @@ export const createDraw = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return row;
   });
+
 
 export const setDrawStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
