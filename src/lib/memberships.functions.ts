@@ -161,15 +161,45 @@ export const createMembershipAdmin = createServerFn({ method: "POST" })
     return row;
   });
 
+// Member Display ID: 2 uppercase letters followed by 4-10 digits (matches
+// `membership_before_insert` trigger output, e.g. "AR123456"). Admin edits are
+// normalized to uppercase and rejected when blank/whitespace-only.
+const memberDisplayIdSchema = z
+  .string({ invalid_type_error: "ID No must be text" })
+  .trim()
+  .min(1, "ID No cannot be empty")
+  .transform((v) => v.toUpperCase())
+  .pipe(
+    z
+      .string()
+      .regex(
+        /^[A-Z]{2}[0-9]{4,10}$/,
+        "ID No must start with 2 letters followed by 4-10 digits (e.g. AR123456)",
+      ),
+  );
+
+// Coupon No: 4-8 digit numeric code (matches trigger output, e.g. "1234").
+const couponNoSchema = z
+  .string({ invalid_type_error: "Coupon No must be text" })
+  .trim()
+  .min(1, "Coupon No cannot be empty")
+  .pipe(
+    z
+      .string()
+      .regex(/^[0-9]{4,8}$/, "Coupon No must be 4-8 digits"),
+  );
+
 const updateSchema = z.object({
   id: z.string().uuid(),
   promoter_id: z.string().uuid().nullable().optional(),
   status: z.enum(["pending", "active", "completed", "cancelled", "defaulted"]).optional(),
   notes: z.string().max(1000).nullable().optional(),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  member_display_id: z.string().trim().min(3).max(32).regex(/^[A-Za-z0-9-]+$/, "letters, digits, or dashes only").nullable().optional(),
-  coupon_no: z.string().trim().min(3).max(16).regex(/^[A-Za-z0-9-]+$/, "letters, digits, or dashes only").nullable().optional(),
+  // `null` clears the value (admin action). `undefined` leaves it unchanged.
+  member_display_id: memberDisplayIdSchema.nullable().optional(),
+  coupon_no: couponNoSchema.nullable().optional(),
 });
+
 
 export const updateMembershipAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
