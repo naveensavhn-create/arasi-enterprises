@@ -2,15 +2,21 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const reasonSchema = z
+  .string()
+  .trim()
+  .min(5, "Reason is required (min 5 characters).")
+  .max(500, "Reason must be 500 characters or fewer.");
+
 const emailSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),
-  reason: z.string().trim().max(500).optional(),
+  reason: reasonSchema,
 });
 
 const roleChangeSchema = z.object({
   userId: z.string().uuid(),
   role: z.enum(["admin", "promoter", "customer"]),
-  reason: z.string().trim().max(500).optional(),
+  reason: reasonSchema,
 });
 
 type AppRole = "admin" | "promoter" | "customer";
