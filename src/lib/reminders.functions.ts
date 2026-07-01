@@ -196,3 +196,232 @@ export const enqueueInstallmentReminders = createServerFn({ method: "POST" })
       scheduled_at: scheduledAtIso,
     };
   });
+
+// ---------------------------------------------------------------------------
+// Admin reminder-job management: list / filter / retry / cancel
+// ---------------------------------------------------------------------------
+
+type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
+
+
+export type ReminderJobStatus =
+  | "pending"
+  | "sending"
+  | "sent"
+  | "failed"
+  | "cancelled"
+  | "skipped";
+
+export type ReminderJobChannel = "email" | "sms";
+
+export interface ReminderJobRow {
+  id: string;
+  installment_id: string;
+  membership_id: string;
+  recipient_id: string;
+  recipient_email: string | null;
+  recipient_phone: string | null;
+  channel: ReminderJobChannel;
+  reminder_kind: string;
+  status: ReminderJobStatus;
+  scheduled_at: string;
+  next_attempt_at: string | null;
+  sent_at: string | null;
+  attempts: number;
+  max_attempts: number;
+  last_attempt_at: string | null;
+  provider: string | null;
+  provider_message_id: string | null;
+  error_code: string | null;
+  error_message: string | null;
+  dead_letter_at: string | null;
+  dead_letter_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  metadata: JsonValue;
+  membership_number: string | null;
+  member_display_id: string | null;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
+  installment_sequence: number | null;
+  installment_due_date: string | null;
+  installment_amount: number | null;
+}
+
+export interface ListReminderJobsResult {
+  rows: ReminderJobRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+const listSchema = z.object({
+  status: z
+    .enum(["pending", "sending", "sent", "failed", "cancelled", "skipped", "all"])
+    .default("all"),
+  channel: z.enum(["email", "sms", "all"]).default("all"),
+  q: z.string().trim().max(200).optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(200).default(50),
+});
+
+export const listReminderJobs = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => listSchema.parse(input))
+  .handler(async ({ data, context }): Promise<ListReminderJobsResult> => {
+    await assertAdmin(context);
+
+    const from = (data.page - 1) * data.pageSize;
+    const to = from + data.pageSize - 1;
+
+    let query = context.supabase
+      .from("payment_reminder_jobs")
+      .select(
+        `id, installment_id, membership_id, recipient_id, recipient_email, recipient_phone,
+         channel, reminder_kind, status, scheduled_at, next_attempt_at, sent_at,
+         attempts, max_attempts, last_attempt_at, provider, provider_message_id,
+         error_code, error_message, dead_letter_at, dead_letter_reason,
+         created_at, updated_at, metadata,
+         memberships:membership_id (
+           membership_number, member_display_id,
+           profiles:user_id ( full_name, email, phone )
+         ),
+         installments:installment_id ( sequence, due_date, amount )`,
+        { count: "exact" },
+      )
+      .order("scheduled_at", { ascending: false })
+      .range(from, to);
+
+    if (data.status !== "all") query = query.eq("status", data.status);
+    if (data.channel !== "all") query = query.eq("channel", data.channel);
+    if (data.q) {
+      const like = `%${data.q}%`;
+      query = query.or(
+        `recipient_email.ilike.${like},recipient_phone.ilike.${like},provider_message_id.ilike.${like},error_code.ilike.${like},error_message.ilike.${like}`,
+      );
+    }
+
+    const { data: rows, error, count } = await query;
+    if (error) throw new Error(error.message);
+
+    type Raw = ReminderJobRow & {
+      memberships: {
+        membership_number: string | null;
+        member_display_id: string | null;
+        profiles: { full_name: string | null; email: string | null; phone: string | null } | null;
+      } | null;
+      installments: { sequence: number | null; due_date: string | null; amount: number | string | null } | null;
+    };
+
+    const mapped: ReminderJobRow[] = ((rows ?? []) as unknown as Raw[]).map((r) => ({
+      id: r.id,
+      installment_id: r.installment_id,
+      membership_id: r.membership_id,
+      recipient_id: r.recipient_id,
+      recipient_email: r.recipient_email,
+      recipient_phone: r.recipient_phone,
+      channel: r.channel,
+      reminder_kind: r.reminder_kind,
+      status: r.status,
+      scheduled_at: r.scheduled_at,
+      next_attempt_at: r.next_attempt_at,
+      sent_at: r.sent_at,
+      attempts: r.attempts,
+      max_attempts: r.max_attempts,
+      last_attempt_at: r.last_attempt_at,
+      provider: r.provider,
+      provider_message_id: r.provider_message_id,
+      error_code: r.error_code,
+      error_message: r.error_message,
+      dead_letter_at: r.dead_letter_at,
+      dead_letter_reason: r.dead_letter_reason,
+      created_at: r.created_at,
+      updated_at: r.updated_at,
+      metadata: (r.metadata ?? {}) as JsonValue,
+      membership_number: r.memberships?.membership_number ?? null,
+      member_display_id: r.memberships?.member_display_id ?? null,
+      customer_name: r.memberships?.profiles?.full_name ?? null,
+      customer_email: r.memberships?.profiles?.email ?? null,
+      customer_phone: r.memberships?.profiles?.phone ?? null,
+      installment_sequence: r.installments?.sequence ?? null,
+      installment_due_date: r.installments?.due_date ?? null,
+      installment_amount: r.installments?.amount == null ? null : Number(r.installments.amount),
+    }));
+
+    return {
+      rows: mapped,
+      total: count ?? mapped.length,
+      page: data.page,
+      pageSize: data.pageSize,
+    };
+  });
+
+const idsSchema = z.object({
+  jobIds: z.array(z.string().uuid()).min(1).max(200),
+});
+
+export interface JobActionResult {
+  updated: number;
+  skipped: number;
+}
+
+/**
+ * Retry: resets `failed` / `cancelled` / `skipped` jobs back to `pending`,
+ * clears error/next_attempt fields, and schedules them for immediate pickup.
+ * Jobs already `sent` or currently `sending` are skipped.
+ */
+export const retryReminderJobs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => idsSchema.parse(input))
+  .handler(async ({ data, context }): Promise<JobActionResult> => {
+    await assertAdmin(context);
+
+    const nowIso = new Date().toISOString();
+
+    const { data: updated, error } = await context.supabase
+      .from("payment_reminder_jobs")
+      .update({
+        status: "pending",
+        error_code: null,
+        error_message: null,
+        next_attempt_at: nowIso,
+        scheduled_at: nowIso,
+        dead_letter_at: null,
+        dead_letter_reason: null,
+      })
+      .in("id", data.jobIds)
+      .in("status", ["failed", "cancelled", "skipped"])
+      .select("id");
+
+    if (error) throw new Error(error.message);
+
+    const count = updated?.length ?? 0;
+    return { updated: count, skipped: data.jobIds.length - count };
+  });
+
+/**
+ * Cancel: marks pending/failed jobs as `cancelled` so the worker skips them.
+ * Already-sent or in-flight `sending` jobs are skipped.
+ */
+export const cancelReminderJobs = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => idsSchema.parse(input))
+  .handler(async ({ data, context }): Promise<JobActionResult> => {
+    await assertAdmin(context);
+
+    const { data: updated, error } = await context.supabase
+      .from("payment_reminder_jobs")
+      .update({
+        status: "cancelled",
+        next_attempt_at: null,
+      })
+      .in("id", data.jobIds)
+      .in("status", ["pending", "failed", "skipped"])
+      .select("id");
+
+    if (error) throw new Error(error.message);
+
+    const count = updated?.length ?? 0;
+    return { updated: count, skipped: data.jobIds.length - count };
+  });
