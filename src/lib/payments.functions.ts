@@ -761,3 +761,19 @@ export const resolveReconciliation = createServerFn({ method: "POST" })
   });
 
 
+
+export const getLastWebhookEvent = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { data, error } = await context.supabase
+      .from("razorpay_webhook_events")
+      .select("event_id, event_type, received_at, processed_at")
+      .order("received_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data as
+      | { event_id: string; event_type: string; received_at: string; processed_at: string | null }
+      | null;
+  });

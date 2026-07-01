@@ -7,11 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Radio } from "lucide-react";
+import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Radio, Webhook } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
-import { listAdminPayments, exportAdminPayments, type AdminPaymentRow } from "@/lib/payments.functions";
+import { listAdminPayments, exportAdminPayments, getLastWebhookEvent, type AdminPaymentRow } from "@/lib/payments.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS } from "@/lib/ui-prefs";
 import { toast } from "sonner";
@@ -46,6 +46,20 @@ export const Route = createFileRoute("/_authenticated/admin/payments")({
 function csvEscape(v: unknown): string {
   const s = v == null ? "" : String(v);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function formatRelative(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "—";
+  const diff = Math.max(0, Date.now() - then);
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
 }
 
 type ExportRow = Awaited<ReturnType<typeof exportAdminPayments>>[number];
@@ -110,6 +124,16 @@ function AdminPaymentsPage() {
   const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
   const exportFn = useServerFn(exportAdminPayments);
+  const lastWebhookFn = useServerFn(getLastWebhookEvent);
+
+  const { data: lastWebhook } = useQuery({
+    queryKey: ["admin-payments-last-webhook"],
+    queryFn: () => lastWebhookFn(),
+    refetchInterval: liveConnected
+      ? (paymentsPollingMs === 0 ? false : Math.max(paymentsPollingMs, 120_000))
+      : (paymentsPollingMs === 0 ? 60_000 : paymentsPollingMs),
+    refetchOnWindowFocus: true,
+  });
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
@@ -153,6 +177,7 @@ function AdminPaymentsPage() {
       queryClient.invalidateQueries({ queryKey: ["payment-webhook-events"] });
       queryClient.invalidateQueries({ queryKey: ["payment-installment"] });
       queryClient.invalidateQueries({ queryKey: ["payment-membership"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-payments-last-webhook"] });
     };
     const channel = supabase
       .channel("admin-payments-live")
@@ -245,6 +270,25 @@ function AdminPaymentsPage() {
             <Radio className={`h-3 w-3 ${liveConnected ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
             {liveConnected ? "Live" : paymentsPollingMs === 0 ? "Manual" : "Polling"}
           </Badge>
+          {lastWebhook ? (
+            <Badge
+              variant="outline"
+              className="gap-1.5 text-[10px] font-mono normal-case"
+              title={`Event ID: ${lastWebhook.event_id}\nType: ${lastWebhook.event_type}\nReceived: ${new Date(lastWebhook.received_at).toLocaleString()}${lastWebhook.processed_at ? `\nProcessed: ${new Date(lastWebhook.processed_at).toLocaleString()}` : "\nNot yet processed"}`}
+            >
+              <Webhook className="h-3 w-3 text-muted-foreground" />
+              <span className="hidden md:inline text-muted-foreground">Last webhook</span>
+              <span>{formatRelative(lastWebhook.processed_at ?? lastWebhook.received_at)}</span>
+              <span className="hidden lg:inline text-muted-foreground truncate max-w-[140px]">
+                · {lastWebhook.event_id.slice(-14)}
+              </span>
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1.5 text-[10px] normal-case text-muted-foreground">
+              <Webhook className="h-3 w-3" />
+              No webhooks yet
+            </Badge>
+          )}
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className="hidden sm:inline">Poll every</span>
             <select
@@ -269,6 +313,7 @@ function AdminPaymentsPage() {
                 queryClient.invalidateQueries({ queryKey: ["payment-webhook-events"] }),
                 queryClient.invalidateQueries({ queryKey: ["payment-installment"] }),
                 queryClient.invalidateQueries({ queryKey: ["payment-membership"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin-payments-last-webhook"] }),
               ]);
               toast.success("Ledger refreshed");
             }}
