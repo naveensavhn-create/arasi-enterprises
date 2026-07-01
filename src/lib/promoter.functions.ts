@@ -68,9 +68,14 @@ const registerSchema = z.object({
     .nullable()
     .refine((v) => !v || /^[0-9+\-\s()]{7,20}$/.test(v), "Invalid phone"),
   address_line1: z.string().trim().max(500).optional().nullable(),
+  address_line2: z.string().trim().max(500).optional().nullable(),
   city: z.string().trim().max(80).optional().nullable(),
   state: z.string().trim().max(80).optional().nullable(),
   postal_code: z.string().trim().max(12).optional().nullable(),
+  country: z.string().trim().max(80).optional().nullable(),
+  referral_note: z.string().trim().max(1000).optional().nullable(),
+  referral_source: z.string().trim().max(80).optional().nullable(),
+  promoter_id: z.string().uuid().optional().nullable(),
   send_invite: z.boolean().optional().default(true),
 });
 
@@ -84,7 +89,9 @@ export const registerCustomerAsPromoter = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => registerSchema.parse(i))
   .handler(async ({ data, context }): Promise<{ id: string; temporary_password: string | null }> => {
-    // Authorization: caller must be a promoter (or admin)
+    // Authorization: caller must be a promoter (or admin). The RPC re-checks
+    // this server-side, but we fail fast to avoid creating an auth user we
+    // then can't link.
     const [{ data: isPromoter }, { data: isAdmin }] = await Promise.all([
       context.supabase.rpc("has_role", { _user_id: context.userId, _role: "promoter" }),
       context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
@@ -108,25 +115,39 @@ export const registerCustomerAsPromoter = createServerFn({ method: "POST" })
     }
     const newUserId = created.data.user.id;
 
-    // Populate profile fields + link referrer
-    const { error: pErr } = await (supabaseAdmin.from("profiles") as any)
-      .update({
-        full_name: data.full_name,
-        phone: data.phone ?? null,
-        address_line1: data.address_line1 ?? null,
-        city: data.city ?? null,
-        state: data.state ?? null,
-        postal_code: data.postal_code ?? null,
-        referred_by_promoter_id: context.userId,
-      })
-      .eq("id", newUserId);
-    if (pErr) throw new Error(pErr.message);
+    // Single RPC that atomically links the referrer, persists profile fields,
+    // and writes the referral audit entry as the calling promoter/admin.
+    const { error: rpcErr } = await context.supabase.rpc(
+      "promoter_register_referred_customer" as any,
+      {
+        _user_id: newUserId,
+        _full_name: data.full_name,
+        _email: data.email,
+        _phone: data.phone ?? null,
+        _address_line1: data.address_line1 ?? null,
+        _address_line2: data.address_line2 ?? null,
+        _city: data.city ?? null,
+        _state: data.state ?? null,
+        _postal_code: data.postal_code ?? null,
+        _country: data.country ?? null,
+        _referral_note: data.referral_note ?? null,
+        _referral_source: data.referral_source ?? null,
+        _promoter_id: data.promoter_id ?? null,
+      } as any,
+    );
+    if (rpcErr) {
+      // Best-effort rollback of the auth user if linking failed, so the
+      // orphaned account doesn't block a retry with the same email.
+      await supabaseAdmin.auth.admin.deleteUser(newUserId).catch(() => {});
+      throw new Error(rpcErr.message);
+    }
 
     return {
       id: newUserId,
       temporary_password: data.send_invite ? tempPassword : null,
     };
   });
+
 
 export const adminSetCustomerPromoter = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
