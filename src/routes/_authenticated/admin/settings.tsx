@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ShieldCheck, UserPlus, AlertTriangle, Loader2, Trash2, History, ShieldAlert, X, Download } from "lucide-react";
+import { ShieldCheck, UserPlus, AlertTriangle, Loader2, Trash2, History, ShieldAlert, X, Download, Eye, Copy } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
