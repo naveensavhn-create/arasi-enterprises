@@ -31,8 +31,8 @@ type WebhookEvent = {
   status: string | null;
   received_at: string;
   processed_at: string | null;
-  raw: unknown;
 };
+
 
 type MembershipRow = {
   id: string;
