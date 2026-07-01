@@ -177,6 +177,29 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
               .eq("id", paymentRow.id);
           }
 
+          // Auto-reconcile against Razorpay immediately so mismatches are
+          // detected the moment a webhook fires. Never fail the webhook if
+          // reconciliation itself errors — the helper logs its own row.
+          try {
+            const { reconcileSinglePayment } = await import(
+              "@/lib/payments/reconcile-one.server"
+            );
+            const outcome = await reconcileSinglePayment(supabaseAdmin, {
+              paymentId: paymentRow.id,
+              providerPaymentId: paymentEntity?.id ?? null,
+              providerOrderId: orderId,
+              eventId,
+            });
+            if (outcome.status === "mismatch") {
+              console.warn("Auto-reconcile mismatch", {
+                paymentId: paymentRow.id,
+                note: outcome.note,
+              });
+            }
+          } catch (recErr) {
+            console.error("Auto-reconcile dispatch threw", recErr);
+          }
+
           return new Response("ok");
         } catch (err) {
           console.error("Razorpay webhook processing error:", err);
