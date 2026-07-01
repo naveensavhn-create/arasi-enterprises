@@ -9,7 +9,7 @@ type PlanDeleteResult = {
   blocked: boolean;
   planId: string;
   planName: string | null;
-  planCode: string | null;
+  planCode: null;
   counts: {
     pending: number;
     active: number;
