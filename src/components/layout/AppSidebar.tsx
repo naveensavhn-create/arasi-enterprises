@@ -20,6 +20,8 @@ import {
   Mail,
   SlidersHorizontal,
   FileSpreadsheet,
+  IdCard,
+  UserCheck,
 } from "lucide-react";
 
 
