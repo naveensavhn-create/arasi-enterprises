@@ -56,6 +56,173 @@ export type Database = {
         }
         Relationships: []
       }
+      draw_entries: {
+        Row: {
+          created_at: string
+          customer_id: string
+          disqualified_reason: string | null
+          draw_id: string
+          eligible: boolean
+          entry_number: number
+          id: string
+          membership_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          disqualified_reason?: string | null
+          draw_id: string
+          eligible?: boolean
+          entry_number?: number
+          id?: string
+          membership_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          disqualified_reason?: string | null
+          draw_id?: string
+          eligible?: boolean
+          entry_number?: number
+          id?: string
+          membership_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draw_entries_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "draws"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draw_entries_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draw_winners: {
+        Row: {
+          customer_id: string
+          draw_id: string
+          drawn_at: string
+          drawn_by: string | null
+          entry_id: string
+          id: string
+          notified_at: string | null
+          position: number
+          prize: string | null
+          seed: string | null
+        }
+        Insert: {
+          customer_id: string
+          draw_id: string
+          drawn_at?: string
+          drawn_by?: string | null
+          entry_id: string
+          id?: string
+          notified_at?: string | null
+          position: number
+          prize?: string | null
+          seed?: string | null
+        }
+        Update: {
+          customer_id?: string
+          draw_id?: string
+          drawn_at?: string
+          drawn_by?: string | null
+          entry_id?: string
+          id?: string
+          notified_at?: string | null
+          position?: number
+          prize?: string | null
+          seed?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draw_winners_draw_id_fkey"
+            columns: ["draw_id"]
+            isOneToOne: false
+            referencedRelation: "draws"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "draw_winners_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "draw_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      draws: {
+        Row: {
+          closes_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          drawn_at: string | null
+          id: string
+          name: string
+          opens_at: string | null
+          plan_id: string | null
+          prize: string
+          prize_value: number | null
+          requires_active_membership: boolean
+          seed: string | null
+          status: Database["public"]["Enums"]["draw_status"]
+          updated_at: string
+          winners_count: number
+        }
+        Insert: {
+          closes_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          drawn_at?: string | null
+          id?: string
+          name: string
+          opens_at?: string | null
+          plan_id?: string | null
+          prize: string
+          prize_value?: number | null
+          requires_active_membership?: boolean
+          seed?: string | null
+          status?: Database["public"]["Enums"]["draw_status"]
+          updated_at?: string
+          winners_count?: number
+        }
+        Update: {
+          closes_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          drawn_at?: string | null
+          id?: string
+          name?: string
+          opens_at?: string | null
+          plan_id?: string | null
+          prize?: string
+          prize_value?: number | null
+          requires_active_membership?: boolean
+          seed?: string | null
+          status?: Database["public"]["Enums"]["draw_status"]
+          updated_at?: string
+          winners_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draws_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       export_jobs: {
         Row: {
           attempts: number
@@ -750,9 +917,31 @@ export type Database = {
         Returns: undefined
       }
       mark_overdue_installments: { Args: never; Returns: number }
+      pick_draw_winners: {
+        Args: { _draw_id: string; _seed?: string }
+        Returns: {
+          customer_id: string
+          draw_id: string
+          drawn_at: string
+          drawn_by: string | null
+          entry_id: string
+          id: string
+          notified_at: string | null
+          position: number
+          prize: string | null
+          seed: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "draw_winners"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "promoter" | "customer"
+      draw_status: "scheduled" | "open" | "closed" | "completed" | "cancelled"
       installment_status: "pending" | "paid" | "overdue" | "waived"
       membership_status:
         | "pending"
@@ -890,6 +1079,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "promoter", "customer"],
+      draw_status: ["scheduled", "open", "closed", "completed", "cancelled"],
       installment_status: ["pending", "paid", "overdue", "waived"],
       membership_status: [
         "pending",
