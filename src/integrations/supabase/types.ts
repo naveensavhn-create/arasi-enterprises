@@ -360,6 +360,48 @@ export type Database = {
           },
         ]
       }
+      plan_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          after_data: Json | null
+          before_data: Json | null
+          changed_fields: string[] | null
+          created_at: string
+          id: string
+          plan_code: string | null
+          plan_id: string | null
+          plan_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          plan_code?: string | null
+          plan_id?: string | null
+          plan_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          changed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          plan_code?: string | null
+          plan_id?: string | null
+          plan_name?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
