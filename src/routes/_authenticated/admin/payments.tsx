@@ -38,6 +38,7 @@ const searchSchema = z.object({
   status: fallback(z.string(), "all").default("all"),
   from: fallback(z.string(), "").default(""),
   to: fallback(z.string(), "").default(""),
+  dateField: fallback(z.enum(["created", "webhook_processed"]), "created").default("created"),
   q: fallback(z.string(), "").default(""),
   orderId: fallback(z.string(), "").default(""),
   paymentId: fallback(z.string(), "").default(""),
