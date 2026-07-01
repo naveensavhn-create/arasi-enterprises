@@ -12,6 +12,36 @@
  * Kept in its own tiny module (no server-fn imports, no Supabase client
  * imports) so browser components, server functions, cron routes, and tests
  * can all share the exact same format without dragging in heavy deps.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ *  When to use which helper
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ *  applyPaymentStatusEq(query, status)   ← PREFERRED, use for everything
+ *    • Accepts a single status string, an array of statuses, or nullish.
+ *    • Automatically picks the right PostgREST operator:
+ *        - 1 value  → `eq`   → `status::text=eq.paid`
+ *        - N values → `in`   → `status::text=in.(paid,refunded)`
+ *        - null / undefined / "" / [] → no-op (query passes through)
+ *    • Use it directly with URL search params, multi-select chip arrays,
+ *      or a hard-coded literal — no branching at the callsite.
+ *
+ *  applyPaymentStatusIn(query, statuses) ← DEPRECATED, thin alias
+ *    • Kept only for backwards compatibility with older callsites and
+ *      tests written before the helpers were unified. New code MUST use
+ *      `applyPaymentStatusEq`; the ESLint rule + CI check
+ *      (`scripts/check-payment-status-filters.mjs`) enforce that no new
+ *      callsite hand-rolls a `.eq("status", …)` / `.in("status", …)`.
+ *
+ *  Required cast format (do NOT inline this string anywhere else):
+ *    Column selector : `status::text`  (exported as `PAYMENT_STATUS_TEXT_COLUMN`)
+ *    Operators       : `eq` | `in`
+ *    IN value shape  : `(v1,v2,v3)`    — parens + comma-separated, NO quotes
+ *
+ *  Anti-patterns (all caught by CI):
+ *    query.eq("status", "paid")                       // missing ::text cast
+ *    query.filter("status", "eq", "paid")             // missing ::text cast
+ *    query.filter("status::text", "in", "paid,refunded") // missing parens
  */
 
 /** Minimal PostgREST query shape both browser and admin clients satisfy. */
