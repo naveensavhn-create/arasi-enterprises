@@ -44,6 +44,7 @@ import { Route as AuthenticatedAdminMembershipEmailsRouteImport } from './routes
 import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authenticated/admin/lucky-draw'
 import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authenticated/admin/exports'
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
+import { Route as AuthenticatedAdminDrawResultsRouteImport } from './routes/_authenticated/admin/draw-results'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as AuthenticatedAdminApprovalsRouteImport } from './routes/_authenticated/admin/approvals'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
@@ -249,6 +250,12 @@ const AuthenticatedAdminEmailPreviewRoute =
     path: '/email-preview',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminDrawResultsRoute =
+  AuthenticatedAdminDrawResultsRouteImport.update({
+    id: '/draw-results',
+    path: '/draw-results',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminCustomersRoute =
   AuthenticatedAdminCustomersRouteImport.update({
     id: '/customers',
@@ -292,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -333,6 +341,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -376,6 +385,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
+  '/_authenticated/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/_authenticated/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/_authenticated/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/approvals'
     | '/admin/customers'
+    | '/admin/draw-results'
     | '/admin/email-preview'
     | '/admin/exports'
     | '/admin/lucky-draw'
@@ -460,6 +471,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/approvals'
     | '/admin/customers'
+    | '/admin/draw-results'
     | '/admin/email-preview'
     | '/admin/exports'
     | '/admin/lucky-draw'
@@ -502,6 +514,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/admin/approvals'
     | '/_authenticated/admin/customers'
+    | '/_authenticated/admin/draw-results'
     | '/_authenticated/admin/email-preview'
     | '/_authenticated/admin/exports'
     | '/_authenticated/admin/lucky-draw'
@@ -789,6 +802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEmailPreviewRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/draw-results': {
+      id: '/_authenticated/admin/draw-results'
+      path: '/draw-results'
+      fullPath: '/admin/draw-results'
+      preLoaderRoute: typeof AuthenticatedAdminDrawResultsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/customers': {
       id: '/_authenticated/admin/customers'
       path: '/customers'
@@ -830,6 +850,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminApprovalsRoute: typeof AuthenticatedAdminApprovalsRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
+  AuthenticatedAdminDrawResultsRoute: typeof AuthenticatedAdminDrawResultsRoute
   AuthenticatedAdminEmailPreviewRoute: typeof AuthenticatedAdminEmailPreviewRoute
   AuthenticatedAdminExportsRoute: typeof AuthenticatedAdminExportsRoute
   AuthenticatedAdminLuckyDrawRoute: typeof AuthenticatedAdminLuckyDrawRoute
@@ -850,6 +871,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
   {
     AuthenticatedAdminApprovalsRoute: AuthenticatedAdminApprovalsRoute,
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
+    AuthenticatedAdminDrawResultsRoute: AuthenticatedAdminDrawResultsRoute,
     AuthenticatedAdminEmailPreviewRoute: AuthenticatedAdminEmailPreviewRoute,
     AuthenticatedAdminExportsRoute: AuthenticatedAdminExportsRoute,
     AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,

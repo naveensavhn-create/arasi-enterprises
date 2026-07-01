@@ -1,0 +1,193 @@
+import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Trophy, Search, Users, CalendarClock } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import { listAllDrawWinners, type DrawResultRow } from "@/lib/draws.functions";
+
+export const Route = createFileRoute("/_authenticated/admin/draw-results")({
+  head: () => ({
+    meta: [
+      { title: "Draw Results — Admin" },
+      { name: "description", content: "Every lucky-draw winner with prize, timestamp, and draw context." },
+    ],
+  }),
+  component: DrawResultsPage,
+});
+
+function fmt(ts: string) {
+  try { return new Date(ts).toLocaleString(); } catch { return ts; }
+}
+
+function DrawResultsPage() {
+  const fn = useServerFn(listAllDrawWinners);
+  const { data = [], isLoading, error } = useQuery({
+    queryKey: ["admin", "draw-results"],
+    queryFn: () => fn() as Promise<DrawResultRow[]>,
+  });
+
+  const [q, setQ] = useState("");
+  const [drawFilter, setDrawFilter] = useState<string>("");
+
+  const draws = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of data) map.set(r.draw_id, r.draw_name);
+    return Array.from(map, ([id, name]) => ({ id, name }));
+  }, [data]);
+
+  const filtered = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    return data.filter((r) => {
+      if (drawFilter && r.draw_id !== drawFilter) return false;
+      if (!needle) return true;
+      return (
+        r.customer_name?.toLowerCase().includes(needle) ||
+        r.customer_email?.toLowerCase().includes(needle) ||
+        r.customer_phone?.toLowerCase().includes(needle) ||
+        r.draw_name.toLowerCase().includes(needle) ||
+        r.prize.toLowerCase().includes(needle) ||
+        r.customer_id.toLowerCase().includes(needle)
+      );
+    });
+  }, [data, q, drawFilter]);
+
+  const totalWinners = data.length;
+  const drawsCount = draws.length;
+  const latest = data[0];
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Draw Results</h1>
+        <p className="text-sm text-muted-foreground">
+          Every recorded winner across all draws — sorted by most recent. Each customer can win a
+          given draw at most once (enforced by the database).
+        </p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Trophy className="h-4 w-4 text-primary" /> Total winners
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{totalWinners}</CardContent>
+        </Card>
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-4 w-4 text-primary" /> Draws completed
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold">{drawsCount}</CardContent>
+        </Card>
+        <Card className="glass">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <CalendarClock className="h-4 w-4 text-primary" /> Latest draw
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            {latest ? (
+              <div>
+                <div className="font-medium">{latest.draw_name}</div>
+                <div className="text-muted-foreground">{fmt(latest.drawn_at)}</div>
+              </div>
+            ) : (
+              <span className="text-muted-foreground">No draws completed yet.</span>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <CardTitle>Winners</CardTitle>
+          <div className="flex flex-col gap-2 md:flex-row md:items-center">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Search name, email, prize…"
+                className="pl-8 md:w-72"
+              />
+            </div>
+            <select
+              className="rounded-md border bg-background px-2 py-2 text-sm"
+              value={drawFilter}
+              onChange={(e) => setDrawFilter(e.target.value)}
+            >
+              <option value="">All draws</option>
+              {draws.map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-sm text-muted-foreground">Loading…</div>
+          ) : error ? (
+            <div className="text-sm text-destructive">{(error as Error).message}</div>
+          ) : filtered.length === 0 ? (
+            <div className="text-sm text-muted-foreground">
+              {data.length === 0
+                ? "No winners have been drawn yet."
+                : "No winners match the current filters."}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[60px]">#</TableHead>
+                    <TableHead>Draw</TableHead>
+                    <TableHead>Winner</TableHead>
+                    <TableHead>Prize</TableHead>
+                    <TableHead>Drawn at</TableHead>
+                    <TableHead className="text-right">Entry</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((r) => (
+                    <TableRow key={r.id}>
+                      <TableCell>
+                        <Badge variant="secondary">#{r.position}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{r.draw_name}</div>
+                        <div className="text-xs text-muted-foreground capitalize">{r.draw_status}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          {r.customer_name || <span className="text-muted-foreground">Unnamed</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {r.customer_email || r.customer_phone || r.customer_id}
+                        </div>
+                      </TableCell>
+                      <TableCell>{r.prize}</TableCell>
+                      <TableCell className="whitespace-nowrap text-sm">{fmt(r.drawn_at)}</TableCell>
+                      <TableCell className="text-right font-mono text-xs text-muted-foreground">
+                        {r.entry_id.slice(0, 8)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
