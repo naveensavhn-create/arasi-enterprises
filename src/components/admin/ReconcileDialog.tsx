@@ -95,7 +95,7 @@ export function ReconcileDialog({
             <div className="text-xs text-muted-foreground">
               Scope:{" "}
               <span className="font-mono">
-                {filters.status && filters.status !== "all" ? filters.status : "all"}
+                {filters.status ?? "all"}
                 {filters.from ? ` · from ${filters.from}` : ""}
                 {filters.to ? ` · to ${filters.to}` : ""}
                 {filters.q ? ` · "${filters.q}"` : ""}
