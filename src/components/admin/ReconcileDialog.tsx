@@ -13,6 +13,7 @@ import {
   listOpenReconciliations,
   resolveReconciliation,
   type ReconciliationResult,
+  type ReconciliationRow,
 } from "@/lib/payments.functions";
 
 type Filters = {
