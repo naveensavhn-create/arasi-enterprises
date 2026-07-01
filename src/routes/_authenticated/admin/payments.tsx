@@ -794,7 +794,45 @@ function AdminPaymentsPage() {
         </CardHeader>
 
         <CardContent>
-          {isLoading ? (
+          {error && rows.length === 0 ? (
+            (() => {
+              const info = toDisplayablePostgrestError(error);
+              return (
+                <Alert variant="destructive" role="alert" aria-live="assertive" className="my-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Couldn't load transactions</AlertTitle>
+                  <AlertDescription className="space-y-2">
+                    <p className="text-sm">{info.message}</p>
+                    {(info.code || info.hint || info.details) && (
+                      <ul className="text-xs font-mono opacity-90 space-y-0.5">
+                        {info.code && <li>code: {info.code}</li>}
+                        {info.hint && <li>hint: {info.hint}</li>}
+                        {info.details && <li>details: {info.details}</li>}
+                      </ul>
+                    )}
+                    <div className="flex gap-2 pt-1">
+                      <Button size="sm" variant="outline" onClick={() => { void refetch(); }}>
+                        <RefreshCw className="mr-2 h-3.5 w-3.5" /> Retry
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setQDraft(""); setOrderDraft(""); setPaymentDraft(""); setCustomerDraft("");
+                          setSearch({
+                            q: "", orderId: "", paymentId: "", customer: "",
+                            status: "all", from: "", to: "", dateField: "created", page: 0,
+                          });
+                        }}
+                      >
+                        <FilterX className="mr-1.5 h-3.5 w-3.5" /> Reset filters
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              );
+            })()
+          ) : isLoading ? (
             <div className="overflow-x-auto" aria-busy="true" aria-label="Loading transactions">
               <table className="w-full text-sm">
                 <thead>
