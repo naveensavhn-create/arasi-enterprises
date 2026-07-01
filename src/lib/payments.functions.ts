@@ -49,6 +49,13 @@ const exportSchema = baseFilterSchema.extend({
   limit: z.number().int().min(1).max(10_000).default(5000),
 });
 
+const CSV_HARD_CAP = 10_000;
+const exportCsvSchema = baseFilterSchema.extend({
+  scope: z.enum(["page", "filtered"]).default("filtered"),
+  page: z.number().int().min(0).default(0),
+  pageSize: z.number().int().min(5).max(200).default(25),
+});
+
 /**
  * The row shape, Zod schema, and validation helpers live in the shared
  * client-safe module `@/lib/payments/validate-row` so both the ledger and
