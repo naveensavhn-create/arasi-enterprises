@@ -343,7 +343,11 @@ function AdminPaymentsPage() {
       queryClient.invalidateQueries({ queryKey: ["admin-export-jobs-header"] });
       return jobId;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to queue export");
+      const msg = e instanceof Error ? e.message : "Failed to queue export";
+      toast.error("Couldn't queue export", {
+        description: msg,
+        duration: 8000,
+      });
     } finally {
       setExporting(false);
     }
