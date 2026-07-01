@@ -391,7 +391,8 @@ export const exportAdminPayments = createServerFn({ method: "GET" })
     const n = normalizeFilters(data);
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
     const customerIdsExact = await resolveCustomerIdsExact(sb, n.customer);
-    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, 0, data.limit - 1);
+    const webhookPaymentIds = await resolveWebhookProcessedPaymentIds(sb, n);
+    const rows = await fetchPaymentRows(sb, n, customerIds, membershipIds, customerIdsExact, webhookPaymentIds, 0, data.limit - 1);
 
 
     // Build history map by scanning webhook events for the exported payments.
