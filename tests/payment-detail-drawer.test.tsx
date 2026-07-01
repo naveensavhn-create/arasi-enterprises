@@ -353,3 +353,88 @@ describe("<PaymentDetailDrawer /> — invalid row surfaces", () => {
     expect(screen.getByText(/1,500/)).toBeDefined();
   });
 });
+
+describe("<PaymentDetailDrawer /> — accessibility affordances", () => {
+  it("renders the invalid-row alert with role='alert' so AT announces it live", () => {
+    const invalid: AdminPaymentRow = {
+      ...validRow,
+      provider_payment_id: null,
+      profile: null,
+    };
+    renderWithClient(
+      <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
+    );
+
+    // shadcn Alert forwards role="alert" — this is the a11y contract we depend on.
+    const alerts = screen.getAllByRole("alert");
+    expect(alerts.length).toBeGreaterThan(0);
+    const incomplete = alerts.find((el) =>
+      /Incomplete payment record/i.test(el.textContent ?? ""),
+    );
+    expect(incomplete, "expected an alert containing the incomplete-record title").toBeDefined();
+  });
+
+  it("copy-row-id button has a descriptive accessible name", () => {
+    const invalid: AdminPaymentRow = { ...validRow, provider_payment_id: null };
+    renderWithClient(
+      <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
+    );
+
+    const alert = screen
+      .getByText("Incomplete payment record")
+      .closest('[role="alert"]') as HTMLElement;
+    // Must be findable by an accessible name matching "copy"; passes WCAG button-name.
+    const copyBtn = within(alert).getByRole("button", { name: /copy/i });
+    expect(copyBtn).toBeDefined();
+    // Ensure it isn't an icon-only button with no label
+    const accessibleName =
+      copyBtn.getAttribute("aria-label") ?? copyBtn.textContent ?? "";
+    expect(accessibleName.trim().length).toBeGreaterThan(0);
+  });
+
+  it("Data unavailable badges expose the label via aria-label AND title", () => {
+    const invalid: AdminPaymentRow = {
+      ...validRow,
+      provider_payment_id: null,
+      profile: null, // triggers UnavailableTag with a specific reason
+    };
+    renderWithClient(
+      <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
+    );
+
+    // Every unavailable badge must carry BOTH aria-label and title so screen
+    // readers and hover tooltips agree on what the placeholder means.
+    const badges = Array.from(
+      document.querySelectorAll<HTMLElement>('[aria-label^="Data unavailable"]'),
+    );
+    expect(badges.length).toBeGreaterThan(0);
+    for (const el of badges) {
+      expect(el.getAttribute("aria-label")).toMatch(/^Data unavailable/);
+      expect(el.getAttribute("title")).toBeTruthy();
+      // Visible text must still read as the label so sighted users see it too.
+      expect(el.textContent).toMatch(/Data unavailable/);
+    }
+
+    // The reason-carrying variant: aria-label = "Data unavailable — <reason>",
+    // title = "<reason>" (tooltip shows the specific cause).
+    const customerBadge = badges.find(
+      (el) => el.getAttribute("aria-label") === "Data unavailable — Linked profile missing",
+    );
+    expect(customerBadge, "expected the customer badge to carry the profile-missing reason").toBeDefined();
+    expect(customerBadge!.getAttribute("title")).toBe("Linked profile missing");
+  });
+
+  it("valid rows do not render any Data unavailable badges or alerts", () => {
+    renderWithClient(
+      <PaymentDetailDrawer row={validRow} open onOpenChange={() => {}} />,
+    );
+    expect(
+      document.querySelectorAll('[aria-label^="Data unavailable"]').length,
+    ).toBe(0);
+    // No destructive alert either
+    const alerts = screen.queryAllByRole("alert");
+    expect(
+      alerts.some((a) => /Incomplete payment record/i.test(a.textContent ?? "")),
+    ).toBe(false);
+  });
+});
