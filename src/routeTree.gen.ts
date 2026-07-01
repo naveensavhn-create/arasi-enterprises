@@ -32,6 +32,7 @@ import { Route as AuthenticatedCustomerMembershipRouteImport } from './routes/_a
 import { Route as AuthenticatedCustomerLuckyDrawRouteImport } from './routes/_authenticated/customer/lucky-draw'
 import { Route as AuthenticatedCustomerInstallmentsRouteImport } from './routes/_authenticated/customer/installments'
 import { Route as AuthenticatedCustomerEnrollRouteImport } from './routes/_authenticated/customer/enroll'
+import { Route as AuthenticatedCustomerDrawResultsRouteImport } from './routes/_authenticated/customer/draw-results'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminSiteSettingsRouteImport } from './routes/_authenticated/admin/site-settings'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
@@ -182,6 +183,12 @@ const AuthenticatedCustomerEnrollRoute =
   AuthenticatedCustomerEnrollRouteImport.update({
     id: '/enroll',
     path: '/enroll',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
+  } as any)
+const AuthenticatedCustomerDrawResultsRoute =
+  AuthenticatedCustomerDrawResultsRouteImport.update({
+    id: '/draw-results',
+    path: '/draw-results',
     getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
@@ -349,6 +356,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/customer/draw-results': typeof AuthenticatedCustomerDrawResultsRoute
   '/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
@@ -395,6 +403,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/customer/draw-results': typeof AuthenticatedCustomerDrawResultsRoute
   '/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
@@ -444,6 +453,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/customer/draw-results': typeof AuthenticatedCustomerDrawResultsRoute
   '/_authenticated/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/_authenticated/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/_authenticated/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
@@ -493,6 +503,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/site-settings'
     | '/admin/users'
+    | '/customer/draw-results'
     | '/customer/enroll'
     | '/customer/installments'
     | '/customer/lucky-draw'
@@ -539,6 +550,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/site-settings'
     | '/admin/users'
+    | '/customer/draw-results'
     | '/customer/enroll'
     | '/customer/installments'
     | '/customer/lucky-draw'
@@ -587,6 +599,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/site-settings'
     | '/_authenticated/admin/users'
+    | '/_authenticated/customer/draw-results'
     | '/_authenticated/customer/enroll'
     | '/_authenticated/customer/installments'
     | '/_authenticated/customer/lucky-draw'
@@ -778,6 +791,13 @@ declare module '@tanstack/react-router' {
       path: '/enroll'
       fullPath: '/customer/enroll'
       preLoaderRoute: typeof AuthenticatedCustomerEnrollRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
+    }
+    '/_authenticated/customer/draw-results': {
+      id: '/_authenticated/customer/draw-results'
+      path: '/draw-results'
+      fullPath: '/customer/draw-results'
+      preLoaderRoute: typeof AuthenticatedCustomerDrawResultsRouteImport
       parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/admin/users': {
@@ -998,6 +1018,7 @@ const AuthenticatedAdminRouteRouteWithChildren =
   )
 
 interface AuthenticatedCustomerRouteRouteChildren {
+  AuthenticatedCustomerDrawResultsRoute: typeof AuthenticatedCustomerDrawResultsRoute
   AuthenticatedCustomerEnrollRoute: typeof AuthenticatedCustomerEnrollRoute
   AuthenticatedCustomerInstallmentsRoute: typeof AuthenticatedCustomerInstallmentsRoute
   AuthenticatedCustomerLuckyDrawRoute: typeof AuthenticatedCustomerLuckyDrawRoute
@@ -1009,6 +1030,8 @@ interface AuthenticatedCustomerRouteRouteChildren {
 
 const AuthenticatedCustomerRouteRouteChildren: AuthenticatedCustomerRouteRouteChildren =
   {
+    AuthenticatedCustomerDrawResultsRoute:
+      AuthenticatedCustomerDrawResultsRoute,
     AuthenticatedCustomerEnrollRoute: AuthenticatedCustomerEnrollRoute,
     AuthenticatedCustomerInstallmentsRoute:
       AuthenticatedCustomerInstallmentsRoute,
