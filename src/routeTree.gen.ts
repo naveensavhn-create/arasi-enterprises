@@ -51,6 +51,7 @@ import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminApprovalsRouteImport } from './routes/_authenticated/admin/approvals'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
+import { Route as ApiPublicHooksProcessPaymentRemindersRouteImport } from './routes/api/public/hooks/process-payment-reminders'
 import { Route as ApiPublicHooksProcessExportJobsRouteImport } from './routes/api/public/hooks/process-export-jobs'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -294,6 +295,12 @@ const ApiPublicHooksReconcilePaymentsRoute =
     path: '/api/public/hooks/reconcile-payments',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksProcessPaymentRemindersRoute =
+  ApiPublicHooksProcessPaymentRemindersRouteImport.update({
+    id: '/api/public/hooks/process-payment-reminders',
+    path: '/api/public/hooks/process-payment-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProcessExportJobsRoute =
   ApiPublicHooksProcessExportJobsRouteImport.update({
     id: '/api/public/hooks/process-export-jobs',
@@ -342,6 +349,7 @@ export interface FileRoutesByFullPath {
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
+  '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
@@ -386,6 +394,7 @@ export interface FileRoutesByTo {
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
+  '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
@@ -432,6 +441,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
+  '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
     | '/api/public/hooks/process-export-jobs'
+    | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -522,6 +533,7 @@ export interface FileRouteTypes {
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
     | '/api/public/hooks/process-export-jobs'
+    | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   id:
@@ -567,6 +579,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/lucky-draw'
     | '/_authenticated/promoter/portfolio'
     | '/api/public/hooks/process-export-jobs'
+    | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   fileRoutesById: FileRoutesById
@@ -577,6 +590,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicHooksProcessExportJobsRoute: typeof ApiPublicHooksProcessExportJobsRoute
+  ApiPublicHooksProcessPaymentRemindersRoute: typeof ApiPublicHooksProcessPaymentRemindersRoute
   ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
 }
@@ -877,6 +891,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksReconcilePaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/process-payment-reminders': {
+      id: '/api/public/hooks/process-payment-reminders'
+      path: '/api/public/hooks/process-payment-reminders'
+      fullPath: '/api/public/hooks/process-payment-reminders'
+      preLoaderRoute: typeof ApiPublicHooksProcessPaymentRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/process-export-jobs': {
       id: '/api/public/hooks/process-export-jobs'
       path: '/api/public/hooks/process-export-jobs'
@@ -1014,6 +1035,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicHooksProcessExportJobsRoute: ApiPublicHooksProcessExportJobsRoute,
+  ApiPublicHooksProcessPaymentRemindersRoute:
+    ApiPublicHooksProcessPaymentRemindersRoute,
   ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
 }

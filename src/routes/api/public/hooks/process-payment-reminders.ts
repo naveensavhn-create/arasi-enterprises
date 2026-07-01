@@ -49,11 +49,11 @@ async function finalize(
   const { error } = await supabase.rpc("finalize_reminder_job", {
     _job_id: jobId,
     _status: args.status,
-    _provider: args.provider ?? null,
-    _provider_message_id: args.providerMessageId ?? null,
-    _error_code: args.errorCode ?? null,
-    _error_message: args.errorMessage ?? null,
-    _retry_in_seconds: args.retryInSeconds ?? null,
+    _provider: args.provider ?? undefined,
+    _provider_message_id: args.providerMessageId ?? undefined,
+    _error_code: args.errorCode ?? undefined,
+    _error_message: args.errorMessage ?? undefined,
+    _retry_in_seconds: args.retryInSeconds ?? undefined,
     _metadata: (args.metadata ?? {}) as never,
   });
   if (error) {
