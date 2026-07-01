@@ -206,7 +206,7 @@ export type InstallmentWebhookEvent = {
   error_code: string | null;
   error_description: string | null;
   resulting_installment_status: string | null;
-  raw: unknown;
+  raw: Record<string, any> | null;
 };
 
 export type InstallmentWebhookTimeline = {
