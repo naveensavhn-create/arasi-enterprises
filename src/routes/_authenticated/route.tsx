@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useSession, useCurrentRole, useSignOut } from "@/lib/auth";
 import { useEffect, useState } from "react";
 import { lastVisitedKey } from "@/lib/last-visited";
-import { useApplyUiPrefs, getUiPrefs } from "@/lib/ui-prefs";
+import { useApplyUiPrefs, getUiPrefs, useSyncUiPrefsWithServer } from "@/lib/ui-prefs";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
