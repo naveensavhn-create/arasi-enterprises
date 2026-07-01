@@ -41,6 +41,7 @@ import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
+import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -225,6 +226,12 @@ const ApiPublicRazorpayWebhookRoute =
     path: '/api/public/razorpay/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksReconcilePaymentsRoute =
+  ApiPublicHooksReconcilePaymentsRouteImport.update({
+    id: '/api/public/hooks/reconcile-payments',
+    path: '/api/public/hooks/reconcile-payments',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -290,6 +298,7 @@ export interface FileRoutesByTo {
   '/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
 export interface FileRoutesById {
@@ -325,6 +334,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/_authenticated/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
 export interface FileRouteTypes {
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/promoter/commissions'
     | '/promoter/customers'
     | '/promoter/portfolio'
+    | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/promoter/commissions'
     | '/promoter/customers'
     | '/promoter/portfolio'
+    | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   id:
     | '__root__'
@@ -427,6 +439,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/commissions'
     | '/_authenticated/promoter/customers'
     | '/_authenticated/promoter/portfolio'
+    | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -435,6 +448,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
 }
 
@@ -664,6 +678,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/reconcile-payments': {
+      id: '/api/public/hooks/reconcile-payments'
+      path: '/api/public/hooks/reconcile-payments'
+      fullPath: '/api/public/hooks/reconcile-payments'
+      preLoaderRoute: typeof ApiPublicHooksReconcilePaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -775,6 +796,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
 }
 export const routeTree = rootRouteImport
