@@ -126,6 +126,8 @@ function PaymentsRouteError({ error, reset }: { error: Error; reset: () => void 
     </div>
   );
 }
+
+function formatRelative(iso: string): string {
   const then = new Date(iso).getTime();
   if (!Number.isFinite(then)) return "—";
   const diff = Math.max(0, Date.now() - then);
