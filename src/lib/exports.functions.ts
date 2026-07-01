@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { PAYMENT_STATUSES } from "@/lib/payments/status-filter";
+import {
+  coercePaymentStatus,
+  type PaymentStatus,
+} from "@/lib/payments/status-filter";
 
 const SORT_COLUMNS = [
   "created_at",
@@ -19,13 +22,12 @@ export const exportFiltersSchema = z
   .object({
     sortBy: z.enum(SORT_COLUMNS).default("created_at"),
     sortDir: z.enum(["asc", "desc"]).default("desc"),
-    // Aligned with `paymentStatusFilterSchema` in payments.functions.ts —
-    // enforce the `payment_status` enum so `buildExportRows` can hand the
-    // value straight to `applyPaymentStatusEq` without re-coercion.
+    // Untrusted status input funneled through `coercePaymentStatus` so
+    // ONLY valid `payment_status` enum members reach `applyPaymentStatusEq`
+    // in `buildExportRows`. "", "all", unknown values → undefined (no-op).
     status: z
-      .enum(PAYMENT_STATUSES)
-      .optional()
-      .or(z.literal("").transform(() => undefined)),
+      .unknown()
+      .transform((v): PaymentStatus | undefined => coercePaymentStatus(v) ?? undefined),
     from: z.string().optional(),
     to: z.string().optional(),
     dateField: z.enum(DATE_FIELDS).default("created"),
