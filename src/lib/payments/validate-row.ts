@@ -153,12 +153,15 @@ export function validateAdminPaymentRow(
       parsed.error.issues.map((i) => String(i.path[0] ?? "")),
     );
     const missing: AdminPaymentRowRequiredField[] = [];
-    if (paths.has("amount")) missing.push("amount");
-    if (paths.has("currency")) missing.push("currency");
-    if (paths.has("status")) missing.push("status");
-    if (paths.has("provider_payment_id")) missing.push("paymentId");
-    if (paths.has("profile")) missing.push("customerName");
+    for (const key of Object.keys(
+      ADMIN_PAYMENT_ROW_REQUIRED_FIELDS,
+    ) as AdminPaymentRowRequiredField[]) {
+      if (paths.has(ADMIN_PAYMENT_ROW_REQUIRED_FIELDS[key].schemaPath)) {
+        missing.push(key);
+      }
+    }
     return { ok: false, missing: missing.length ? missing : ["status"] };
+
   }
   return applyDisplayRules(parsed.data);
 }
