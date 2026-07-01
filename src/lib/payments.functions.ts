@@ -31,9 +31,10 @@ export {
 export type { PaymentStatus } from "@/lib/payments/status-filter";
 import {
   applyPaymentStatusEq,
-  coercePaymentStatus,
+  coercePaymentStatusOrLog,
   type PaymentStatus,
 } from "@/lib/payments/status-filter";
+
 
 
 const SORT_COLUMNS = [
