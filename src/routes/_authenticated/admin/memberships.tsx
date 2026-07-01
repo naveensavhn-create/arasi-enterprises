@@ -73,10 +73,13 @@ function MembershipsAdminPage() {
   const [openImport, setOpenImport] = useState(false);
   const [editing, setEditing] = useState<any>(null);
 
+  const refetchInterval = useListRefetchInterval();
   const membershipsQ = useQuery({
     queryKey: ["admin-memberships", status, search],
     queryFn: () => list({ data: { status, search } }),
+    refetchInterval,
   });
+
   const customersQ = useQuery({ queryKey: ["opt-customers"], queryFn: () => customers() });
   const promotersQ = useQuery({ queryKey: ["opt-promoters"], queryFn: () => promoters() });
   const plansQ = useQuery({ queryKey: ["opt-plans"], queryFn: () => plans() });
