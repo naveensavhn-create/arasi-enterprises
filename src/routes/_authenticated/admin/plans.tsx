@@ -251,134 +251,271 @@ function AdminPlansPage() {
     return { advance, monthly, months, total: advance + monthly * months };
   }, [form.has_advance, form.advance_amount, form.monthly_installment, form.duration_months]);
 
+  const activeCount = data?.filter((p) => p.is_active).length ?? 0;
+  const totalEnrolled = usage ? Object.values(usage).reduce((a, b) => a + b, 0) : 0;
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Membership Plans</h1>
-          <p className="text-sm text-muted-foreground">
-            Advance amount + monthly installments × duration.
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={startCreate}>
-              <Plus className="mr-2 h-4 w-4" /> New Plan
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editing ? "Edit Plan" : "New Plan"}</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-3">
-              <div className="grid gap-1.5">
-                <Label>Name</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Description</Label>
-                <Textarea
-                  rows={2}
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="grid gap-1.5">
-                  <Label>Advance (₹)</Label>
-                  <Input
-                    type="number"
-                    value={form.advance_amount}
-                    onChange={(e) => setForm({ ...form, advance_amount: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label>Monthly (₹)</Label>
-                  <Input
-                    type="number"
-                    value={form.monthly_installment}
-                    onChange={(e) => setForm({ ...form, monthly_installment: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label>Months</Label>
-                  <Input
-                    type="number"
-                    value={form.duration_months}
-                    onChange={(e) => setForm({ ...form, duration_months: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Benefits (one per line)</Label>
-                <Textarea
-                  rows={4}
-                  value={form.benefits}
-                  onChange={(e) => setForm({ ...form, benefits: e.target.value })}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={form.is_active}
-                    onCheckedChange={(v) => setForm({ ...form, is_active: v })}
-                  />
-                  <Label>Active</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs">Display order</Label>
-                  <Input
-                    type="number"
-                    className="w-20"
-                    value={form.display_order}
-                    onChange={(e) => setForm({ ...form, display_order: e.target.value })}
-                  />
-                </div>
-              </div>
+    <div className="space-y-6">
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/10 via-background to-background p-6 shadow-sm">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/10 blur-3xl" />
+        <div className="relative flex flex-wrap items-end justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              <Sparkles className="h-3.5 w-3.5" /> Catalog
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={() => save.mutate()} disabled={save.isPending || !form.name}>
-                {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editing ? "Save changes" : "Create plan"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            <h1 className="text-3xl font-semibold tracking-tight">Membership Plans</h1>
+            <p className="max-w-xl text-sm text-muted-foreground">
+              Configure your advance-and-installment offerings. Toggle the advance requirement
+              off for pure monthly plans, or set both to build custom subscriptions.
+            </p>
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <div className="text-xs text-muted-foreground">Total plans</div>
+              <div className="text-2xl font-semibold">{data?.length ?? 0}</div>
+            </div>
+            <div className="hidden text-right sm:block">
+              <div className="text-xs text-muted-foreground">Active</div>
+              <div className="text-2xl font-semibold text-primary">{activeCount}</div>
+            </div>
+            <div className="hidden text-right md:block">
+              <div className="text-xs text-muted-foreground">Enrollments</div>
+              <div className="text-2xl font-semibold">{totalEnrolled}</div>
+            </div>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" onClick={startCreate} className="shadow-md">
+                  <Plus className="mr-2 h-4 w-4" /> New plan
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-xl">
+                    {editing ? "Edit plan" : "Create a new plan"}
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="grid gap-5 py-2">
+                  <div className="grid gap-4 sm:grid-cols-[1fr_140px]">
+                    <div className="grid gap-1.5">
+                      <Label>Plan name</Label>
+                      <Input
+                        placeholder="e.g. Gold"
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">Display order</Label>
+                      <Input
+                        type="number"
+                        value={form.display_order}
+                        onChange={(e) => setForm({ ...form, display_order: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <Label>Description</Label>
+                    <Textarea
+                      rows={2}
+                      placeholder="Short pitch shown to customers"
+                      value={form.description}
+                      onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Advance toggle */}
+                  <div className="rounded-xl border bg-muted/30 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                          <Wallet className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium">Requires an advance payment</div>
+                          <div className="text-xs text-muted-foreground">
+                            Turn off for pure monthly plans with no upfront amount.
+                          </div>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={form.has_advance}
+                        onCheckedChange={(v) =>
+                          setForm({ ...form, has_advance: v, advance_amount: v ? form.advance_amount : "0" })
+                        }
+                      />
+                    </div>
+
+                    {form.has_advance && (
+                      <div className="mt-3 grid gap-1.5">
+                        <Label className="text-xs">Advance amount (₹)</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={form.advance_amount}
+                          onChange={(e) => setForm({ ...form, advance_amount: e.target.value })}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs flex items-center gap-1.5">
+                        <TrendingUp className="h-3.5 w-3.5" /> Monthly installment (₹)
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        value={form.monthly_installment}
+                        onChange={(e) => setForm({ ...form, monthly_installment: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" /> Duration (months)
+                      </Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={form.duration_months}
+                        onChange={(e) => setForm({ ...form, duration_months: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Live totals preview */}
+                  <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent p-4">
+                    <div className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                      Preview
+                    </div>
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Advance</div>
+                        <div className="font-semibold">{inr(formTotals.advance)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">
+                          {inr(formTotals.monthly)} × {formTotals.months}
+                        </div>
+                        <div className="font-semibold">{inr(formTotals.monthly * formTotals.months)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Total value</div>
+                        <div className="text-lg font-bold text-primary">{inr(formTotals.total)}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-1.5">
+                    <Label>Benefits <span className="text-xs text-muted-foreground">(one per line)</span></Label>
+                    <Textarea
+                      rows={4}
+                      placeholder={"Priority support\nExclusive draws\nEarly access"}
+                      value={form.benefits}
+                      onChange={(e) => setForm({ ...form, benefits: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={form.is_active}
+                        onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+                      />
+                      <div>
+                        <div className="text-sm font-medium">Active</div>
+                        <div className="text-xs text-muted-foreground">
+                          Visible to customers for new enrollments
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                  <Button onClick={() => save.mutate()} disabled={save.isPending || !form.name}>
+                    {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {editing ? "Save changes" : "Create plan"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="h-4 w-4" /> {data?.length ?? 0} plan{data?.length === 1 ? "" : "s"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center py-8 text-muted-foreground">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
+      {/* Cards grid */}
+      {isLoading ? (
+        <Card>
+          <CardContent className="flex items-center py-12 text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading plans…
+          </CardContent>
+        </Card>
+      ) : !data || data.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <div className="rounded-full bg-primary/10 p-3 text-primary">
+              <Package className="h-6 w-6" />
             </div>
-          ) : !data || data.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              No plans yet. Click "New Plan" to add one.
-            </p>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {data.map((p) => (
-                <div key={p.id} className="rounded-lg border p-4">
+            <div>
+              <div className="font-medium">No plans yet</div>
+              <p className="text-sm text-muted-foreground">
+                Create your first membership plan to start accepting enrollments.
+              </p>
+            </div>
+            <Button onClick={startCreate}>
+              <Plus className="mr-2 h-4 w-4" /> New plan
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {data.map((p) => {
+            const enrolled = usageForPlan(p.id);
+            const noAdvance = Number(p.advance_amount) <= 0;
+            return (
+              <div
+                key={p.id}
+                className={cn(
+                  "group relative flex flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg",
+                  !p.is_active && "opacity-70",
+                )}
+              >
+                {/* Accent bar */}
+                <div
+                  className={cn(
+                    "h-1.5 w-full",
+                    p.is_active
+                      ? "bg-gradient-to-r from-primary via-primary/70 to-primary/40"
+                      : "bg-muted",
+                  )}
+                />
+
+                <div className="flex flex-col gap-4 p-5">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold">{p.name}</h3>
-                        <Badge variant={p.is_active ? "default" : "secondary"}>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="truncate text-lg font-semibold">{p.name}</h3>
+                        <Badge variant={p.is_active ? "default" : "secondary"} className="shrink-0">
                           {p.is_active ? "Active" : "Inactive"}
                         </Badge>
+                        {noAdvance && (
+                          <Badge variant="outline" className="shrink-0 border-primary/40 text-primary">
+                            No advance
+                          </Badge>
+                        )}
                       </div>
                       {p.description && (
-                        <p className="mt-1 text-xs text-muted-foreground">{p.description}</p>
+                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.description}</p>
                       )}
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex shrink-0 gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">
                       <Button size="icon" variant="ghost" onClick={() => startEdit(p)} title="Edit">
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -403,36 +540,73 @@ function AdminPlansPage() {
                         variant="ghost"
                         onClick={() => setConfirmDelete(p)}
                         title="Delete"
+                        className="text-destructive hover:text-destructive"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                    <div>
-                      <div className="text-muted-foreground">Advance</div>
-                      <div className="font-medium">₹{Number(p.advance_amount).toLocaleString("en-IN")}</div>
+
+                  {/* Price block */}
+                  <div className="rounded-xl border bg-muted/30 p-4">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-bold tracking-tight text-gradient-gold">
+                        {inr(Number(p.total_value))}
+                      </span>
+                      <span className="text-xs text-muted-foreground">total value</span>
                     </div>
-                    <div>
-                      <div className="text-muted-foreground">Monthly × {p.duration_months}</div>
-                      <div className="font-medium">₹{Number(p.monthly_installment).toLocaleString("en-IN")}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Total</div>
-                      <div className="font-medium text-gradient-gold">
-                        ₹{Number(p.total_value).toLocaleString("en-IN")}
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        <Wallet className="h-3.5 w-3.5 text-muted-foreground" />
+                        <div>
+                          <div className="text-muted-foreground">Advance</div>
+                          <div className="font-medium text-foreground">
+                            {noAdvance ? "—" : inr(Number(p.advance_amount))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                        <div>
+                          <div className="text-muted-foreground">Monthly × {p.duration_months}</div>
+                          <div className="font-medium text-foreground">
+                            {inr(Number(p.monthly_installment))}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
+
                   {p.benefits && p.benefits.length > 0 && (
-                    <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-                      {p.benefits.map((b, i) => (
-                        <li key={i}>• {b}</li>
+                    <ul className="space-y-1.5 text-sm">
+                      {p.benefits.slice(0, 4).map((b, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                          <span className="text-muted-foreground">{b}</span>
+                        </li>
                       ))}
+                      {p.benefits.length > 4 && (
+                        <li className="pl-6 text-xs text-muted-foreground">
+                          +{p.benefits.length - 4} more
+                        </li>
+                      )}
                     </ul>
                   )}
+
+                  <div className="mt-auto flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5" />
+                      {enrolled} enrolled
+                    </span>
+                    <span>Order #{p.display_order}</span>
+                  </div>
                 </div>
-              ))}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
             </div>
           )}
         </CardContent>
