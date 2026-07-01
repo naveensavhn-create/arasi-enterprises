@@ -89,6 +89,20 @@ function AdminPlansPage() {
     },
   });
 
+  const { data: usage } = useQuery({
+    queryKey: ["admin-plans-usage"],
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data, error } = await supabase.from("memberships").select("plan_id");
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const row of (data ?? []) as { plan_id: string | null }[]) {
+        if (row.plan_id) counts[row.plan_id] = (counts[row.plan_id] ?? 0) + 1;
+      }
+      return counts;
+    },
+  });
+  const usageFor = (id: string) => usage?.[id] ?? 0;
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
@@ -140,6 +154,7 @@ function AdminPlansPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      qc.invalidateQueries({ queryKey: ["admin-plans-usage"] });
       toast.success("Plan deleted");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Delete failed"),
@@ -347,30 +362,68 @@ function AdminPlansPage() {
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete plan?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete <span className="font-semibold">{confirmDelete?.name}</span>.
-              Existing memberships already on this plan are unaffected, but customers will no longer be
-              able to enroll in it. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={remove.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={remove.isPending}
-              onClick={(e) => {
-                e.preventDefault();
-                if (!confirmDelete) return;
-                remove.mutate(confirmDelete.id, {
-                  onSuccess: () => setConfirmDelete(null),
-                });
-              }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete plan"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+          {(() => {
+            const inUse = confirmDelete ? usageFor(confirmDelete.id) : 0;
+            const blocked = inUse > 0;
+            return (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {blocked ? "Cannot delete this plan" : "Delete plan?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {blocked ? (
+                      <>
+                        <span className="font-semibold">{confirmDelete?.name}</span> is used by{" "}
+                        <span className="font-semibold">{inUse}</span> existing membership
+                        {inUse === 1 ? "" : "s"}. Deleting it would orphan those records.
+                        Deactivate the plan instead to stop new enrollments while preserving history.
+                      </>
+                    ) : (
+                      <>
+                        This will permanently delete{" "}
+                        <span className="font-semibold">{confirmDelete?.name}</span>. No memberships
+                        reference this plan. This action cannot be undone.
+                      </>
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={remove.isPending}>
+                    {blocked ? "Close" : "Cancel"}
+                  </AlertDialogCancel>
+                  {blocked ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        if (!confirmDelete || !confirmDelete.is_active) return;
+                        toggleActive.mutate(confirmDelete, {
+                          onSuccess: () => setConfirmDelete(null),
+                        });
+                      }}
+                      disabled={toggleActive.isPending || !confirmDelete?.is_active}
+                    >
+                      {confirmDelete?.is_active ? "Deactivate plan" : "Already inactive"}
+                    </Button>
+                  ) : (
+                    <AlertDialogAction
+                      disabled={remove.isPending}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!confirmDelete) return;
+                        remove.mutate(confirmDelete.id, {
+                          onSuccess: () => setConfirmDelete(null),
+                        });
+                      }}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete plan"}
+                    </AlertDialogAction>
+                  )}
+                </AlertDialogFooter>
+              </>
+            );
+          })()}
         </AlertDialogContent>
       </AlertDialog>
     </div>
