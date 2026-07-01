@@ -148,7 +148,7 @@ function AdminPaymentsPage() {
     queryKey: [
       "admin-payments",
       search.page, search.pageSize, search.sortBy, search.sortDir,
-      search.status, search.from, search.to, search.q,
+      search.status, search.from, search.to, search.dateField, search.q,
       search.orderId, search.paymentId, search.customer,
     ],
     queryFn: () =>
@@ -161,6 +161,7 @@ function AdminPaymentsPage() {
           status: search.status || undefined,
           from: search.from || undefined,
           to: search.to || undefined,
+          dateField: search.dateField,
           q: search.q || undefined,
           orderId: search.orderId || undefined,
           paymentId: search.paymentId || undefined,
