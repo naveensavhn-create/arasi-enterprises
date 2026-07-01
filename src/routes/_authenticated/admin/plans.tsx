@@ -464,26 +464,33 @@ function AdminPlansPage() {
                     )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={remove.isPending}>
+                <AlertDialogFooter className="gap-2 sm:gap-2">
+                  <AlertDialogCancel disabled={remove.isPending || deactivate.isPending}>
                     {blocked ? "Close" : "Cancel"}
                   </AlertDialogCancel>
-                  {blocked ? (
+
+                  {confirmDelete?.is_active && (
                     <Button
                       variant="secondary"
                       onClick={() => {
-                        if (!confirmDelete || !confirmDelete.is_active) return;
-                        toggleActive.mutate(confirmDelete, {
+                        if (!confirmDelete) return;
+                        deactivate.mutate(confirmDelete, {
                           onSuccess: () => setConfirmDelete(null),
                         });
                       }}
-                      disabled={toggleActive.isPending || !confirmDelete?.is_active}
+                      disabled={deactivate.isPending || remove.isPending}
                     >
-                      {confirmDelete?.is_active ? "Deactivate plan" : "Already inactive"}
+                      {deactivate.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Deactivate plan"
+                      )}
                     </Button>
-                  ) : (
+                  )}
+
+                  {!blocked && (
                     <AlertDialogAction
-                      disabled={remove.isPending}
+                      disabled={remove.isPending || deactivate.isPending}
                       onClick={(e) => {
                         e.preventDefault();
                         if (!confirmDelete) return;
@@ -493,7 +500,11 @@ function AdminPlansPage() {
                       }}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete plan"}
+                      {remove.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Delete plan"
+                      )}
                     </AlertDialogAction>
                   )}
                 </AlertDialogFooter>
