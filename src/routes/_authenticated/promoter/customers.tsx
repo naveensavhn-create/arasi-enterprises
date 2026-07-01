@@ -89,6 +89,7 @@ function PromoterCustomersPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listMyReferredCustomers);
   const registerFn = useServerFn(registerCustomerAsPromoter);
+  const submitFn = useServerFn(submitReferralForReview);
 
   const [q, setQ] = useState("");
   const [openRegister, setOpenRegister] = useState(false);
@@ -125,6 +126,17 @@ function PromoterCustomersPage() {
       qc.invalidateQueries({ queryKey: ["promoter-referred-customers"] });
     },
     onError: (e: any) => toast.error(e?.message ?? "Failed to register customer"),
+  });
+
+  const submitMut = useMutation({
+    mutationFn: (v: { userId: string; note: string | null }) =>
+      submitFn({ data: v } as any),
+    onSuccess: () => {
+      toast.success("Submitted to admin for review");
+      qc.invalidateQueries({ queryKey: ["promoter-referred-customers"] });
+      setSelected(null);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't submit for review"),
   });
 
   const rows = filtered;
