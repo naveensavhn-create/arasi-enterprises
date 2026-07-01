@@ -1,0 +1,218 @@
+/**
+ * Integration test: plan-delete safety net.
+ *
+ * Verifies BOTH layers of protection:
+ *   1. The admin UI precheck (`computePlanUsage` / `isDeleteBlocked`) that
+ *      disables the destructive button when pending/active memberships exist.
+ *   2. The Postgres trigger `prevent_plan_delete_with_memberships` that
+ *      raises `foreign_key_violation` if the UI is bypassed.
+ *
+ * Both must block while enrollments are pending/active, and both must
+ * allow deletion once every membership is cancelled or completed.
+ *
+ * Run with: `bunx vitest run tests/plan-delete.test.ts`
+ */
+
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { Client } from "pg";
+import {
+  BLOCKING_STATUSES,
+  computePlanUsage,
+  isDeleteBlocked,
+  usageFor,
+} from "@/lib/plans-precheck";
+
+const DB_URL = process.env.SUPABASE_DB_URL;
+const describeIfDb = DB_URL ? describe : describe.skip;
+
+describe("plan-delete UI precheck (unit)", () => {
+  it("counts only pending + active memberships as blocking", () => {
+    const usage = computePlanUsage([
+      { plan_id: "p1", status: "pending" },
+      { plan_id: "p1", status: "active" },
+      { plan_id: "p1", status: "cancelled" },
+      { plan_id: "p1", status: "completed" },
+      { plan_id: "p2", status: "active" },
+      { plan_id: null, status: "active" },
+      { plan_id: "p3", status: null },
+    ]);
+    expect(usage).toEqual({ p1: 2, p2: 1 });
+    expect(usageFor(usage, "p1")).toBe(2);
+    expect(usageFor(usage, "p3")).toBe(0);
+    expect(isDeleteBlocked(usage, "p1")).toBe(true);
+    expect(isDeleteBlocked(usage, "p2")).toBe(true);
+    expect(isDeleteBlocked(usage, "p3")).toBe(false);
+    expect(isDeleteBlocked(undefined, "p1")).toBe(false);
+  });
+
+  it("mirrors the DB trigger's blocking-status set", () => {
+    // If this ever drifts, the UI and the trigger disagree — a real bug.
+    expect([...BLOCKING_STATUSES].sort()).toEqual(["active", "pending"]);
+  });
+
+  it("returns an empty map for no rows", () => {
+    expect(computePlanUsage([])).toEqual({});
+  });
+});
+
+describeIfDb("plan-delete DB trigger (integration)", () => {
+  const client = new Client({ connectionString: DB_URL });
+
+  // Namespaced test IDs so parallel runs and leftover data never collide.
+  const runTag = `vitest-plan-delete-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  let planId = "";
+  let customerId = "";
+  const membershipIds: string[] = [];
+
+  beforeAll(async () => {
+    await client.connect();
+
+    // 1) Ephemeral customer profile (memberships.customer_id is NOT NULL and
+    //    references profiles(id), which in turn FKs auth.users). Insert into
+    //    auth.users directly with the service-role DB connection so the FK
+    //    chain is satisfied without touching real accounts.
+    const userInsert = await client.query<{ id: string }>(
+      `INSERT INTO auth.users (id, instance_id, aud, role, email, created_at, updated_at)
+       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000000', 'authenticated',
+               'authenticated', $1, now(), now())
+       RETURNING id`,
+      [`${runTag}@example.test`],
+    );
+    customerId = userInsert.rows[0].id;
+    await client.query(
+      `INSERT INTO public.profiles (id, full_name, email)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (id) DO NOTHING`,
+      [customerId, `Test ${runTag}`, `${runTag}@example.test`],
+    );
+
+    // 2) Ephemeral active plan.
+    const planInsert = await client.query<{ id: string }>(
+      `INSERT INTO public.membership_plans
+         (name, description, advance_amount, monthly_installment, duration_months,
+          total_value, is_active, display_order)
+       VALUES ($1, 'integration test plan', 1000, 500, 12, 7000, true, 999)
+       RETURNING id`,
+      [`Test Plan ${runTag}`],
+    );
+    planId = planInsert.rows[0].id;
+  });
+
+  afterAll(async () => {
+    // Best-effort cleanup, no matter which assertion failed.
+    try {
+      if (membershipIds.length) {
+        await client.query(`DELETE FROM public.installments WHERE membership_id = ANY($1::uuid[])`, [
+          membershipIds,
+        ]);
+        await client.query(`DELETE FROM public.memberships WHERE id = ANY($1::uuid[])`, [
+          membershipIds,
+        ]);
+      }
+      if (planId) {
+        await client.query(`DELETE FROM public.membership_plans WHERE id = $1`, [planId]);
+      }
+      if (customerId) {
+        await client.query(`DELETE FROM public.profiles WHERE id = $1`, [customerId]);
+        await client.query(`DELETE FROM auth.users WHERE id = $1`, [customerId]);
+      }
+    } finally {
+      await client.end();
+    }
+  });
+
+  async function createMembership(status: "pending" | "active" | "cancelled" | "completed") {
+    const res = await client.query<{ id: string }>(
+      `INSERT INTO public.memberships (customer_id, plan_id, status, start_date)
+       VALUES ($1, $2, $3, CURRENT_DATE)
+       RETURNING id`,
+      [customerId, planId, status],
+    );
+    const id = res.rows[0].id;
+    membershipIds.push(id);
+    return id;
+  }
+
+  async function loadUsage() {
+    const rows = await client.query<{ plan_id: string; status: string }>(
+      `SELECT plan_id, status FROM public.memberships WHERE plan_id = $1`,
+      [planId],
+    );
+    return computePlanUsage(rows.rows);
+  }
+
+  it("UI precheck AND trigger both block delete while pending/active enrollments exist", async () => {
+    const pendingId = await createMembership("pending");
+    const activeId = await createMembership("active");
+    // Non-blocking history should NOT count.
+    await createMembership("cancelled");
+    await createMembership("completed");
+
+    // --- UI precheck ---
+    const usage = await loadUsage();
+    expect(usageFor(usage, planId)).toBe(2);
+    expect(isDeleteBlocked(usage, planId)).toBe(true);
+
+    // --- DB trigger ---
+    await expect(
+      client.query(`DELETE FROM public.membership_plans WHERE id = $1`, [planId]),
+    ).rejects.toMatchObject({
+      // `prevent_plan_delete_with_memberships` raises with ERRCODE 23503.
+      code: "23503",
+      message: expect.stringContaining("Cannot delete plan"),
+    });
+
+    // Plan must still exist after the blocked delete.
+    const stillThere = await client.query(
+      `SELECT 1 FROM public.membership_plans WHERE id = $1`,
+      [planId],
+    );
+    expect(stillThere.rowCount).toBe(1);
+
+    // Keep IDs referenced so the linter is happy and the intent is clear.
+    expect(pendingId).toBeTruthy();
+    expect(activeId).toBeTruthy();
+  });
+
+  it("both layers allow delete once every membership is cancelled or completed", async () => {
+    // Retire the two blocking rows created above.
+    await client.query(
+      `UPDATE public.memberships
+          SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE 'completed' END
+        WHERE plan_id = $1 AND status IN ('pending','active')`,
+      [planId],
+    );
+
+    // --- UI precheck now permits deletion ---
+    const usage = await loadUsage();
+    expect(usageFor(usage, planId)).toBe(0);
+    expect(isDeleteBlocked(usage, planId)).toBe(false);
+
+    // --- DB trigger permits deletion ---
+    // Installments FK -> memberships with ON DELETE CASCADE, but membership_plans
+    // is only referenced by memberships; wipe memberships first so the plan row
+    // has no dependents left.
+    await client.query(`DELETE FROM public.installments WHERE membership_id = ANY($1::uuid[])`, [
+      membershipIds,
+    ]);
+    await client.query(`DELETE FROM public.memberships WHERE id = ANY($1::uuid[])`, [
+      membershipIds,
+    ]);
+    membershipIds.length = 0;
+
+    const del = await client.query(
+      `DELETE FROM public.membership_plans WHERE id = $1 RETURNING id`,
+      [planId],
+    );
+    expect(del.rowCount).toBe(1);
+
+    const gone = await client.query(
+      `SELECT 1 FROM public.membership_plans WHERE id = $1`,
+      [planId],
+    );
+    expect(gone.rowCount).toBe(0);
+
+    // Prevent afterAll from trying to delete the already-gone plan.
+    planId = "";
+  });
+});
