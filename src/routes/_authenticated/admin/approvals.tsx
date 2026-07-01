@@ -222,6 +222,20 @@ function AdminApprovalsPage() {
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
+                    <TableCell className="text-xs">
+                      {r.referred_by_promoter_id ? (
+                        <>
+                          <div className="font-medium">
+                            {r.referred_by_name || r.referred_by_email}
+                          </div>
+                          {r.referred_by_name && r.referred_by_email && (
+                            <div className="text-muted-foreground">{r.referred_by_email}</div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">Direct</span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-mono text-xs">{r.phone || "—"}</TableCell>
                     <TableCell className="text-sm">{r.city || "—"}</TableCell>
                     <TableCell className="font-mono text-xs">
