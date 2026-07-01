@@ -326,7 +326,7 @@ export const listAdminPayments = createServerFn({ method: "GET" })
             }
             let tq = sb.from("payments").select("amount, status", { count: "exact" });
             tq = tq.in("id", webhookPaymentIds);
-            if (n.status) tq = tq.filter("status::text", "eq", n.status);
+            tq = applyPaymentStatusEq(tq, n.status);
             if (n.orderId) tq = tq.ilike("provider_order_id", `%${n.orderId}%`);
             if (n.paymentId) tq = tq.ilike("provider_payment_id", `%${n.paymentId}%`);
             if (customerIdsExact && customerIdsExact.length) tq = tq.in("customer_id", customerIdsExact);
