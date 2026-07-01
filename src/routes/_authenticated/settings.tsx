@@ -17,7 +17,7 @@ function SettingsPage() {
         <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Account</p>
         <h1 className="mt-1 text-2xl font-semibold">Preferences</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Personalize how the workspace looks. Changes apply immediately and are saved on this device.
+          Personalize how the workspace looks. Changes apply immediately and sync to your account across devices.
         </p>
       </header>
 
