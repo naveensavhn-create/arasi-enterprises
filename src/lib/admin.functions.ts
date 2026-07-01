@@ -4,17 +4,84 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const emailSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),
+  reason: z.string().trim().max(500).optional(),
 });
 
 const roleChangeSchema = z.object({
   userId: z.string().uuid(),
   role: z.enum(["admin", "promoter", "customer"]),
+  reason: z.string().trim().max(500).optional(),
 });
+
+type AppRole = "admin" | "promoter" | "customer";
+
+async function writeAudit(
+  supabaseAdmin: Awaited<
+    ReturnType<
+      typeof import("@/integrations/supabase/client.server")
+    >
+  >["supabaseAdmin"],
+  entry: {
+    actor_id: string;
+    actor_email: string | null;
+    target_user_id: string;
+    target_email: string | null;
+    action: "promote" | "revoke" | "role_change" | "bootstrap_claim";
+    role_before: AppRole | null;
+    role_after: AppRole | null;
+    reason: string | null;
+    metadata?: Record<string, unknown>;
+  },
+) {
+  await supabaseAdmin.from("admin_audit_log").insert({
+    actor_id: entry.actor_id,
+    actor_email: entry.actor_email,
+    target_user_id: entry.target_user_id,
+    target_email: entry.target_email,
+    action: entry.action,
+    role_before: entry.role_before,
+    role_after: entry.role_after,
+    reason: entry.reason,
+    metadata: entry.metadata ?? {},
+  });
+}
+
+async function lookupEmail(
+  supabaseAdmin: Awaited<
+    ReturnType<
+      typeof import("@/integrations/supabase/client.server")
+    >
+  >["supabaseAdmin"],
+  userId: string,
+): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("email")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.email ?? null;
+}
+
+async function currentRole(
+  supabaseAdmin: Awaited<
+    ReturnType<
+      typeof import("@/integrations/supabase/client.server")
+    >
+  >["supabaseAdmin"],
+  userId: string,
+): Promise<AppRole | null> {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .order("role", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (data?.role as AppRole | null) ?? null;
+}
 
 /**
  * Public status endpoint — no auth required.
- * Reports whether any admin exists in the system (used to gate the one-time
- * bootstrap flow) and, if the caller is signed in, whether they are that admin.
  */
 export const getAdminBootstrapStatus = createServerFn({ method: "GET" }).handler(
   async () => {
@@ -29,8 +96,7 @@ export const getAdminBootstrapStatus = createServerFn({ method: "GET" }).handler
 );
 
 /**
- * One-time bootstrap: if NO admin exists yet, the currently signed-in user
- * may claim the admin role. Once any admin exists, this endpoint refuses.
+ * One-time bootstrap: if NO admin exists yet, the signed-in user may claim admin.
  */
 export const claimFirstAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -46,10 +112,24 @@ export const claimFirstAdmin = createServerFn({ method: "POST" })
       throw new Error("An administrator already exists. Ask an existing admin to promote you.");
     }
 
+    const before = await currentRole(supabaseAdmin, context.userId);
+    const email = await lookupEmail(supabaseAdmin, context.userId);
+
     const { error: insertError } = await supabaseAdmin
       .from("user_roles")
       .insert({ user_id: context.userId, role: "admin" });
     if (insertError) throw new Error(insertError.message);
+
+    await writeAudit(supabaseAdmin, {
+      actor_id: context.userId,
+      actor_email: email,
+      target_user_id: context.userId,
+      target_email: email,
+      action: "bootstrap_claim",
+      role_before: before,
+      role_after: "admin",
+      reason: "Initial admin bootstrap",
+    });
 
     return { ok: true };
   });
@@ -70,7 +150,6 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Look up target user by email via Auth Admin API
     let targetId: string | null = null;
     let page = 1;
     while (page < 20 && !targetId) {
@@ -86,6 +165,9 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
     }
     if (!targetId) throw new Error(`No user found with email ${data.email}.`);
 
+    const before = await currentRole(supabaseAdmin, targetId);
+    const actorEmail = await lookupEmail(supabaseAdmin, context.userId);
+
     const { data: existing } = await supabaseAdmin
       .from("user_roles")
       .select("id")
@@ -98,6 +180,18 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
         .insert({ user_id: targetId, role: "admin" });
       if (insertError) throw new Error(insertError.message);
     }
+
+    await writeAudit(supabaseAdmin, {
+      actor_id: context.userId,
+      actor_email: actorEmail,
+      target_user_id: targetId,
+      target_email: data.email,
+      action: "promote",
+      role_before: before,
+      role_after: "admin",
+      reason: data.reason ?? null,
+      metadata: { already_admin: !!existing },
+    });
 
     return { ok: true, userId: targetId };
   });
@@ -128,6 +222,10 @@ export const setUserRole = createServerFn({ method: "POST" })
       }
     }
 
+    const before = await currentRole(supabaseAdmin, data.userId);
+    const actorEmail = await lookupEmail(supabaseAdmin, context.userId);
+    const targetEmail = await lookupEmail(supabaseAdmin, data.userId);
+
     const { error: deleteError } = await supabaseAdmin
       .from("user_roles")
       .delete()
@@ -139,11 +237,29 @@ export const setUserRole = createServerFn({ method: "POST" })
       .insert({ user_id: data.userId, role: data.role });
     if (insertError) throw new Error(insertError.message);
 
+    const action =
+      before === "admin" && data.role !== "admin"
+        ? "revoke"
+        : data.role === "admin" && before !== "admin"
+          ? "promote"
+          : "role_change";
+
+    await writeAudit(supabaseAdmin, {
+      actor_id: context.userId,
+      actor_email: actorEmail,
+      target_user_id: data.userId,
+      target_email: targetEmail,
+      action,
+      role_before: before,
+      role_after: data.role,
+      reason: data.reason ?? null,
+    });
+
     return { ok: true };
   });
 
 /**
- * List all admins (admin only). Powers the settings UI.
+ * List all admins (admin only).
  */
 export const listAdmins = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -176,4 +292,26 @@ export const listAdmins = createServerFn({ method: "GET" })
       email: byId.get(r.user_id)?.email ?? null,
       fullName: byId.get(r.user_id)?.full_name ?? null,
     }));
+  });
+
+/**
+ * List admin audit log entries (admin only), most recent first.
+ */
+export const listAdminAuditLog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleErr) throw new Error(roleErr.message);
+    if (!isAdmin) throw new Error("Forbidden: admin role required.");
+
+    const { data, error } = await context.supabase
+      .from("admin_audit_log")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) throw new Error(error.message);
+    return data;
   });
