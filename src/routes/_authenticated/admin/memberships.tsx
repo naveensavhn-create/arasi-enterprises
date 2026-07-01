@@ -246,6 +246,12 @@ function MembershipsAdminPage() {
           submitting={updateMut.isPending}
         />
       )}
+
+      <ImportMembershipsDialog
+        open={openImport}
+        onOpenChange={setOpenImport}
+        onImported={invalidate}
+      />
     </div>
   );
 }
