@@ -47,12 +47,16 @@ function AdminPromotersPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Promoters</h1>
-        <p className="text-sm text-muted-foreground">
-          Field agents who onboard and support customers. Assign the promoter role from Settings.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Promoters</h1>
+          <p className="text-sm text-muted-foreground">
+            Field agents who onboard and support customers. Assign the promoter role from Settings.
+          </p>
+        </div>
+        <PollingControls ariaLabel="Promoters polling fallback interval" />
       </div>
+
 
       <Card>
         <CardHeader>
