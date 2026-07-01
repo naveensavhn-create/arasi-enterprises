@@ -68,33 +68,83 @@ function DrawResultsPage() {
   });
 
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [drawFilter, setDrawFilter] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
-  const draws = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const r of data) map.set(r.draw_id, r.draw_name);
-    return Array.from(map, ([id, name]) => ({ id, name }));
-  }, [data]);
+  // Debounce search input so keystrokes don't re-filter thousands of rows synchronously.
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q.trim().toLowerCase()), 150);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  // Precompute a lowercased haystack per row once — avoids re-lowercasing on every keystroke.
+  const indexed = useMemo(
+    () =>
+      data.map((r) => ({
+        row: r,
+        haystack: [
+          r.customer_name,
+          r.customer_email,
+          r.customer_phone,
+          r.draw_name,
+          r.prize,
+          r.customer_id,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase(),
+      })),
+    [data],
+  );
+
+  // Group rows by draw_id so the per-draw filter is an O(1) map lookup instead of
+  // a full-table scan. Also gives us the sorted (draw_id, name) list for the <select>.
+  const byDraw = useMemo(() => {
+    const groups = new Map<string, typeof indexed>();
+    for (const item of indexed) {
+      const list = groups.get(item.row.draw_id);
+      if (list) list.push(item);
+      else groups.set(item.row.draw_id, [item]);
+    }
+    return groups;
+  }, [indexed]);
+
+  const draws = useMemo(
+    () =>
+      Array.from(byDraw, ([id, list]) => ({ id, name: list[0].row.draw_name })).sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+    [byDraw],
+  );
 
   const filtered = useMemo(() => {
-    const needle = q.trim().toLowerCase();
-    return data.filter((r) => {
-      if (drawFilter && r.draw_id !== drawFilter) return false;
-      if (!needle) return true;
-      return (
-        r.customer_name?.toLowerCase().includes(needle) ||
-        r.customer_email?.toLowerCase().includes(needle) ||
-        r.customer_phone?.toLowerCase().includes(needle) ||
-        r.draw_name.toLowerCase().includes(needle) ||
-        r.prize.toLowerCase().includes(needle) ||
-        r.customer_id.toLowerCase().includes(needle)
-      );
-    });
-  }, [data, q, drawFilter]);
+    const source = drawFilter ? byDraw.get(drawFilter) ?? [] : indexed;
+    if (!debouncedQ) return source.map((i) => i.row);
+    const out: DrawResultRow[] = [];
+    for (const item of source) {
+      if (item.haystack.includes(debouncedQ)) out.push(item.row);
+    }
+    return out;
+  }, [indexed, byDraw, drawFilter, debouncedQ]);
+
+  // Reset to first page whenever the filter set changes.
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQ, drawFilter, pageSize]);
 
   const totalWinners = data.length;
   const drawsCount = draws.length;
   const latest = data[0];
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const pageStart = (safePage - 1) * pageSize;
+  const pageRows = useMemo(
+    () => filtered.slice(pageStart, pageStart + pageSize),
+    [filtered, pageStart, pageSize],
+  );
 
   return (
     <div className="space-y-4">
