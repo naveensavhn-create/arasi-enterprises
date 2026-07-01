@@ -233,6 +233,7 @@ function AdminPlansPage() {
     setForm({
       name: p.name,
       description: p.description ?? "",
+      has_advance: Number(p.advance_amount) > 0,
       advance_amount: String(p.advance_amount),
       monthly_installment: String(p.monthly_installment),
       duration_months: String(p.duration_months),
@@ -242,6 +243,13 @@ function AdminPlansPage() {
     });
     setOpen(true);
   }
+
+  const formTotals = useMemo(() => {
+    const advance = form.has_advance ? Number(form.advance_amount || 0) : 0;
+    const monthly = Number(form.monthly_installment || 0);
+    const months = Number(form.duration_months || 0);
+    return { advance, monthly, months, total: advance + monthly * months };
+  }, [form.has_advance, form.advance_amount, form.monthly_installment, form.duration_months]);
 
   return (
     <div className="space-y-4">
