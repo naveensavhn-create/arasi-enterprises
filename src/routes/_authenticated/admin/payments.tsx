@@ -35,6 +35,15 @@ import { toast } from "sonner";
 
 
 const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"] as const;
+type StatusKey = typeof STATUSES[number];
+const STATUS_META: Record<StatusKey, { label: string; dot: string; activeClass: string }> = {
+  all:       { label: "All",        dot: "bg-muted-foreground",   activeClass: "bg-primary text-primary-foreground border-primary" },
+  paid:      { label: "Succeeded",  dot: "bg-emerald-500",        activeClass: "bg-emerald-600 text-white border-emerald-600" },
+  created:   { label: "Pending",    dot: "bg-amber-500",          activeClass: "bg-amber-600 text-white border-amber-600" },
+  attempted: { label: "Attempted",  dot: "bg-sky-500",            activeClass: "bg-sky-600 text-white border-sky-600" },
+  failed:    { label: "Failed",     dot: "bg-red-500",            activeClass: "bg-red-600 text-white border-red-600" },
+  refunded:  { label: "Refunded",   dot: "bg-violet-500",         activeClass: "bg-violet-600 text-white border-violet-600" },
+};
 const SORT_COLUMNS = [
   "created_at",
   "paid_at",
@@ -439,19 +448,27 @@ function AdminPaymentsPage() {
             <CreditCard className="h-4 w-4" /> Transactions
             {isFetching && !isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </CardTitle>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap gap-1">
-              {STATUSES.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setSearch({ status: s, page: 0 })}
-                  className={`rounded-md border px-2.5 py-1 text-xs capitalize ${
-                    search.status === s ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Quick status filters">
+            <div className="flex flex-wrap gap-1.5">
+              {STATUSES.map((s) => {
+                const meta = STATUS_META[s];
+                const active = search.status === s;
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    aria-pressed={active}
+                    title={`Filter by ${meta.label}`}
+                    onClick={() => setSearch({ status: s, page: 0 })}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      active ? meta.activeClass : "bg-background hover:bg-accent"
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-white/90" : meta.dot}`} />
+                    {meta.label}
+                  </button>
+                );
+              })}
             </div>
             <select
               value={search.dateField}
@@ -635,7 +652,7 @@ function AdminPaymentsPage() {
           ) : rows.length === 0 ? (
             (() => {
               const activeFilters: { label: string; value: string; clear: Partial<z.infer<typeof searchSchema>> }[] = [];
-              if (search.status !== "all") activeFilters.push({ label: "Status", value: search.status, clear: { status: "all", page: 0 } });
+              if (search.status !== "all") activeFilters.push({ label: "Status", value: STATUS_META[search.status as StatusKey]?.label ?? search.status, clear: { status: "all", page: 0 } });
               if (search.from) activeFilters.push({ label: "From", value: search.from, clear: { from: "", page: 0 } });
               if (search.to) activeFilters.push({ label: "To", value: search.to, clear: { to: "", page: 0 } });
               if (search.q) activeFilters.push({ label: "Search", value: search.q, clear: { q: "", page: 0 } });
