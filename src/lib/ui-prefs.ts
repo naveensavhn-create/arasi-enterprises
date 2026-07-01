@@ -29,19 +29,30 @@ const KEY = "arasi:ui-prefs";
 
 const listeners = new Set<() => void>();
 
-function normalizePolling(v: unknown): PaymentsPollingMs {
-  const n = typeof v === "number" ? v : Number(v);
-  return ([0, 30_000, 60_000, 120_000] as const).includes(n as PaymentsPollingMs)
+/** Valid polling intervals in ms (0 = disabled). Exported for validation. */
+export const VALID_PAYMENTS_POLLING_MS = [0, 30_000, 60_000, 120_000] as const;
+
+/**
+ * Runtime validator for the payments-page polling interval preference.
+ * Returns the input when it's a known valid value; otherwise falls back to
+ * the safe default (30s). Handles unknown, null, NaN, strings, negatives,
+ * and legacy values that predate the current option set.
+ */
+export function normalizePollingInterval(v: unknown): PaymentsPollingMs {
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v) : NaN;
+  if (!Number.isFinite(n)) return DEFAULTS.paymentsPollingMs;
+  return (VALID_PAYMENTS_POLLING_MS as readonly number[]).includes(n)
     ? (n as PaymentsPollingMs)
     : DEFAULTS.paymentsPollingMs;
 }
+
 
 function coerce(parsed: Partial<UiPrefs> | undefined | null): UiPrefs {
   const p = parsed ?? {};
   return {
     sidebarMode: p.sidebarMode === "collapsed" ? "collapsed" : "expanded",
     density: p.density === "compact" ? "compact" : "comfortable",
-    paymentsPollingMs: normalizePolling(p.paymentsPollingMs),
+    paymentsPollingMs: normalizePollingInterval(p.paymentsPollingMs),
   };
 }
 

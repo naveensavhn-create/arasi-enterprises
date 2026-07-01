@@ -18,7 +18,7 @@ import {
   type AdminPaymentRow,
 } from "@/lib/payments/validate-row";
 import { supabase } from "@/integrations/supabase/client";
-import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS } from "@/lib/ui-prefs";
+import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS, normalizePollingInterval } from "@/lib/ui-prefs";
 import { toast } from "sonner";
 
 
@@ -335,7 +335,7 @@ function AdminPaymentsPage() {
             <span className="hidden sm:inline">Poll every</span>
             <select
               value={paymentsPollingMs}
-              onChange={(e) => setUiPrefs({ paymentsPollingMs: Number(e.target.value) as typeof paymentsPollingMs })}
+              onChange={(e) => setUiPrefs({ paymentsPollingMs: normalizePollingInterval(e.target.value) })}
               className="rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
               aria-label="Payments polling fallback interval"
               title="Fallback refresh interval when realtime is unavailable"
