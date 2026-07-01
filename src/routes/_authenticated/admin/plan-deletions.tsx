@@ -51,13 +51,42 @@ function PlanDeletionsPage() {
     setQ(""); setActor(""); setPlan(""); setStatus("all"); setFrom(""); setTo(""); setPage(1);
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const { csv, count } = await runExport({ data: { q, actor, plan, status, from, to } });
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `plan-deletions-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success(`Exported ${count} entries`, {
+        description: count >= 10000 ? "Result capped at 10,000 rows — narrow filters for a smaller set." : undefined,
+      });
+    } catch (e) {
+      toast.error("Export failed", { description: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">Plan Deletion Audit</h1>
-        <p className="text-sm text-muted-foreground">
-          Every blocked and successful plan-deletion attempt, from admin_audit_log.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Plan Deletion Audit</h1>
+          <p className="text-sm text-muted-foreground">
+            Every blocked and successful plan-deletion attempt, from admin_audit_log.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+          <Download className="h-4 w-4 mr-2" />
+          {exporting ? "Exporting…" : "Export CSV"}
+        </Button>
       </div>
 
       <Card>
