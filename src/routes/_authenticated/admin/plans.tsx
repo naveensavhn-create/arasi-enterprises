@@ -426,7 +426,7 @@ function AdminPlansPage() {
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
           {(() => {
-            const inUse = confirmDelete ? usageFor(confirmDelete.id) : 0;
+            const inUse = confirmDelete ? usageForPlan(confirmDelete.id) : 0;
             const blocked = inUse > 0;
             return (
               <>
