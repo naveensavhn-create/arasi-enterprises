@@ -236,11 +236,23 @@ function AdminSettings() {
 
         <form
           className="mt-5 space-y-3"
+          noValidate
           onSubmit={(e) => {
             e.preventDefault();
             const value = email.trim().toLowerCase();
+            const reason = promoteReason.trim();
             if (!value) return;
-            promote.mutate({ email: value, reason: promoteReason.trim() || undefined });
+            if (reason.length < REASON_MIN) {
+              setPromoteReasonError(
+                reason.length === 0
+                  ? "Reason is required — this action is recorded in the audit log."
+                  : `Please provide at least ${REASON_MIN} characters (currently ${reason.length}).`,
+              );
+              document.getElementById("promote-reason")?.focus();
+              return;
+            }
+            setPromoteReasonError(null);
+            promote.mutate({ email: value, reason });
           }}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -266,19 +278,41 @@ function AdminSettings() {
             </Button>
           </div>
           <div>
-            <Label htmlFor="promote-reason" className="text-xs">Reason (recorded in audit log)</Label>
+            <Label htmlFor="promote-reason" className="text-xs">
+              Reason <span className="text-destructive">*</span>{" "}
+              <span className="text-muted-foreground">(recorded in audit log)</span>
+            </Label>
             <Textarea
               id="promote-reason"
               rows={2}
               maxLength={500}
+              required
+              aria-invalid={!!promoteReasonError}
+              aria-describedby={promoteReasonError ? "promote-reason-error" : undefined}
+              className={promoteReasonError ? "border-destructive focus-visible:ring-destructive" : ""}
               placeholder="e.g. Onboarding new operations lead"
               value={promoteReason}
-              onChange={(e) => setPromoteReason(e.target.value)}
+              onChange={(e) => {
+                setPromoteReason(e.target.value);
+                if (promoteReasonError && e.target.value.trim().length >= REASON_MIN) {
+                  setPromoteReasonError(null);
+                }
+              }}
               disabled={promote.isPending}
             />
+            {promoteReasonError ? (
+              <p id="promote-reason-error" role="alert" className="mt-1 text-xs text-destructive">
+                {promoteReasonError}
+              </p>
+            ) : (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Minimum {REASON_MIN} characters. {Math.max(0, REASON_MIN - promoteReason.trim().length)} to go.
+              </p>
+            )}
           </div>
         </form>
       </div>
+
 
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
