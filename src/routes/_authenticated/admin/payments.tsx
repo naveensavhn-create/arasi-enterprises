@@ -326,7 +326,69 @@ function AdminPaymentsPage() {
               ))}
             </select>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch({ orderId: orderDraft.trim(), page: 0 });
+              }}
+            >
+              <Input
+                value={orderDraft}
+                onChange={(e) => setOrderDraft(e.target.value)}
+                onBlur={() => { if (orderDraft.trim() !== search.orderId) setSearch({ orderId: orderDraft.trim(), page: 0 }); }}
+                placeholder="Order ID (order_...)"
+                className="h-8 w-52 font-mono text-xs"
+              />
+            </form>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch({ paymentId: paymentDraft.trim(), page: 0 });
+              }}
+            >
+              <Input
+                value={paymentDraft}
+                onChange={(e) => setPaymentDraft(e.target.value)}
+                onBlur={() => { if (paymentDraft.trim() !== search.paymentId) setSearch({ paymentId: paymentDraft.trim(), page: 0 }); }}
+                placeholder="Payment ID (pay_...)"
+                className="h-8 w-52 font-mono text-xs"
+              />
+            </form>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch({ customer: customerDraft.trim(), page: 0 });
+              }}
+            >
+              <Input
+                value={customerDraft}
+                onChange={(e) => setCustomerDraft(e.target.value)}
+                onBlur={() => { if (customerDraft.trim() !== search.customer) setSearch({ customer: customerDraft.trim(), page: 0 }); }}
+                placeholder="Customer name or email"
+                className="h-8 w-64 text-xs"
+              />
+            </form>
+            {(search.orderId || search.paymentId || search.customer || search.q ||
+              search.from || search.to || search.status !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={() => {
+                  setQDraft(""); setOrderDraft(""); setPaymentDraft(""); setCustomerDraft("");
+                  setSearch({
+                    q: "", orderId: "", paymentId: "", customer: "",
+                    status: "all", from: "", to: "", page: 0,
+                  });
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
         </CardHeader>
+
         <CardContent>
           {isLoading ? (
             <div className="flex items-center py-8 text-muted-foreground">
