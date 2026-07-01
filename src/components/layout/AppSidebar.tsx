@@ -15,6 +15,7 @@ import {
   Receipt,
   Briefcase,
   ShieldCheck,
+  Plus,
 } from "lucide-react";
 
 import {
@@ -88,6 +89,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
       label: "My Account",
       items: [
         { title: "Membership", url: "/customer/membership", icon: ShieldCheck },
+        { title: "Enroll in Plan", url: "/customer/enroll", icon: Plus },
         { title: "Installments", url: "/customer/installments", icon: CreditCard },
         { title: "Rewards", url: "/customer/rewards", icon: Gift },
         { title: "Lucky Draw", url: "/customer/lucky-draw", icon: Ticket },
