@@ -34,6 +34,7 @@ import { Route as AuthenticatedAdminRewardsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin/reports'
 import { Route as AuthenticatedAdminPromotersRouteImport } from './routes/_authenticated/admin/promoters'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin/plans'
+import { Route as AuthenticatedAdminPlanDeletionsRouteImport } from './routes/_authenticated/admin/plan-deletions'
 import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authenticated/admin/payments'
 import { Route as AuthenticatedAdminMembershipsRouteImport } from './routes/_authenticated/admin/memberships'
 import { Route as AuthenticatedAdminMembershipEmailsRouteImport } from './routes/_authenticated/admin/membership-emails'
@@ -184,6 +185,12 @@ const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
   path: '/plans',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedAdminPlanDeletionsRoute =
+  AuthenticatedAdminPlanDeletionsRouteImport.update({
+    id: '/plan-deletions',
+    path: '/plan-deletions',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminPaymentsRoute =
   AuthenticatedAdminPaymentsRouteImport.update({
     id: '/payments',
@@ -248,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -282,6 +290,7 @@ export interface FileRoutesByTo {
   '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -318,6 +327,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/_authenticated/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
   '/_authenticated/admin/payments': typeof AuthenticatedAdminPaymentsRoute
+  '/_authenticated/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/promoters': typeof AuthenticatedAdminPromotersRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
     | '/admin/membership-emails'
     | '/admin/memberships'
     | '/admin/payments'
+    | '/admin/plan-deletions'
     | '/admin/plans'
     | '/admin/promoters'
     | '/admin/reports'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/admin/membership-emails'
     | '/admin/memberships'
     | '/admin/payments'
+    | '/admin/plan-deletions'
     | '/admin/plans'
     | '/admin/promoters'
     | '/admin/reports'
@@ -423,6 +435,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/membership-emails'
     | '/_authenticated/admin/memberships'
     | '/_authenticated/admin/payments'
+    | '/_authenticated/admin/plan-deletions'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/promoters'
     | '/_authenticated/admin/reports'
@@ -629,6 +642,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPlansRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/plan-deletions': {
+      id: '/_authenticated/admin/plan-deletions'
+      path: '/plan-deletions'
+      fullPath: '/admin/plan-deletions'
+      preLoaderRoute: typeof AuthenticatedAdminPlanDeletionsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/payments': {
       id: '/_authenticated/admin/payments'
       path: '/payments'
@@ -695,6 +715,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminMembershipEmailsRoute: typeof AuthenticatedAdminMembershipEmailsRoute
   AuthenticatedAdminMembershipsRoute: typeof AuthenticatedAdminMembershipsRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
+  AuthenticatedAdminPlanDeletionsRoute: typeof AuthenticatedAdminPlanDeletionsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminPromotersRoute: typeof AuthenticatedAdminPromotersRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
@@ -711,6 +732,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
       AuthenticatedAdminMembershipEmailsRoute,
     AuthenticatedAdminMembershipsRoute: AuthenticatedAdminMembershipsRoute,
     AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
+    AuthenticatedAdminPlanDeletionsRoute: AuthenticatedAdminPlanDeletionsRoute,
     AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
     AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
     AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
