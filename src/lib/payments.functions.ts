@@ -187,3 +187,138 @@ export const exportAdminPayments = createServerFn({ method: "GET" })
     const { customerIds, membershipIds } = await resolveSearchIds(sb, n.q);
     return fetchPaymentRows(sb, n, customerIds, membershipIds, 0, data.limit - 1);
   });
+
+/* ---------- Per-installment webhook timeline ---------- */
+
+export type InstallmentWebhookEvent = {
+  id: string;
+  event_id: string;
+  event_type: string | null;
+  status: string;
+  received_at: string;
+  processed_at: string;
+  order_id: string | null;
+  payment_id: string | null;
+  payment_provider_id: string | null;
+  payment_status: string | null;
+  amount: number | null;
+  currency: string | null;
+  error_code: string | null;
+  error_description: string | null;
+  resulting_installment_status: string | null;
+  raw: unknown;
+};
+
+export type InstallmentWebhookTimeline = {
+  installment: {
+    id: string;
+    sequence: number;
+    due_date: string;
+    amount: number;
+    status: string;
+    paid_at: string | null;
+    membership_number: string | null;
+  };
+  events: InstallmentWebhookEvent[];
+};
+
+export const getInstallmentWebhookTimeline = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ installmentId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<InstallmentWebhookTimeline> => {
+    const sb: any = context.supabase;
+
+    // Authorization: admin OR the installment's membership belongs to the caller.
+    const { data: isAdmin } = await sb.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+
+    const { data: inst, error: iErr } = await sb
+      .from("installments")
+      .select(
+        "id, sequence, due_date, amount, status, paid_at, membership_id, memberships!inner(membership_number, user_id)",
+      )
+      .eq("id", data.installmentId)
+      .maybeSingle();
+    if (iErr) throw new Error(iErr.message);
+    if (!inst) throw new Error("Installment not found");
+
+    const membership = Array.isArray(inst.memberships) ? inst.memberships[0] : inst.memberships;
+    if (!isAdmin && membership?.user_id !== context.userId) {
+      throw new Error("Forbidden");
+    }
+
+    // Load privileged clients only after authorization succeeds.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: pays, error: pErr } = await supabaseAdmin
+      .from("payments")
+      .select("id, provider_order_id, provider_payment_id, status, amount, currency, error_code, error_description")
+      .eq("installment_id", data.installmentId);
+    if (pErr) throw new Error(pErr.message);
+
+    const paymentIds = (pays ?? []).map((p) => p.id);
+    const orderIds = (pays ?? []).map((p) => p.provider_order_id).filter(Boolean) as string[];
+
+    let events: any[] = [];
+    if (paymentIds.length || orderIds.length) {
+      const filters: string[] = [];
+      if (paymentIds.length) filters.push(`payment_id.in.(${paymentIds.join(",")})`);
+      if (orderIds.length) filters.push(`order_id.in.(${orderIds.map((o) => `"${o}"`).join(",")})`);
+      const { data: evs, error: eErr } = await supabaseAdmin
+        .from("razorpay_webhook_events")
+        .select("id, event_id, event_type, status, received_at, processed_at, order_id, payment_id, raw")
+        .or(filters.join(","))
+        .order("received_at", { ascending: true })
+        .limit(200);
+      if (eErr) throw new Error(eErr.message);
+      events = evs ?? [];
+    }
+
+    const payById = new Map((pays ?? []).map((p) => [p.id, p]));
+
+    const enriched: InstallmentWebhookEvent[] = events.map((e) => {
+      const pay = e.payment_id ? payById.get(e.payment_id) : null;
+      const et = (e.event_type ?? "").toLowerCase();
+      let resulting: string | null = null;
+      if (et.includes("payment.captured") || et.includes("order.paid")) resulting = "paid";
+      else if (et.includes("payment.failed")) resulting = "payment failed";
+      else if (et.includes("refund")) resulting = "refunded";
+      else if (et.includes("payment.authorized")) resulting = "authorized";
+      return {
+        id: e.id,
+        event_id: e.event_id,
+        event_type: e.event_type,
+        status: e.status,
+        received_at: e.received_at,
+        processed_at: e.processed_at,
+        order_id: e.order_id,
+        payment_id: e.payment_id,
+        payment_provider_id: pay?.provider_payment_id ?? null,
+        payment_status: pay?.status ?? null,
+        amount: pay?.amount ?? null,
+        currency: pay?.currency ?? null,
+        error_code: pay?.error_code ?? null,
+        error_description: pay?.error_description ?? null,
+        resulting_installment_status: resulting,
+        raw: e.raw,
+      };
+    });
+
+    return {
+      installment: {
+        id: inst.id,
+        sequence: inst.sequence,
+        due_date: inst.due_date,
+        amount: Number(inst.amount),
+        status: inst.status,
+        paid_at: inst.paid_at,
+        membership_number: membership?.membership_number ?? null,
+      },
+      events: enriched,
+    };
+  });
+
