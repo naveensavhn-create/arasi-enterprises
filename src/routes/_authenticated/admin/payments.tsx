@@ -185,7 +185,7 @@ function AdminPaymentsPage() {
   });
 
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: [
       "admin-payments",
       search.page, search.pageSize, search.sortBy, search.sortDir,
@@ -214,7 +214,32 @@ function AdminPaymentsPage() {
     // Realtime caps the interval at 120s; "Off" disables background polling.
     refetchInterval: listRefetchInterval,
     refetchOnWindowFocus: true,
+    // Don't hammer the server if the query is genuinely broken (bad filter,
+    // schema drift, permission error). Users can click Retry.
+    retry: 1,
   });
+
+  // Show a single toast per distinct error message so a polling loop doesn't
+  // spam the same PostgREST failure over and over.
+  const lastErrorMsgRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!error) { lastErrorMsgRef.current = null; return; }
+    const info = toDisplayablePostgrestError(error);
+    const key = `${info.code ?? ""}|${info.message}`;
+    if (lastErrorMsgRef.current === key) return;
+    lastErrorMsgRef.current = key;
+    toast.error("Payments query failed", {
+      id: "admin-payments-query-error",
+      description: [
+        info.message,
+        info.code ? `code: ${info.code}` : null,
+        info.hint ? `hint: ${info.hint}` : null,
+      ].filter(Boolean).join(" · "),
+      duration: 8000,
+      action: { label: "Retry", onClick: () => { void refetch(); } },
+    });
+  }, [error, refetch]);
+
 
 
 
