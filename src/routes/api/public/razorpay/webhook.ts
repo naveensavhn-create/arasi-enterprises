@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
 
           const { data: paymentRow, error: findErr } = await supabaseAdmin
             .from("payments")
-            .select("id, installment_id, status")
+            .select("id, installment_id, membership_id, status")
             .eq("provider_order_id", orderId)
             .maybeSingle();
 
