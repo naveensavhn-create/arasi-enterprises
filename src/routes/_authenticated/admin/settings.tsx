@@ -731,6 +731,7 @@ function AdminSettings() {
                           <th className="px-3 py-2 font-medium">Change</th>
                           <th className="px-3 py-2 font-medium">Actor</th>
                           <th className="px-3 py-2 font-medium">Reason</th>
+                          <th className="px-3 py-2 font-medium sr-only">Details</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -742,7 +743,11 @@ function AdminSettings() {
                                 ? "bg-destructive/10 text-destructive"
                                 : "bg-primary/10 text-primary";
                           return (
-                            <tr key={row.id} className="align-top">
+                            <tr
+                              key={row.id}
+                              className="cursor-pointer align-top hover:bg-muted/30 focus-within:bg-muted/30"
+                              onClick={() => setSelectedAudit(row)}
+                            >
                               <td className="px-3 py-2 text-xs text-muted-foreground">
                                 {new Date(row.created_at).toLocaleString()}
                               </td>
@@ -761,7 +766,20 @@ function AdminSettings() {
                                 {row.actor_email ?? row.actor_id}
                               </td>
                               <td className="px-3 py-2 text-xs text-muted-foreground">
-                                {row.reason || <span className="italic opacity-60">—</span>}
+                                <span className="line-clamp-1 max-w-[220px]">
+                                  {row.reason || <span className="italic opacity-60">—</span>}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2"
+                                  onClick={(e) => { e.stopPropagation(); setSelectedAudit(row); }}
+                                  aria-label="View audit entry details"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
                               </td>
                             </tr>
                           );
