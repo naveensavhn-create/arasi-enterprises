@@ -183,7 +183,8 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
     if (!targetId) throw new Error(`No user found with email ${data.email}.`);
 
     const before = await currentRole(supabaseAdmin, targetId);
-    const actorEmail = await lookupEmail(supabaseAdmin, context.userId);
+    const actor = await lookupProfile(supabaseAdmin, context.userId);
+    const target = await lookupProfile(supabaseAdmin, targetId);
 
     const { data: existing } = await supabaseAdmin
       .from("user_roles")
@@ -198,7 +199,43 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
       if (insertError) throw new Error(insertError.message);
     }
 
-    await writeAudit(supabaseAdmin, {
+    const changedAt = new Date().toISOString();
+    const auditId = await writeAudit(supabaseAdmin, {
+      actor_id: context.userId,
+      actor_email: actor.email,
+      target_user_id: targetId,
+      target_email: data.email,
+      action: "promote",
+      role_before: before,
+      role_after: "admin",
+      reason: data.reason ?? null,
+      metadata: { already_admin: !!existing },
+    });
+
+    // Fire-and-log email notification (never fail the promote if email breaks)
+    try {
+      const { sendRoleChangeEmail } = await import("@/lib/email/send-role-change.server");
+      await sendRoleChangeEmail({
+        kind: "promote",
+        recipientEmail: data.email,
+        recipientName: target.fullName,
+        actorName: actor.fullName ?? actor.email ?? "Administrator",
+        actorEmail: actor.email ?? "unknown@arasienterprises.com",
+        previousRole: before ?? "customer",
+        newRole: "admin",
+        changedAt,
+        reason: data.reason,
+        targetUserId: targetId,
+        auditId,
+        triggeredBy: context.userId,
+      });
+    } catch (e) {
+      console.error("[admin.promoteToAdminByEmail] email send failed", e);
+    }
+
+    return { ok: true, userId: targetId };
+  });
+
       actor_id: context.userId,
       actor_email: actorEmail,
       target_user_id: targetId,
