@@ -75,6 +75,7 @@ function AdminPlansPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
   const [form, setForm] = useState<FormState>(empty);
+  const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-plans"],
