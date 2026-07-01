@@ -78,6 +78,13 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
       updated_by: context.userId,
     };
 
+    // Snapshot the current row so we can diff changed fields for the audit log.
+    const { data: before } = await context.supabase
+      .from("site_settings")
+      .select(COLUMNS)
+      .eq("id", SETTINGS_ID)
+      .maybeSingle();
+
     const { data: row, error } = await context.supabase
       .from("site_settings")
       .update(payload)
@@ -85,5 +92,43 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
       .select(COLUMNS)
       .single();
     if (error) throw new Error(error.message);
+
+    // Compute a compact list of changed fields for the audit trail. Best-effort
+    // — a logging failure must NOT roll back a successful settings update.
+    try {
+      const beforeRow = (before ?? {}) as Record<string, unknown>;
+      const afterRow = row as Record<string, unknown>;
+      const changed: string[] = [];
+      for (const key of Object.keys(payload)) {
+        if (key === "updated_by") continue;
+        if (beforeRow[key] !== afterRow[key]) changed.push(key);
+      }
+
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: actorProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("email")
+        .eq("id", context.userId)
+        .maybeSingle();
+
+      await supabaseAdmin.from("admin_audit_log").insert({
+        actor_id: context.userId,
+        actor_email: actorProfile?.email ?? null,
+        target_user_id: null,
+        target_email: null,
+        action: "site_settings.updated",
+        role_before: null,
+        role_after: null,
+        reason: changed.length
+          ? `Updated branding fields: ${changed.join(", ")}`
+          : "Saved branding (no field changes detected)",
+        metadata: { changed_fields: changed, before: beforeRow, after: afterRow } as never,
+      });
+    } catch (err) {
+      // Swallow — audit logging is best-effort for this global settings row.
+      console.warn("site_settings audit log failed", err);
+    }
+
     return row as SiteSettings;
   });
+
