@@ -196,6 +196,7 @@ function AdminApprovalsPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Referred by</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>City</TableHead>
                   <TableHead>Aadhaar</TableHead>
