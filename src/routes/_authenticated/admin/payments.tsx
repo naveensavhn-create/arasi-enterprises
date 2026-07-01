@@ -31,6 +31,9 @@ import {
 } from "@/lib/payments/validate-row";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toDisplayablePostgrestError } from "@/lib/payments/postgrest-error";
+import { useRouter } from "@tanstack/react-router";
 
 
 
@@ -86,7 +89,43 @@ export const Route = createFileRoute("/_authenticated/admin/payments")({
   head: () => ({ meta: [{ title: "Payments — Admin" }] }),
   validateSearch: zodValidator(searchSchema),
   component: AdminPaymentsPage,
+  errorComponent: PaymentsRouteError,
+  notFoundComponent: () => (
+    <div className="p-6 text-sm text-muted-foreground">Page not found.</div>
+  ),
 });
+
+function PaymentsRouteError({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  const info = toDisplayablePostgrestError(error);
+  return (
+    <div className="p-6">
+      <Alert variant="destructive" role="alert" aria-live="assertive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Couldn't load the payments ledger</AlertTitle>
+        <AlertDescription className="space-y-2">
+          <p className="text-sm">{info.message}</p>
+          {(info.code || info.hint || info.details) && (
+            <ul className="text-xs font-mono opacity-90 space-y-0.5">
+              {info.code && <li>code: {info.code}</li>}
+              {info.hint && <li>hint: {info.hint}</li>}
+              {info.details && <li>details: {info.details}</li>}
+            </ul>
+          )}
+          <div className="pt-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { reset(); router.invalidate(); }}
+            >
+              <RefreshCw className="mr-2 h-3.5 w-3.5" /> Retry
+            </Button>
+          </div>
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
+}
 
 function formatRelative(iso: string): string {
   const then = new Date(iso).getTime();
@@ -146,7 +185,7 @@ function AdminPaymentsPage() {
   });
 
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: [
       "admin-payments",
       search.page, search.pageSize, search.sortBy, search.sortDir,
@@ -175,7 +214,32 @@ function AdminPaymentsPage() {
     // Realtime caps the interval at 120s; "Off" disables background polling.
     refetchInterval: listRefetchInterval,
     refetchOnWindowFocus: true,
+    // Don't hammer the server if the query is genuinely broken (bad filter,
+    // schema drift, permission error). Users can click Retry.
+    retry: 1,
   });
+
+  // Show a single toast per distinct error message so a polling loop doesn't
+  // spam the same PostgREST failure over and over.
+  const lastErrorMsgRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!error) { lastErrorMsgRef.current = null; return; }
+    const info = toDisplayablePostgrestError(error);
+    const key = `${info.code ?? ""}|${info.message}`;
+    if (lastErrorMsgRef.current === key) return;
+    lastErrorMsgRef.current = key;
+    toast.error("Payments query failed", {
+      id: "admin-payments-query-error",
+      description: [
+        info.message,
+        info.code ? `code: ${info.code}` : null,
+        info.hint ? `hint: ${info.hint}` : null,
+      ].filter(Boolean).join(" · "),
+      duration: 8000,
+      action: { label: "Retry", onClick: () => { void refetch(); } },
+    });
+  }, [error, refetch]);
+
 
 
 
@@ -730,7 +794,45 @@ function AdminPaymentsPage() {
         </CardHeader>
 
         <CardContent>
-          {isLoading ? (
+          {error && rows.length === 0 ? (
+            (() => {
+              const info = toDisplayablePostgrestError(error);
+              return (
+                <Alert variant="destructive" role="alert" aria-live="assertive" className="my-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Couldn't load transactions</AlertTitle>
+                  <AlertDescription className="space-y-2">
+                    <p className="text-sm">{info.message}</p>
+                    {(info.code || info.hint || info.details) && (
+                      <ul className="text-xs font-mono opacity-90 space-y-0.5">
+                        {info.code && <li>code: {info.code}</li>}
+                        {info.hint && <li>hint: {info.hint}</li>}
+                        {info.details && <li>details: {info.details}</li>}
+                      </ul>
+                    )}
+                    <div className="flex gap-2 pt-1">
+                      <Button size="sm" variant="outline" onClick={() => { void refetch(); }}>
+                        <RefreshCw className="mr-2 h-3.5 w-3.5" /> Retry
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setQDraft(""); setOrderDraft(""); setPaymentDraft(""); setCustomerDraft("");
+                          setSearch({
+                            q: "", orderId: "", paymentId: "", customer: "",
+                            status: "all", from: "", to: "", dateField: "created", page: 0,
+                          });
+                        }}
+                      >
+                        <FilterX className="mr-1.5 h-3.5 w-3.5" /> Reset filters
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              );
+            })()
+          ) : isLoading ? (
             <div className="overflow-x-auto" aria-busy="true" aria-label="Loading transactions">
               <table className="w-full text-sm">
                 <thead>
