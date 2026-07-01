@@ -84,12 +84,12 @@ describeIfDb("plan-delete DB trigger (integration)", () => {
     }
     customerId = existing.rows[0].id;
 
-    // 2) Ephemeral active plan.
+    // 2) Ephemeral active plan. `total_value` is a generated column — omit it.
     const planInsert = await client.query<{ id: string }>(
       `INSERT INTO public.membership_plans
          (name, description, advance_amount, monthly_installment, duration_months,
-          total_value, is_active, display_order)
-       VALUES ($1, 'integration test plan', 1000, 500, 12, 7000, true, 999)
+          is_active, display_order)
+       VALUES ($1, 'integration test plan', 1000, 500, 12, true, 999)
        RETURNING id`,
       [`Test Plan ${runTag}`],
     );
