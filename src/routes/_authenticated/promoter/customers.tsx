@@ -101,6 +101,10 @@ function PromoterCustomersPage() {
   const submitFn = useServerFn(submitReferralForReview);
 
   const [q, setQ] = useState("");
+  const [kycFilter, setKycFilter] = useState<"all" | ReferredCustomer["kyc_status"]>("all");
+  const [planFilter, setPlanFilter] = useState<string>("all"); // plan_id | "all" | "__none"
+  const [fromDate, setFromDate] = useState<string>(""); // yyyy-mm-dd
+  const [toDate, setToDate] = useState<string>("");
   const [openRegister, setOpenRegister] = useState(false);
   const [selected, setSelected] = useState<ReferredCustomer | null>(null);
   const [issuedCreds, setIssuedCreds] = useState<{ email: string; password: string } | null>(null);
@@ -110,19 +114,59 @@ function PromoterCustomersPage() {
     queryFn: () => listFn(),
   });
 
+  const planOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of listQ.data ?? []) {
+      if (r.plan_id && r.plan_name) map.set(r.plan_id, r.plan_name);
+    }
+    return Array.from(map, ([id, name]) => ({ id, name })).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+  }, [listQ.data]);
+
+  const fromTs = fromDate ? new Date(`${fromDate}T00:00:00`).getTime() : null;
+  const toTs = toDate ? new Date(`${toDate}T23:59:59.999`).getTime() : null;
+
   const filtered = useMemo(() => {
     const rows = listQ.data ?? [];
-    if (!q.trim()) return rows;
     const s = q.trim().toLowerCase();
-    return rows.filter(
-      (r) =>
-        r.full_name?.toLowerCase().includes(s) ||
-        r.email?.toLowerCase().includes(s) ||
-        r.phone?.toLowerCase().includes(s) ||
-        r.city?.toLowerCase().includes(s) ||
-        r.membership_number?.toLowerCase().includes(s),
-    );
-  }, [listQ.data, q]);
+    return rows.filter((r) => {
+      if (kycFilter !== "all" && r.kyc_status !== kycFilter) return false;
+      if (planFilter === "__none" && r.plan_id) return false;
+      if (planFilter !== "all" && planFilter !== "__none" && r.plan_id !== planFilter)
+        return false;
+      const created = new Date(r.created_at).getTime();
+      if (fromTs !== null && created < fromTs) return false;
+      if (toTs !== null && created > toTs) return false;
+      if (
+        s &&
+        !(
+          r.full_name?.toLowerCase().includes(s) ||
+          r.email?.toLowerCase().includes(s) ||
+          r.phone?.toLowerCase().includes(s) ||
+          r.city?.toLowerCase().includes(s) ||
+          r.membership_number?.toLowerCase().includes(s)
+        )
+      )
+        return false;
+      return true;
+    });
+  }, [listQ.data, q, kycFilter, planFilter, fromTs, toTs]);
+
+  const activeFilterCount =
+    (kycFilter !== "all" ? 1 : 0) +
+    (planFilter !== "all" ? 1 : 0) +
+    (fromDate ? 1 : 0) +
+    (toDate ? 1 : 0) +
+    (q.trim() ? 1 : 0);
+
+  const clearFilters = () => {
+    setQ("");
+    setKycFilter("all");
+    setPlanFilter("all");
+    setFromDate("");
+    setToDate("");
+  };
 
   const registerMut = useMutation({
     mutationFn: (input: Parameters<typeof registerFn>[0]) => registerFn(input),
