@@ -42,7 +42,7 @@ function PromoterPortfolioPage() {
         supabase
           .from("payments")
           .select("amount, memberships!inner(promoter_id)")
-          .eq("status", "paid")
+          .filter("status::text", "eq", "paid")
           .eq("memberships.promoter_id", session!.user.id),
       ]);
       const mems = ms.data ?? [];
