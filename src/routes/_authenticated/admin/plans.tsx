@@ -114,12 +114,13 @@ function AdminPlansPage() {
 
   const save = useMutation({
     mutationFn: async () => {
+      const advance = form.has_advance ? Number(form.advance_amount || 0) : 0;
       const payload = {
         name: form.name.trim(),
         description: form.description.trim() || null,
-        advance_amount: Number(form.advance_amount),
-        monthly_installment: Number(form.monthly_installment),
-        duration_months: Number(form.duration_months),
+        advance_amount: advance,
+        monthly_installment: Number(form.monthly_installment || 0),
+        duration_months: Number(form.duration_months || 0),
         benefits: form.benefits
           .split("\n")
           .map((s) => s.trim())
