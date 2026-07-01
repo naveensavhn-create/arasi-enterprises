@@ -58,23 +58,82 @@ export const adminPaymentRowSchema = z.object({
 
 export type AdminPaymentRow = z.infer<typeof adminPaymentRowSchema>;
 
+/** Any top-level key on the parsed admin payment row. */
+type AdminPaymentRowSchemaKey = keyof AdminPaymentRow;
+
+/**
+ * Single source of truth for the drawer's "required for display" fields.
+ *
+ * Each entry ties a UI-facing key (`amount`, `paymentId`, ...) to:
+ *   - `schemaPath`: the underlying Zod schema key it derives from. The
+ *     `satisfies` clause below makes TypeScript fail the build if the schema
+ *     is renamed or the referenced key is removed, so this map cannot drift.
+ *   - `label`: human-readable label shown in the inline validation alert.
+ *   - `hint`: short remediation guidance shown under each missing-field bullet.
+ *
+ * To add a new required field: extend this object. TypeScript will then force
+ * updates to `applyDisplayRules` (via the exhaustive switch) and to any
+ * consumer that iterates `AdminPaymentRowRequiredField`.
+ */
+export const ADMIN_PAYMENT_ROW_REQUIRED_FIELDS = {
+  amount: {
+    schemaPath: "amount",
+    label: "Amount",
+    hint: "Reconcile with Razorpay dashboard; the stored value is invalid or negative.",
+  },
+  currency: {
+    schemaPath: "currency",
+    label: "Currency",
+    hint: "Currency code is empty. Check the originating order metadata.",
+  },
+  status: {
+    schemaPath: "status",
+    label: "Status",
+    hint: "Payment status is blank. Trigger a webhook replay or manual reconcile.",
+  },
+  paymentId: {
+    schemaPath: "provider_payment_id",
+    label: "Razorpay payment ID",
+    hint: "Marked paid without a Razorpay payment ID. Verify the webhook fired.",
+  },
+  customerName: {
+    schemaPath: "profile",
+    label: "Customer name",
+    hint: "Linked profile is missing or has no name/email. The customer may have been deleted.",
+  },
+} as const satisfies Record<
+  string,
+  { schemaPath: AdminPaymentRowSchemaKey; label: string; hint: string }
+>;
+
 export type AdminPaymentRowRequiredField =
-  | "amount"
-  | "currency"
-  | "status"
-  | "paymentId"
-  | "customerName";
+  keyof typeof ADMIN_PAYMENT_ROW_REQUIRED_FIELDS;
+
+type RequiredFieldMeta<K extends AdminPaymentRowRequiredField> =
+  (typeof ADMIN_PAYMENT_ROW_REQUIRED_FIELDS)[K];
+
+function mapMeta<V>(
+  pick: <K extends AdminPaymentRowRequiredField>(meta: RequiredFieldMeta<K>) => V,
+): Record<AdminPaymentRowRequiredField, V> {
+  const out = {} as Record<AdminPaymentRowRequiredField, V>;
+  for (const key of Object.keys(
+    ADMIN_PAYMENT_ROW_REQUIRED_FIELDS,
+  ) as AdminPaymentRowRequiredField[]) {
+    out[key] = pick(ADMIN_PAYMENT_ROW_REQUIRED_FIELDS[key]);
+  }
+  return out;
+}
 
 export const ADMIN_PAYMENT_ROW_FIELD_LABELS: Record<
   AdminPaymentRowRequiredField,
   string
-> = {
-  amount: "Amount",
-  currency: "Currency",
-  status: "Status",
-  paymentId: "Razorpay payment ID",
-  customerName: "Customer name",
-};
+> = mapMeta((m) => m.label);
+
+export const ADMIN_PAYMENT_ROW_FIELD_HINTS: Record<
+  AdminPaymentRowRequiredField,
+  string
+> = mapMeta((m) => m.hint);
+
 
 export type ValidateAdminPaymentRowResult =
   | { ok: true; row: AdminPaymentRow }
