@@ -54,16 +54,6 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
           const paymentEntity = event.payload?.payment?.entity;
           const orderEntity = event.payload?.order?.entity;
 
-          const orderId = paymentEntity?.order_id ?? orderEntity?.id;
-          if (!orderId) {
-            return new Response("Missing order id", { status: 400 });
-          }
-
-          const { data: paymentRow, error: findErr } = await supabaseAdmin
-            .from("payments")
-            .select("id, installment_id, membership_id, status")
-            .eq("provider_order_id", orderId)
-            .maybeSingle();
 
           const orderId = paymentEntity?.order_id ?? orderEntity?.id;
           if (!orderId) {
