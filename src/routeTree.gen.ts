@@ -14,6 +14,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedPromoterRouteRouteImport } from './routes/_authenticated/promoter/route'
+import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/customer/route'
+import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedPromoterPortfolioRouteImport } from './routes/_authenticated/promoter/portfolio'
 import { Route as AuthenticatedPromoterCustomersRouteImport } from './routes/_authenticated/promoter/customers'
 import { Route as AuthenticatedPromoterCommissionsRouteImport } from './routes/_authenticated/promoter/commissions'
@@ -57,106 +60,123 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPromoterRouteRoute =
+  AuthenticatedPromoterRouteRouteImport.update({
+    id: '/promoter',
+    path: '/promoter',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedCustomerRouteRoute =
+  AuthenticatedCustomerRouteRouteImport.update({
+    id: '/customer',
+    path: '/customer',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAdminRouteRoute = AuthenticatedAdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPromoterPortfolioRoute =
   AuthenticatedPromoterPortfolioRouteImport.update({
-    id: '/promoter/portfolio',
-    path: '/promoter/portfolio',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/portfolio',
+    path: '/portfolio',
+    getParentRoute: () => AuthenticatedPromoterRouteRoute,
   } as any)
 const AuthenticatedPromoterCustomersRoute =
   AuthenticatedPromoterCustomersRouteImport.update({
-    id: '/promoter/customers',
-    path: '/promoter/customers',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/customers',
+    path: '/customers',
+    getParentRoute: () => AuthenticatedPromoterRouteRoute,
   } as any)
 const AuthenticatedPromoterCommissionsRoute =
   AuthenticatedPromoterCommissionsRouteImport.update({
-    id: '/promoter/commissions',
-    path: '/promoter/commissions',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/commissions',
+    path: '/commissions',
+    getParentRoute: () => AuthenticatedPromoterRouteRoute,
   } as any)
 const AuthenticatedPromoterCollectionsRoute =
   AuthenticatedPromoterCollectionsRouteImport.update({
-    id: '/promoter/collections',
-    path: '/promoter/collections',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/collections',
+    path: '/collections',
+    getParentRoute: () => AuthenticatedPromoterRouteRoute,
   } as any)
 const AuthenticatedCustomerRewardsRoute =
   AuthenticatedCustomerRewardsRouteImport.update({
-    id: '/customer/rewards',
-    path: '/customer/rewards',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/rewards',
+    path: '/rewards',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerReferralsRoute =
   AuthenticatedCustomerReferralsRouteImport.update({
-    id: '/customer/referrals',
-    path: '/customer/referrals',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/referrals',
+    path: '/referrals',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerMembershipRoute =
   AuthenticatedCustomerMembershipRouteImport.update({
-    id: '/customer/membership',
-    path: '/customer/membership',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/membership',
+    path: '/membership',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerLuckyDrawRoute =
   AuthenticatedCustomerLuckyDrawRouteImport.update({
-    id: '/customer/lucky-draw',
-    path: '/customer/lucky-draw',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/lucky-draw',
+    path: '/lucky-draw',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerInstallmentsRoute =
   AuthenticatedCustomerInstallmentsRouteImport.update({
-    id: '/customer/installments',
-    path: '/customer/installments',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/installments',
+    path: '/installments',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
-    id: '/admin/settings',
-    path: '/admin/settings',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminRewardsRoute =
   AuthenticatedAdminRewardsRouteImport.update({
-    id: '/admin/rewards',
-    path: '/admin/rewards',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/rewards',
+    path: '/rewards',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminReportsRoute =
   AuthenticatedAdminReportsRouteImport.update({
-    id: '/admin/reports',
-    path: '/admin/reports',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminPromotersRoute =
   AuthenticatedAdminPromotersRouteImport.update({
-    id: '/admin/promoters',
-    path: '/admin/promoters',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/promoters',
+    path: '/promoters',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminPlansRoute = AuthenticatedAdminPlansRouteImport.update({
-  id: '/admin/plans',
-  path: '/admin/plans',
-  getParentRoute: () => AuthenticatedRouteRoute,
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
 const AuthenticatedAdminPaymentsRoute =
   AuthenticatedAdminPaymentsRouteImport.update({
-    id: '/admin/payments',
-    path: '/admin/payments',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/payments',
+    path: '/payments',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminLuckyDrawRoute =
   AuthenticatedAdminLuckyDrawRouteImport.update({
-    id: '/admin/lucky-draw',
-    path: '/admin/lucky-draw',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/lucky-draw',
+    path: '/lucky-draw',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminCustomersRoute =
   AuthenticatedAdminCustomersRouteImport.update({
-    id: '/admin/customers',
-    path: '/admin/customers',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/customers',
+    path: '/customers',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const ApiPublicRazorpayWebhookRoute =
   ApiPublicRazorpayWebhookRouteImport.update({
@@ -169,6 +189,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
+  '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -193,6 +216,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
+  '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -219,6 +245,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
+  '/_authenticated/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
+  '/_authenticated/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -245,6 +274,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/admin'
+    | '/customer'
+    | '/promoter'
     | '/dashboard'
     | '/admin/customers'
     | '/admin/lucky-draw'
@@ -269,6 +301,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/admin'
+    | '/customer'
+    | '/promoter'
     | '/dashboard'
     | '/admin/customers'
     | '/admin/lucky-draw'
@@ -294,6 +329,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/admin'
+    | '/_authenticated/customer'
+    | '/_authenticated/promoter'
     | '/_authenticated/dashboard'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/lucky-draw'
@@ -360,124 +398,145 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/promoter': {
+      id: '/_authenticated/promoter'
+      path: '/promoter'
+      fullPath: '/promoter'
+      preLoaderRoute: typeof AuthenticatedPromoterRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/customer': {
+      id: '/_authenticated/customer'
+      path: '/customer'
+      fullPath: '/customer'
+      preLoaderRoute: typeof AuthenticatedCustomerRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/promoter/portfolio': {
       id: '/_authenticated/promoter/portfolio'
-      path: '/promoter/portfolio'
+      path: '/portfolio'
       fullPath: '/promoter/portfolio'
       preLoaderRoute: typeof AuthenticatedPromoterPortfolioRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedPromoterRouteRoute
     }
     '/_authenticated/promoter/customers': {
       id: '/_authenticated/promoter/customers'
-      path: '/promoter/customers'
+      path: '/customers'
       fullPath: '/promoter/customers'
       preLoaderRoute: typeof AuthenticatedPromoterCustomersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedPromoterRouteRoute
     }
     '/_authenticated/promoter/commissions': {
       id: '/_authenticated/promoter/commissions'
-      path: '/promoter/commissions'
+      path: '/commissions'
       fullPath: '/promoter/commissions'
       preLoaderRoute: typeof AuthenticatedPromoterCommissionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedPromoterRouteRoute
     }
     '/_authenticated/promoter/collections': {
       id: '/_authenticated/promoter/collections'
-      path: '/promoter/collections'
+      path: '/collections'
       fullPath: '/promoter/collections'
       preLoaderRoute: typeof AuthenticatedPromoterCollectionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedPromoterRouteRoute
     }
     '/_authenticated/customer/rewards': {
       id: '/_authenticated/customer/rewards'
-      path: '/customer/rewards'
+      path: '/rewards'
       fullPath: '/customer/rewards'
       preLoaderRoute: typeof AuthenticatedCustomerRewardsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/customer/referrals': {
       id: '/_authenticated/customer/referrals'
-      path: '/customer/referrals'
+      path: '/referrals'
       fullPath: '/customer/referrals'
       preLoaderRoute: typeof AuthenticatedCustomerReferralsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/customer/membership': {
       id: '/_authenticated/customer/membership'
-      path: '/customer/membership'
+      path: '/membership'
       fullPath: '/customer/membership'
       preLoaderRoute: typeof AuthenticatedCustomerMembershipRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/customer/lucky-draw': {
       id: '/_authenticated/customer/lucky-draw'
-      path: '/customer/lucky-draw'
+      path: '/lucky-draw'
       fullPath: '/customer/lucky-draw'
       preLoaderRoute: typeof AuthenticatedCustomerLuckyDrawRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/customer/installments': {
       id: '/_authenticated/customer/installments'
-      path: '/customer/installments'
+      path: '/installments'
       fullPath: '/customer/installments'
       preLoaderRoute: typeof AuthenticatedCustomerInstallmentsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
-      path: '/admin/settings'
+      path: '/settings'
       fullPath: '/admin/settings'
       preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/rewards': {
       id: '/_authenticated/admin/rewards'
-      path: '/admin/rewards'
+      path: '/rewards'
       fullPath: '/admin/rewards'
       preLoaderRoute: typeof AuthenticatedAdminRewardsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/reports': {
       id: '/_authenticated/admin/reports'
-      path: '/admin/reports'
+      path: '/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof AuthenticatedAdminReportsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/promoters': {
       id: '/_authenticated/admin/promoters'
-      path: '/admin/promoters'
+      path: '/promoters'
       fullPath: '/admin/promoters'
       preLoaderRoute: typeof AuthenticatedAdminPromotersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/plans': {
       id: '/_authenticated/admin/plans'
-      path: '/admin/plans'
+      path: '/plans'
       fullPath: '/admin/plans'
       preLoaderRoute: typeof AuthenticatedAdminPlansRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/payments': {
       id: '/_authenticated/admin/payments'
-      path: '/admin/payments'
+      path: '/payments'
       fullPath: '/admin/payments'
       preLoaderRoute: typeof AuthenticatedAdminPaymentsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/lucky-draw': {
       id: '/_authenticated/admin/lucky-draw'
-      path: '/admin/lucky-draw'
+      path: '/lucky-draw'
       fullPath: '/admin/lucky-draw'
       preLoaderRoute: typeof AuthenticatedAdminLuckyDrawRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/customers': {
       id: '/_authenticated/admin/customers'
-      path: '/admin/customers'
+      path: '/customers'
       fullPath: '/admin/customers'
       preLoaderRoute: typeof AuthenticatedAdminCustomersRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/api/public/razorpay/webhook': {
       id: '/api/public/razorpay/webhook'
@@ -489,8 +548,7 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminLuckyDrawRoute: typeof AuthenticatedAdminLuckyDrawRoute
   AuthenticatedAdminPaymentsRoute: typeof AuthenticatedAdminPaymentsRoute
@@ -499,37 +557,82 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
   AuthenticatedAdminRewardsRoute: typeof AuthenticatedAdminRewardsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+}
+
+const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
+  {
+    AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
+    AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,
+    AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
+    AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
+    AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
+    AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
+    AuthenticatedAdminRewardsRoute: AuthenticatedAdminRewardsRoute,
+    AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  }
+
+const AuthenticatedAdminRouteRouteWithChildren =
+  AuthenticatedAdminRouteRoute._addFileChildren(
+    AuthenticatedAdminRouteRouteChildren,
+  )
+
+interface AuthenticatedCustomerRouteRouteChildren {
   AuthenticatedCustomerInstallmentsRoute: typeof AuthenticatedCustomerInstallmentsRoute
   AuthenticatedCustomerLuckyDrawRoute: typeof AuthenticatedCustomerLuckyDrawRoute
   AuthenticatedCustomerMembershipRoute: typeof AuthenticatedCustomerMembershipRoute
   AuthenticatedCustomerReferralsRoute: typeof AuthenticatedCustomerReferralsRoute
   AuthenticatedCustomerRewardsRoute: typeof AuthenticatedCustomerRewardsRoute
+}
+
+const AuthenticatedCustomerRouteRouteChildren: AuthenticatedCustomerRouteRouteChildren =
+  {
+    AuthenticatedCustomerInstallmentsRoute:
+      AuthenticatedCustomerInstallmentsRoute,
+    AuthenticatedCustomerLuckyDrawRoute: AuthenticatedCustomerLuckyDrawRoute,
+    AuthenticatedCustomerMembershipRoute: AuthenticatedCustomerMembershipRoute,
+    AuthenticatedCustomerReferralsRoute: AuthenticatedCustomerReferralsRoute,
+    AuthenticatedCustomerRewardsRoute: AuthenticatedCustomerRewardsRoute,
+  }
+
+const AuthenticatedCustomerRouteRouteWithChildren =
+  AuthenticatedCustomerRouteRoute._addFileChildren(
+    AuthenticatedCustomerRouteRouteChildren,
+  )
+
+interface AuthenticatedPromoterRouteRouteChildren {
   AuthenticatedPromoterCollectionsRoute: typeof AuthenticatedPromoterCollectionsRoute
   AuthenticatedPromoterCommissionsRoute: typeof AuthenticatedPromoterCommissionsRoute
   AuthenticatedPromoterCustomersRoute: typeof AuthenticatedPromoterCustomersRoute
   AuthenticatedPromoterPortfolioRoute: typeof AuthenticatedPromoterPortfolioRoute
 }
 
+const AuthenticatedPromoterRouteRouteChildren: AuthenticatedPromoterRouteRouteChildren =
+  {
+    AuthenticatedPromoterCollectionsRoute:
+      AuthenticatedPromoterCollectionsRoute,
+    AuthenticatedPromoterCommissionsRoute:
+      AuthenticatedPromoterCommissionsRoute,
+    AuthenticatedPromoterCustomersRoute: AuthenticatedPromoterCustomersRoute,
+    AuthenticatedPromoterPortfolioRoute: AuthenticatedPromoterPortfolioRoute,
+  }
+
+const AuthenticatedPromoterRouteRouteWithChildren =
+  AuthenticatedPromoterRouteRoute._addFileChildren(
+    AuthenticatedPromoterRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
+  AuthenticatedCustomerRouteRoute: typeof AuthenticatedCustomerRouteRouteWithChildren
+  AuthenticatedPromoterRouteRoute: typeof AuthenticatedPromoterRouteRouteWithChildren
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+}
+
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
+  AuthenticatedCustomerRouteRoute: AuthenticatedCustomerRouteRouteWithChildren,
+  AuthenticatedPromoterRouteRoute: AuthenticatedPromoterRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
-  AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,
-  AuthenticatedAdminPaymentsRoute: AuthenticatedAdminPaymentsRoute,
-  AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
-  AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
-  AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
-  AuthenticatedAdminRewardsRoute: AuthenticatedAdminRewardsRoute,
-  AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
-  AuthenticatedCustomerInstallmentsRoute:
-    AuthenticatedCustomerInstallmentsRoute,
-  AuthenticatedCustomerLuckyDrawRoute: AuthenticatedCustomerLuckyDrawRoute,
-  AuthenticatedCustomerMembershipRoute: AuthenticatedCustomerMembershipRoute,
-  AuthenticatedCustomerReferralsRoute: AuthenticatedCustomerReferralsRoute,
-  AuthenticatedCustomerRewardsRoute: AuthenticatedCustomerRewardsRoute,
-  AuthenticatedPromoterCollectionsRoute: AuthenticatedPromoterCollectionsRoute,
-  AuthenticatedPromoterCommissionsRoute: AuthenticatedPromoterCommissionsRoute,
-  AuthenticatedPromoterCustomersRoute: AuthenticatedPromoterCustomersRoute,
-  AuthenticatedPromoterPortfolioRoute: AuthenticatedPromoterPortfolioRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
