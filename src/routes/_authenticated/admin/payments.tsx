@@ -209,10 +209,19 @@ function AdminPaymentsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Badge
+            variant="outline"
+            className="gap-1.5 text-[10px] uppercase tracking-wider"
+            title={liveConnected ? "Realtime updates connected" : "Realtime disconnected — polling every 30s"}
+          >
+            <Radio className={`h-3 w-3 ${liveConnected ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
+            {liveConnected ? "Live" : "Polling"}
+          </Badge>
           <Button variant="outline" size="sm" onClick={() => setReconcileOpen(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Reconcile
           </Button>
+
           <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
             {exporting
               ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
