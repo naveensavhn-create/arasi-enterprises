@@ -308,6 +308,7 @@ function ReviewDrawer({
 
   useEffect(() => {
     setNotes(row?.kyc_review_notes ?? "");
+    setAssignRole(row?.role === "promoter" ? "promoter" : "customer");
     setFrontUrl(null);
     setBackUrl(null);
     if (!row) return;
