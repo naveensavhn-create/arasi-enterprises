@@ -143,7 +143,9 @@ async function resolveCustomerIdsExact(sb: any, customer: string | undefined) {
 
 function normalizeFilters(f: Filters) {
   const q = f.q?.trim() || undefined;
-  const status = f.status && f.status !== "all" ? f.status : undefined;
+  // Zod already narrowed `f.status` to PaymentStatus | undefined; the "all"
+  // chip is a UI-only concept that never survives validation.
+  const status = f.status;
   const fromISO = f.from ? new Date(f.from).toISOString() : undefined;
   const toISO = f.to ? new Date(new Date(f.to).getTime() + 86_400_000).toISOString() : undefined;
   const orderId = f.orderId?.trim() || undefined;
