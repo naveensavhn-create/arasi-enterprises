@@ -19,7 +19,15 @@ import { toast } from "sonner";
 
 
 const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"] as const;
-const SORT_COLUMNS = ["created_at", "paid_at", "amount", "status"] as const;
+const SORT_COLUMNS = [
+  "created_at",
+  "paid_at",
+  "amount",
+  "status",
+  "provider_order_id",
+  "provider_payment_id",
+  "customer_name",
+] as const;
 type SortCol = typeof SORT_COLUMNS[number];
 
 const searchSchema = z.object({
