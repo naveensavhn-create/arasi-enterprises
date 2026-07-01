@@ -15,9 +15,12 @@ import {
   type ReconciliationResult,
   type ReconciliationRow,
 } from "@/lib/payments.functions";
+import type { PaymentStatus } from "@/lib/payments/status-filter";
 
+// `status` is the shared `payment_status` enum union — never a plain string —
+// so the dialog can only forward values that the server-fn schema accepts.
 type Filters = {
-  status?: string;
+  status?: PaymentStatus;
   from?: string;
   to?: string;
   q?: string;
