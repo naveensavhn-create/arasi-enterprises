@@ -373,3 +373,87 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
     </Sheet>
   );
 }
+
+function RawPayload({ eventRowId, eventId }: { eventRowId: string; eventId: string }) {
+  const [open, setOpen] = useState(false);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["webhook-event-raw", eventRowId],
+    enabled: open,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("razorpay_webhook_events")
+        .select("raw")
+        .eq("id", eventRowId)
+        .maybeSingle();
+      if (error) throw error;
+      const raw = data?.raw ?? null;
+      const text = raw == null ? "" : JSON.stringify(raw, null, 2);
+      const bytes = new Blob([text]).size;
+      return { text, bytes, truncated: bytes > RAW_MAX_BYTES };
+    },
+  });
+
+  const downloadFull = () => {
+    if (!data?.text) return;
+    const blob = new Blob([data.text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `webhook-${eventId}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground"
+        onClick={() => setOpen((v) => !v)}
+      >
+        {open ? "▾ Hide raw payload" : "▸ Raw payload"}
+      </button>
+      {open && (
+        <div className="mt-1">
+          {isLoading ? (
+            <div className="flex items-center rounded bg-muted p-2 text-[10px] text-muted-foreground">
+              <Loader2 className="mr-1.5 h-3 w-3 animate-spin" /> Loading payload…
+            </div>
+          ) : error ? (
+            <p className="rounded bg-muted p-2 text-[10px] text-destructive">
+              Failed to load payload.
+            </p>
+          ) : !data || !data.text ? (
+            <p className="rounded bg-muted p-2 text-[10px] text-muted-foreground">
+              No payload stored.
+            </p>
+          ) : (
+            <>
+              <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-muted-foreground">
+                <span>
+                  {(data.bytes / 1024).toFixed(1)} KB
+                  {data.truncated && " • truncated preview"}
+                </span>
+                <button
+                  type="button"
+                  onClick={downloadFull}
+                  className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 hover:bg-accent"
+                >
+                  <Download className="h-3 w-3" /> Download full JSON
+                </button>
+              </div>
+              <pre className="max-h-48 overflow-auto rounded bg-muted p-2 text-[10px] leading-tight">
+                {data.truncated ? data.text.slice(0, RAW_MAX_BYTES) + "\n… (truncated)" : data.text}
+              </pre>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
