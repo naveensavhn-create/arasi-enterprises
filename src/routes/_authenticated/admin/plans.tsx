@@ -30,6 +30,7 @@ import { Loader2, Package, Plus, Pencil, Trash2, History } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
+import { deletePlanAudited } from "@/lib/plans.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
