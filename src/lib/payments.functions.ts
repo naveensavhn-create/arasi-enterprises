@@ -110,6 +110,7 @@ async function fetchPaymentRows(
   n: ReturnType<typeof normalizeFilters>,
   customerIds: string[] | undefined,
   membershipIds: string[] | undefined,
+  customerIdsExact: string[] | undefined,
   fromIdx: number,
   toIdx: number,
 ): Promise<AdminPaymentRow[]> {
@@ -127,6 +128,16 @@ async function fetchPaymentRows(
   if (n.status) query = query.eq("status", n.status);
   if (n.fromISO) query = query.gte("created_at", n.fromISO);
   if (n.toISO) query = query.lt("created_at", n.toISO);
+  if (n.orderId) query = query.ilike("provider_order_id", `%${n.orderId}%`);
+  if (n.paymentId) query = query.ilike("provider_payment_id", `%${n.paymentId}%`);
+  if (n.customer) {
+    if (!customerIdsExact || customerIdsExact.length === 0) {
+      // No matching customer — return empty result set.
+      query = query.eq("customer_id", "00000000-0000-0000-0000-000000000000");
+    } else {
+      query = query.in("customer_id", customerIdsExact);
+    }
+  }
   if (n.q) {
     const like = `%${n.q}%`;
     const parts = [
@@ -137,6 +148,7 @@ async function fetchPaymentRows(
     if (membershipIds && membershipIds.length) parts.push(`membership_id.in.(${membershipIds.join(",")})`);
     query = query.or(parts.join(","));
   }
+
 
   const { data: rows, error } = await query.range(fromIdx, toIdx);
   if (error) throw new Error(error.message);
