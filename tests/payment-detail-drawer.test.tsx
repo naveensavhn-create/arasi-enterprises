@@ -402,29 +402,26 @@ describe("<PaymentDetailDrawer /> — accessibility affordances", () => {
       <PaymentDetailDrawer row={invalid} open onOpenChange={() => {}} />,
     );
 
-    // The generic bare label (no reason) — plain "Data unavailable" on both attrs.
-    const bare = document.querySelectorAll<HTMLElement>(
-      '[aria-label="Data unavailable"]',
+    // Every unavailable badge must carry BOTH aria-label and title so screen
+    // readers and hover tooltips agree on what the placeholder means.
+    const badges = Array.from(
+      document.querySelectorAll<HTMLElement>('[aria-label^="Data unavailable"]'),
     );
-    expect(bare.length).toBeGreaterThan(0);
-    for (const el of Array.from(bare)) {
-      expect(el.getAttribute("title")).toBe("Data unavailable");
+    expect(badges.length).toBeGreaterThan(0);
+    for (const el of badges) {
+      expect(el.getAttribute("aria-label")).toMatch(/^Data unavailable/);
+      expect(el.getAttribute("title")).toBeTruthy();
       // Visible text must still read as the label so sighted users see it too.
       expect(el.textContent).toMatch(/Data unavailable/);
     }
 
     // The reason-carrying variant: aria-label = "Data unavailable — <reason>",
     // title = "<reason>" (tooltip shows the specific cause).
-    const reasoned = Array.from(
-      document.querySelectorAll<HTMLElement>('[aria-label^="Data unavailable — "]'),
-    );
-    expect(reasoned.length).toBeGreaterThan(0);
-    const customerBadge = reasoned.find(
+    const customerBadge = badges.find(
       (el) => el.getAttribute("aria-label") === "Data unavailable — Linked profile missing",
     );
     expect(customerBadge, "expected the customer badge to carry the profile-missing reason").toBeDefined();
     expect(customerBadge!.getAttribute("title")).toBe("Linked profile missing");
-    expect(customerBadge!.textContent).toMatch(/Data unavailable/);
   });
 
   it("valid rows do not render any Data unavailable badges or alerts", () => {
