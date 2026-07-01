@@ -201,6 +201,9 @@ export const enqueueInstallmentReminders = createServerFn({ method: "POST" })
 // Admin reminder-job management: list / filter / retry / cancel
 // ---------------------------------------------------------------------------
 
+type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
+
+
 export type ReminderJobStatus =
   | "pending"
   | "sending"
