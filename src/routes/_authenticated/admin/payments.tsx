@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Radio } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
 import { listAdminPayments, exportAdminPayments, type AdminPaymentRow } from "@/lib/payments.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
 
 
 const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"] as const;
@@ -93,8 +95,10 @@ function AdminPaymentsPage() {
   const [qDraft, setQDraft] = useState(search.q);
   const [exporting, setExporting] = useState(false);
   const [reconcileOpen, setReconcileOpen] = useState(false);
+  const [liveConnected, setLiveConnected] = useState(false);
+  const lastLiveAt = useRef<number>(0);
 
-
+  const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
   const exportFn = useServerFn(exportAdminPayments);
 
@@ -118,7 +122,34 @@ function AdminPaymentsPage() {
         },
       }),
     placeholderData: keepPreviousData,
+    // Polling fallback: refresh every 30s while realtime is off, 2m otherwise.
+    refetchInterval: liveConnected ? 120_000 : 30_000,
+    refetchOnWindowFocus: true,
   });
+
+  // Realtime: invalidate ledger + drawer queries when webhooks land.
+  useEffect(() => {
+    const invalidate = () => {
+      lastLiveAt.current = Date.now();
+      queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-webhook-events"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-installment"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-membership"] });
+    };
+    const channel = supabase
+      .channel("admin-payments-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "razorpay_webhook_events" }, invalidate)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "installments" }, invalidate)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "memberships" }, invalidate)
+      .subscribe((status) => {
+        setLiveConnected(status === "SUBSCRIBED");
+      });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
 
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;
@@ -178,10 +209,19 @@ function AdminPaymentsPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <Badge
+            variant="outline"
+            className="gap-1.5 text-[10px] uppercase tracking-wider"
+            title={liveConnected ? "Realtime updates connected" : "Realtime disconnected — polling every 30s"}
+          >
+            <Radio className={`h-3 w-3 ${liveConnected ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
+            {liveConnected ? "Live" : "Polling"}
+          </Badge>
           <Button variant="outline" size="sm" onClick={() => setReconcileOpen(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Reconcile
           </Button>
+
           <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
             {exporting
               ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
