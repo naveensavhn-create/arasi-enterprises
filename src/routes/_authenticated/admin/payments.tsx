@@ -76,6 +76,7 @@ function AdminPaymentsPage() {
   const [status, setStatus] = useState<string>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [selected, setSelected] = useState<Row | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-payments"],
