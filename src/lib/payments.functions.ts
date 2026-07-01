@@ -53,7 +53,8 @@ export type PaymentDateField = typeof DATE_FIELDS[number];
 const paymentStatusFilterSchema = z
   .enum(PAYMENT_STATUSES)
   .optional()
-  .or(z.literal("").transform(() => undefined));
+  .or(z.literal("").transform(() => undefined))
+  .or(z.literal("all").transform(() => undefined));
 
 const baseFilterSchema = z.object({
   sortBy: z.enum(SORT_COLUMNS).default("created_at"),
