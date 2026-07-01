@@ -204,6 +204,9 @@ function AdminSettings() {
       }
     },
     onError: (e: Error) => toast.error("Test send failed", { description: e.message }),
+  });
+
+
 
   const claim = useMutation({
     mutationFn: () => claimFn(),
