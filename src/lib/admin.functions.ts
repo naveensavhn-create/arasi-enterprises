@@ -40,31 +40,47 @@ async function writeAudit(
     reason: string | null;
     metadata?: Record<string, unknown>;
   },
-) {
-  await supabaseAdmin.from("admin_audit_log").insert({
-    actor_id: entry.actor_id,
-    actor_email: entry.actor_email,
-    target_user_id: entry.target_user_id,
-    target_email: entry.target_email,
-    action: entry.action,
-    role_before: entry.role_before,
-    role_after: entry.role_after,
-    reason: entry.reason,
-    metadata: (entry.metadata ?? {}) as never,
-  });
+): Promise<string | null> {
+  const { data } = await supabaseAdmin
+    .from("admin_audit_log")
+    .insert({
+      actor_id: entry.actor_id,
+      actor_email: entry.actor_email,
+      target_user_id: entry.target_user_id,
+      target_email: entry.target_email,
+      action: entry.action,
+      role_before: entry.role_before,
+      role_after: entry.role_after,
+      reason: entry.reason,
+      metadata: (entry.metadata ?? {}) as never,
+    })
+    .select("id")
+    .single();
+  return data?.id ?? null;
+}
+
+async function lookupProfile(
+  supabaseAdmin: SupabaseAdmin,
+  userId: string,
+): Promise<{ email: string | null; fullName: string | null }> {
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("email, full_name")
+    .eq("id", userId)
+    .maybeSingle();
+  return {
+    email: data?.email ?? null,
+    fullName: data?.full_name ?? null,
+  };
 }
 
 async function lookupEmail(
   supabaseAdmin: SupabaseAdmin,
   userId: string,
 ): Promise<string | null> {
-  const { data } = await supabaseAdmin
-    .from("profiles")
-    .select("email")
-    .eq("id", userId)
-    .maybeSingle();
-  return data?.email ?? null;
+  return (await lookupProfile(supabaseAdmin, userId)).email;
 }
+
 
 async function currentRole(
   supabaseAdmin: SupabaseAdmin,
@@ -167,7 +183,8 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
     if (!targetId) throw new Error(`No user found with email ${data.email}.`);
 
     const before = await currentRole(supabaseAdmin, targetId);
-    const actorEmail = await lookupEmail(supabaseAdmin, context.userId);
+    const actor = await lookupProfile(supabaseAdmin, context.userId);
+    const target = await lookupProfile(supabaseAdmin, targetId);
 
     const { data: existing } = await supabaseAdmin
       .from("user_roles")
@@ -182,9 +199,10 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
       if (insertError) throw new Error(insertError.message);
     }
 
-    await writeAudit(supabaseAdmin, {
+    const changedAt = new Date().toISOString();
+    const auditId = await writeAudit(supabaseAdmin, {
       actor_id: context.userId,
-      actor_email: actorEmail,
+      actor_email: actor.email,
       target_user_id: targetId,
       target_email: data.email,
       action: "promote",
@@ -194,8 +212,31 @@ export const promoteToAdminByEmail = createServerFn({ method: "POST" })
       metadata: { already_admin: !!existing },
     });
 
+    // Fire-and-log email notification (never fail the promote if email breaks)
+    try {
+      const { sendRoleChangeEmail } = await import("@/lib/email/send-role-change.server");
+      await sendRoleChangeEmail({
+        kind: "promote",
+        recipientEmail: data.email,
+        recipientName: target.fullName,
+        actorName: actor.fullName ?? actor.email ?? "Administrator",
+        actorEmail: actor.email ?? "unknown@arasienterprises.com",
+        previousRole: before ?? "customer",
+        newRole: "admin",
+        changedAt,
+        reason: data.reason,
+        targetUserId: targetId,
+        auditId,
+        triggeredBy: context.userId,
+      });
+    } catch (e) {
+      console.error("[admin.promoteToAdminByEmail] email send failed", e);
+    }
+
     return { ok: true, userId: targetId };
   });
+
+
 
 /**
  * Change a user's role (admin only). Safeguards against demoting the last admin.
@@ -236,8 +277,8 @@ export const setUserRole = createServerFn({ method: "POST" })
 
 
     const before = await currentRole(supabaseAdmin, data.userId);
-    const actorEmail = await lookupEmail(supabaseAdmin, context.userId);
-    const targetEmail = await lookupEmail(supabaseAdmin, data.userId);
+    const actor = await lookupProfile(supabaseAdmin, context.userId);
+    const target = await lookupProfile(supabaseAdmin, data.userId);
 
     const { error: deleteError } = await supabaseAdmin
       .from("user_roles")
@@ -257,19 +298,44 @@ export const setUserRole = createServerFn({ method: "POST" })
           ? "promote"
           : "role_change";
 
-    await writeAudit(supabaseAdmin, {
+    const changedAt = new Date().toISOString();
+    const auditId = await writeAudit(supabaseAdmin, {
       actor_id: context.userId,
-      actor_email: actorEmail,
+      actor_email: actor.email,
       target_user_id: data.userId,
-      target_email: targetEmail,
+      target_email: target.email,
       action,
       role_before: before,
       role_after: data.role,
       reason: data.reason ?? null,
     });
 
+    // Fire-and-log email notification when the change is a promote or revoke.
+    if ((action === "promote" || action === "revoke") && target.email) {
+      try {
+        const { sendRoleChangeEmail } = await import("@/lib/email/send-role-change.server");
+        await sendRoleChangeEmail({
+          kind: action,
+          recipientEmail: target.email,
+          recipientName: target.fullName,
+          actorName: actor.fullName ?? actor.email ?? "Administrator",
+          actorEmail: actor.email ?? "unknown@arasienterprises.com",
+          previousRole: before ?? "customer",
+          newRole: data.role,
+          changedAt,
+          reason: data.reason,
+          targetUserId: data.userId,
+          auditId,
+          triggeredBy: context.userId,
+        });
+      } catch (e) {
+        console.error("[admin.setUserRole] email send failed", e);
+      }
+    }
+
     return { ok: true };
   });
+
 
 /**
  * List all admins (admin only).
@@ -328,3 +394,90 @@ export const listAdminAuditLog = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data;
   });
+
+const testEmailSchema = z.object({
+  kind: z.enum(["promote", "revoke"]),
+  recipientEmail: z.string().trim().toLowerCase().email().max(255).optional(),
+});
+
+/**
+ * Sends a role-change email to the caller (or a chosen address) to validate
+ * template rendering + delivery infrastructure. Records the attempt in
+ * role_email_notifications with is_test=true.
+ */
+export const sendRoleChangeTestEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => testEmailSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleErr) throw new Error(roleErr.message);
+    if (!isAdmin) throw new Error("Forbidden: admin role required.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const actor = await lookupProfile(supabaseAdmin, context.userId);
+    const recipient = data.recipientEmail ?? actor.email;
+    if (!recipient) throw new Error("No recipient email available for test send.");
+
+    const { sendRoleChangeEmail } = await import("@/lib/email/send-role-change.server");
+    const result = await sendRoleChangeEmail({
+      kind: data.kind,
+      recipientEmail: recipient,
+      recipientName: actor.fullName,
+      actorName: actor.fullName ?? actor.email ?? "Administrator",
+      actorEmail: actor.email ?? "unknown@arasienterprises.com",
+      previousRole: data.kind === "promote" ? "customer" : "admin",
+      newRole: data.kind === "promote" ? "admin" : "customer",
+      changedAt: new Date().toISOString(),
+      reason: "Test email triggered from Admin Settings to verify delivery.",
+      targetUserId: context.userId,
+      triggeredBy: context.userId,
+      isTest: true,
+    });
+    return result;
+  });
+
+export interface RoleEmailNotification {
+  id: string;
+  audit_id: string | null;
+  target_user_id: string | null;
+  recipient_email: string;
+  template_name: string;
+  subject: string | null;
+  status: string;
+  message_id: string | null;
+  error_message: string | null;
+  is_test: boolean;
+  triggered_by: string | null;
+  metadata: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Lists the 100 most recent role-change email notifications (admin only).
+ */
+export const listRoleEmailNotifications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<RoleEmailNotification[]> => {
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleErr) throw new Error(roleErr.message);
+    if (!isAdmin) throw new Error("Forbidden: admin role required.");
+
+    const { data, error } = await context.supabase
+      .from("role_email_notifications")
+      .select("id, audit_id, target_user_id, recipient_email, template_name, subject, status, message_id, error_message, is_test, triggered_by, metadata, created_at, updated_at")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r) => ({
+      ...r,
+      metadata: r.metadata == null ? null : JSON.stringify(r.metadata),
+    })) as RoleEmailNotification[];
+  });
+

@@ -343,6 +343,65 @@ export type Database = {
         }
         Relationships: []
       }
+      role_email_notifications: {
+        Row: {
+          audit_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          is_test: boolean
+          message_id: string | null
+          metadata: Json
+          recipient_email: string
+          status: string
+          subject: string | null
+          target_user_id: string | null
+          template_name: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          audit_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_test?: boolean
+          message_id?: string | null
+          metadata?: Json
+          recipient_email: string
+          status?: string
+          subject?: string | null
+          target_user_id?: string | null
+          template_name: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audit_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          is_test?: boolean
+          message_id?: string | null
+          metadata?: Json
+          recipient_email?: string
+          status?: string
+          subject?: string | null
+          target_user_id?: string | null
+          template_name?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_email_notifications_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "admin_audit_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
