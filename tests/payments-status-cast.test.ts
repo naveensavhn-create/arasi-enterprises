@@ -73,7 +73,42 @@ describe("applyPaymentStatusEq (status::text cast helper)", () => {
       expect(q.calls).toEqual([]);
     }
   });
+
+  it("PAYMENT_STATUS_TEXT_COLUMN is the single source of truth", () => {
+    expect(PAYMENT_STATUS_TEXT_COLUMN).toBe("status::text");
+  });
 });
+
+describe("applyPaymentStatusIn (status::text IN helper)", () => {
+  function makeQuery() {
+    const calls: Array<{ col: string; op: string; v: unknown }> = [];
+    const q: any = {
+      calls,
+      filter(col: string, op: string, v: unknown) {
+        calls.push({ col, op, v });
+        return q;
+      },
+    };
+    return q;
+  }
+
+  it("emits filter('status::text','in','(a,b,c)') for a non-empty list", () => {
+    const q = makeQuery();
+    applyPaymentStatusIn(q, ["paid", "refunded", "failed"]);
+    expect(q.calls).toEqual([
+      { col: "status::text", op: "in", v: "(paid,refunded,failed)" },
+    ]);
+  });
+
+  it("is a no-op for empty/null/undefined lists", () => {
+    for (const v of [[], null, undefined] as const) {
+      const q = makeQuery();
+      applyPaymentStatusIn(q, v);
+      expect(q.calls).toEqual([]);
+    }
+  });
+});
+
 
 // ---------------------------------------------------------------------------
 // 2. Source-level audit: no raw payments.status equality anywhere
