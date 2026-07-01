@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Loader2,
   Gift,
@@ -16,9 +17,13 @@ import {
   Wallet,
   CheckCircle2,
   Clock,
+  Sparkles,
+  ArrowRight,
+  Inbox,
 } from "lucide-react";
 import { toast } from "sonner";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
+
 
 
 type MembershipRow = {
