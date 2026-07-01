@@ -150,6 +150,7 @@ function AdminSettings() {
   const [fAction, setFAction] = useState<string>("all");
   const [fFrom, setFFrom] = useState("");
   const [fTo, setFTo] = useState("");
+  const [selectedAudit, setSelectedAudit] = useState<AuditRow | null>(null);
 
 
 
