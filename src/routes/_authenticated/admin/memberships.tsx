@@ -397,12 +397,34 @@ function EditMembershipDialog({
   const [status, setStatus] = useState<string>(row.status);
   const [notes, setNotes] = useState<string>(row.notes ?? "");
   const [startDate, setStartDate] = useState<string>(row.start_date);
+  const [memberDisplayId, setMemberDisplayId] = useState<string>(row.member_display_id ?? "");
+  const [couponNo, setCouponNo] = useState<string>(row.coupon_no ?? "");
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>Edit {row.membership_number}</DialogTitle></DialogHeader>
         <div className="grid gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>ID No</Label>
+              <Input
+                value={memberDisplayId}
+                onChange={(e) => setMemberDisplayId(e.target.value.toUpperCase())}
+                placeholder="e.g. AG453801"
+                className="font-mono"
+              />
+            </div>
+            <div>
+              <Label>Coupon No</Label>
+              <Input
+                value={couponNo}
+                onChange={(e) => setCouponNo(e.target.value)}
+                placeholder="e.g. 4956"
+                className="font-mono"
+              />
+            </div>
+          </div>
           <div>
             <Label>Promoter</Label>
             <Select value={promoterId} onValueChange={setPromoterId}>
@@ -442,6 +464,8 @@ function EditMembershipDialog({
                 status,
                 notes: notes || null,
                 start_date: startDate,
+                member_display_id: memberDisplayId.trim() ? memberDisplayId.trim() : null,
+                coupon_no: couponNo.trim() ? couponNo.trim() : null,
               })
             }
             disabled={submitting}
