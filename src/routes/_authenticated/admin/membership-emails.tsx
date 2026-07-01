@@ -96,11 +96,13 @@ function StatusBadge({ status }: { status: string }) {
 function MembershipEmailsPage() {
   const queryClient = useQueryClient();
 
+  const refetchInterval = useListRefetchInterval();
   const notificationsQuery = useQuery({
     queryKey: ["admin", "membership-email-notifications"],
     queryFn: () => listMembershipEmailNotifications(),
-    refetchInterval: 15_000,
+    refetchInterval,
   });
+
   const membershipsQuery = useQuery({
     queryKey: ["admin", "memberships-for-test"],
     queryFn: () => listMembershipsForTest(),
