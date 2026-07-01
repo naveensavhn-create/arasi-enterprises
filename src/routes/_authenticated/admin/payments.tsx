@@ -522,7 +522,7 @@ function AdminPaymentsPage() {
                   setQDraft(""); setOrderDraft(""); setPaymentDraft(""); setCustomerDraft("");
                   setSearch({
                     q: "", orderId: "", paymentId: "", customer: "",
-                    status: "all", from: "", to: "", page: 0,
+                    status: "all", from: "", to: "", dateField: "created", page: 0,
                   });
                 }}
               >
