@@ -167,6 +167,8 @@ const updateSchema = z.object({
   status: z.enum(["pending", "active", "completed", "cancelled", "defaulted"]).optional(),
   notes: z.string().max(1000).nullable().optional(),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  member_display_id: z.string().trim().min(3).max(32).regex(/^[A-Za-z0-9-]+$/, "letters, digits, or dashes only").nullable().optional(),
+  coupon_no: z.string().trim().min(3).max(16).regex(/^[A-Za-z0-9-]+$/, "letters, digits, or dashes only").nullable().optional(),
 });
 
 export const updateMembershipAdmin = createServerFn({ method: "POST" })
