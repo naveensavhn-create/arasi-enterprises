@@ -1,7 +1,8 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { getMyRole } from "@/lib/roles.functions";
 import { getAdminBootstrapStatus } from "@/lib/admin.functions";
 import { Forbidden, ForbiddenError } from "@/components/access/Forbidden";
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async ({ location }) => {
@@ -28,5 +29,12 @@ export const Route = createFileRoute("/_authenticated/admin")({
       </div>
     );
   },
+  // Any unknown child under /admin (e.g. a stray `/admin/admin` from a
+  // relative link) should quietly redirect to the shared dashboard instead
+  // of surfacing a route-match error.
+  notFoundComponent: () => {
+    throw redirect({ to: "/dashboard" });
+  },
   component: () => <Outlet />,
 });
+
