@@ -257,7 +257,7 @@ function DrawResultsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((r) => (
+                  {pageRows.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell>
                         <Badge variant="secondary">#{r.position}</Badge>
@@ -283,6 +283,48 @@ function DrawResultsPage() {
                   ))}
                 </TableBody>
               </Table>
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground">
+                  Showing {filtered.length === 0 ? 0 : pageStart + 1}–
+                  {Math.min(pageStart + pageSize, filtered.length)} of {filtered.length}
+                  {filtered.length !== totalWinners ? ` (filtered from ${totalWinners})` : ""}
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-muted-foreground" htmlFor="page-size">
+                    Rows
+                  </label>
+                  <select
+                    id="page-size"
+                    className="rounded-md border bg-background px-2 py-1 text-sm"
+                    value={pageSize}
+                    onChange={(e) => setPageSize(Number(e.target.value))}
+                  >
+                    {[25, 50, 100, 200].map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={safePage <= 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="text-xs tabular-nums text-muted-foreground">
+                    Page {safePage} / {totalPages}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={safePage >= totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </CardContent>
