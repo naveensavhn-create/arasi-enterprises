@@ -24,6 +24,8 @@ export type ReferredCustomer = {
   membership_status: string | null;
   member_display_id: string | null;
   coupon_no: string | null;
+  plan_id: string | null;
+  plan_name: string | null;
 };
 
 export type PromoterOption = { id: string; full_name: string; email: string };
