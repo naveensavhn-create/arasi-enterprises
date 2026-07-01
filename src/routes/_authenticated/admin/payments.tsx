@@ -171,24 +171,50 @@ function AdminPaymentsPage() {
 
   // Realtime: invalidate ledger + drawer queries when webhooks land.
   useEffect(() => {
-    const invalidate = () => {
+    // Debounce toasts so bursts of related events (payment + webhook + installment)
+    // surface as a single notification.
+    let toastTimer: ReturnType<typeof setTimeout> | null = null;
+    const pending = { payments: 0, webhooks: 0, other: 0 };
+    const scheduleToast = (kind: "payments" | "webhooks" | "other") => {
+      pending[kind] += 1;
+      if (toastTimer) return;
+      toastTimer = setTimeout(() => {
+        const { payments: p, webhooks: w, other: o } = pending;
+        const total = p + w + o;
+        if (total > 0) {
+          const parts: string[] = [];
+          if (p) parts.push(`${p} payment${p > 1 ? "s" : ""}`);
+          if (w) parts.push(`${w} webhook${w > 1 ? "s" : ""}`);
+          if (o) parts.push(`${o} related update${o > 1 ? "s" : ""}`);
+          toast.success("Ledger updated", {
+            description: parts.join(" · "),
+            duration: 2500,
+          });
+        }
+        pending.payments = 0; pending.webhooks = 0; pending.other = 0;
+        toastTimer = null;
+      }, 800);
+    };
+    const invalidate = (kind: "payments" | "webhooks" | "other") => () => {
       lastLiveAt.current = Date.now();
       queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
       queryClient.invalidateQueries({ queryKey: ["payment-webhook-events"] });
       queryClient.invalidateQueries({ queryKey: ["payment-installment"] });
       queryClient.invalidateQueries({ queryKey: ["payment-membership"] });
       queryClient.invalidateQueries({ queryKey: ["admin-payments-last-webhook"] });
+      scheduleToast(kind);
     };
     const channel = supabase
       .channel("admin-payments-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, invalidate)
-      .on("postgres_changes", { event: "*", schema: "public", table: "razorpay_webhook_events" }, invalidate)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "installments" }, invalidate)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "memberships" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, invalidate("payments"))
+      .on("postgres_changes", { event: "*", schema: "public", table: "razorpay_webhook_events" }, invalidate("webhooks"))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "installments" }, invalidate("other"))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "memberships" }, invalidate("other"))
       .subscribe((status) => {
         setLiveConnected(status === "SUBSCRIBED");
       });
     return () => {
+      if (toastTimer) clearTimeout(toastTimer);
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
