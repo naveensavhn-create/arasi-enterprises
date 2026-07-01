@@ -165,6 +165,21 @@ function DrawResultsPage() {
                 <option key={d.id} value={d.id}>{d.name}</option>
               ))}
             </select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (filtered.length === 0) {
+                  toast.error("Nothing to export");
+                  return;
+                }
+                downloadWinnersCsv(filtered);
+                toast.success(`Exported ${filtered.length} winner${filtered.length === 1 ? "" : "s"}`);
+              }}
+              disabled={isLoading || filtered.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" /> Export CSV
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
