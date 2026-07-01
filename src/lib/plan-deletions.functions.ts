@@ -23,7 +23,7 @@ export type PlanDeletionRow = {
   plan_name: string | null;
   counts: { pending: number; active: number; cancelled: number; completed: number; blocking: number; total: number };
   error_message: string | null;
-  metadata: unknown;
+  metadata: JsonValue;
 };
 
 export type PlanDeletionListResult = {
