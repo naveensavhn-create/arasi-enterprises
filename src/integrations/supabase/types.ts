@@ -18,7 +18,7 @@ export type Database = {
         Row: {
           action: string
           actor_email: string | null
-          actor_id: string
+          actor_id: string | null
           created_at: string
           id: string
           metadata: Json
@@ -31,7 +31,7 @@ export type Database = {
         Insert: {
           action: string
           actor_email?: string | null
-          actor_id: string
+          actor_id?: string | null
           created_at?: string
           id?: string
           metadata?: Json
@@ -44,7 +44,7 @@ export type Database = {
         Update: {
           action?: string
           actor_email?: string | null
-          actor_id?: string
+          actor_id?: string | null
           created_at?: string
           id?: string
           metadata?: Json
@@ -583,13 +583,17 @@ export type Database = {
           attempts: number
           channel: Database["public"]["Enums"]["reminder_channel"]
           created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
           error_code: string | null
           error_message: string | null
           id: string
           installment_id: string
           last_attempt_at: string | null
+          max_attempts: number
           membership_id: string
           metadata: Json
+          next_attempt_at: string | null
           provider: string | null
           provider_message_id: string | null
           recipient_email: string | null
@@ -605,13 +609,17 @@ export type Database = {
           attempts?: number
           channel?: Database["public"]["Enums"]["reminder_channel"]
           created_at?: string
+          dead_letter_at?: string | null
+          dead_letter_reason?: string | null
           error_code?: string | null
           error_message?: string | null
           id?: string
           installment_id: string
           last_attempt_at?: string | null
+          max_attempts?: number
           membership_id: string
           metadata?: Json
+          next_attempt_at?: string | null
           provider?: string | null
           provider_message_id?: string | null
           recipient_email?: string | null
@@ -627,13 +635,17 @@ export type Database = {
           attempts?: number
           channel?: Database["public"]["Enums"]["reminder_channel"]
           created_at?: string
+          dead_letter_at?: string | null
+          dead_letter_reason?: string | null
           error_code?: string | null
           error_message?: string | null
           id?: string
           installment_id?: string
           last_attempt_at?: string | null
+          max_attempts?: number
           membership_id?: string
           metadata?: Json
+          next_attempt_at?: string | null
           provider?: string | null
           provider_message_id?: string | null
           recipient_email?: string | null
@@ -1153,10 +1165,89 @@ export type Database = {
         Returns: undefined
       }
       auto_pick_due_draws: { Args: never; Returns: number }
+      claim_due_reminder_jobs: {
+        Args: { _limit?: number }
+        Returns: {
+          attempts: number
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          installment_id: string
+          last_attempt_at: string | null
+          max_attempts: number
+          membership_id: string
+          metadata: Json
+          next_attempt_at: string | null
+          provider: string | null
+          provider_message_id: string | null
+          recipient_email: string | null
+          recipient_id: string
+          recipient_phone: string | null
+          reminder_kind: string
+          scheduled_at: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["reminder_status"]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "payment_reminder_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       count_active_admins: { Args: never; Returns: number }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      finalize_reminder_job: {
+        Args: {
+          _error_code?: string
+          _error_message?: string
+          _job_id: string
+          _metadata?: Json
+          _provider?: string
+          _provider_message_id?: string
+          _retry_in_seconds?: number
+          _status: string
+        }
+        Returns: {
+          attempts: number
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          error_code: string | null
+          error_message: string | null
+          id: string
+          installment_id: string
+          last_attempt_at: string | null
+          max_attempts: number
+          membership_id: string
+          metadata: Json
+          next_attempt_at: string | null
+          provider: string | null
+          provider_message_id: string | null
+          recipient_email: string | null
+          recipient_id: string
+          recipient_phone: string | null
+          reminder_kind: string
+          scheduled_at: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["reminder_status"]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payment_reminder_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       has_role: {
         Args: {
