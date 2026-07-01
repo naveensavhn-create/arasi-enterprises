@@ -395,13 +395,12 @@ function AdminPlansPage() {
                     <Button
                       variant="secondary"
                       onClick={() => {
-                        if (!confirmDelete) return;
-                        toggleActive.mutate(
-                          { ...confirmDelete, is_active: true },
-                          { onSuccess: () => setConfirmDelete(null) },
-                        );
+                        if (!confirmDelete || !confirmDelete.is_active) return;
+                        toggleActive.mutate(confirmDelete, {
+                          onSuccess: () => setConfirmDelete(null),
+                        });
                       }}
-                      disabled={toggleActive.isPending || !confirmDelete?.is_active === false}
+                      disabled={toggleActive.isPending || !confirmDelete?.is_active}
                     >
                       {confirmDelete?.is_active ? "Deactivate plan" : "Already inactive"}
                     </Button>
