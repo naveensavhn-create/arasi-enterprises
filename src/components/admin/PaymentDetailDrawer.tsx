@@ -12,27 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import type { AdminPaymentRow } from "@/lib/payments.functions";
 
-export type PaymentDetailRow = {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  method: string | null;
-  provider: string;
-  provider_order_id: string | null;
-  provider_payment_id: string | null;
-  error_code: string | null;
-  error_description: string | null;
-  paid_at: string | null;
-  created_at: string;
-  customer_id: string;
-  membership_id: string;
-  installment_id: string | null;
-  memberships: { membership_number: string | null } | null;
-  installments: { sequence: number; due_date: string } | null;
-  profile?: { full_name: string | null; email: string | null } | null;
-};
+export type PaymentDetailRow = AdminPaymentRow;
+
 
 type WebhookEvent = {
   id: string;
