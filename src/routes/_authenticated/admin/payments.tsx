@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, Search, Download } from "lucide-react";
 import { useState, useMemo } from "react";
+import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 
 export const Route = createFileRoute("/_authenticated/admin/payments")({
   head: () => ({ meta: [{ title: "Payments — Admin" }] }),
@@ -75,6 +76,7 @@ function AdminPaymentsPage() {
   const [status, setStatus] = useState<string>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [selected, setSelected] = useState<Row | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-payments"],
@@ -233,7 +235,11 @@ function AdminPaymentsPage() {
                   {filtered.map((r) => {
                     const p = r.profile;
                     return (
-                      <tr key={r.id} className="border-b last:border-0 align-top">
+                      <tr
+                        key={r.id}
+                        className="cursor-pointer border-b align-top last:border-0 hover:bg-accent/50"
+                        onClick={() => setSelected(r)}
+                      >
                         <td className="py-2 pr-4 text-muted-foreground whitespace-nowrap">
                           {new Date(r.paid_at ?? r.created_at).toLocaleString()}
                         </td>
@@ -285,6 +291,12 @@ function AdminPaymentsPage() {
           )}
         </CardContent>
       </Card>
+
+      <PaymentDetailDrawer
+        row={selected}
+        open={!!selected}
+        onOpenChange={(o) => !o && setSelected(null)}
+      />
     </div>
   );
 }
