@@ -16,6 +16,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Loader2, Package, Plus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -65,6 +75,7 @@ function AdminPlansPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Plan | null>(null);
   const [form, setForm] = useState<FormState>(empty);
+  const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-plans"],
@@ -297,9 +308,8 @@ function AdminPlansPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => {
-                          if (confirm(`Delete "${p.name}"?`)) remove.mutate(p.id);
-                        }}
+                        onClick={() => setConfirmDelete(p)}
+
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -334,6 +344,35 @@ function AdminPlansPage() {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete plan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <span className="font-semibold">{confirmDelete?.name}</span>.
+              Existing memberships already on this plan are unaffected, but customers will no longer be
+              able to enroll in it. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={remove.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={remove.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (!confirmDelete) return;
+                remove.mutate(confirmDelete.id, {
+                  onSuccess: () => setConfirmDelete(null),
+                });
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete plan"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
