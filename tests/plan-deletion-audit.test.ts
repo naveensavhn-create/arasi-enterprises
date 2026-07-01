@@ -201,5 +201,67 @@ describe("mapPlanDeletionAuditRow — read path parity", () => {
     });
     expect(view.actor_email).toBeNull();
     expect(view.error_message).toBeNull();
+});
+
+describe("parseBlockingCountFromTriggerError", () => {
+  it("parses the canonical trigger message", () => {
+    expect(
+      parseBlockingCountFromTriggerError(
+        "Cannot delete plan: 3 active enrollment(s) still reference this plan. Deactivate the plan instead.",
+      ),
+    ).toBe(3);
   });
+
+  it("handles the plural 'enrollments' variant", () => {
+    expect(
+      parseBlockingCountFromTriggerError("12 active enrollments still reference this plan"),
+    ).toBe(12);
+  });
+
+  it("strips a Postgres 'ERROR:' prefix", () => {
+    expect(
+      parseBlockingCountFromTriggerError(
+        "ERROR:  Cannot delete plan: 7 active enrollment(s) still reference this plan.",
+      ),
+    ).toBe(7);
+  });
+
+  it("parses thousands separators", () => {
+    expect(
+      parseBlockingCountFromTriggerError("Cannot delete plan: 1,234 active enrollment(s) block this."),
+    ).toBe(1234);
+  });
+
+  it("parses 'pending/active memberships' phrasing", () => {
+    expect(
+      parseBlockingCountFromTriggerError("5 pending memberships reference this plan"),
+    ).toBe(5);
+  });
+
+  it("parses key=value suffixes", () => {
+    expect(parseBlockingCountFromTriggerError("delete blocked (blocking=9)")).toBe(9);
+    expect(parseBlockingCountFromTriggerError("count: 4 enrollments")).toBe(4);
+  });
+
+  it("parses parenthesized counts", () => {
+    expect(parseBlockingCountFromTriggerError("blocked (2 enrollments)")).toBe(2);
+  });
+
+  it("falls back to a nearby integer next to 'enrollment'", () => {
+    expect(
+      parseBlockingCountFromTriggerError("There are still 6 enrollment records preventing this"),
+    ).toBe(6);
+  });
+
+  it("returns null for null/empty/unrelated input", () => {
+    expect(parseBlockingCountFromTriggerError(null)).toBeNull();
+    expect(parseBlockingCountFromTriggerError("")).toBeNull();
+    expect(parseBlockingCountFromTriggerError("some other db error")).toBeNull();
+  });
+
+  it("does not return negative numbers", () => {
+    // No integer at all → null
+    expect(parseBlockingCountFromTriggerError("enrollments blocked")).toBeNull();
+  });
+});
 });
