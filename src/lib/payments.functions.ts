@@ -235,7 +235,7 @@ export const exportAdminPayments = createServerFn({ method: "GET" })
       const paymentChunks: string[][] = [];
       for (let i = 0; i < paymentIds.length; i += CHUNK) paymentChunks.push(paymentIds.slice(i, i + CHUNK));
 
-      const runs: Promise<any>[] = [];
+      const runs: Array<PromiseLike<any>> = [];
       for (const oc of orderChunks) {
         runs.push(
           supabaseAdmin
