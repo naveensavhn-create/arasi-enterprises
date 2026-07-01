@@ -154,6 +154,7 @@ function AdminPlansPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      qc.invalidateQueries({ queryKey: ["admin-plans-usage"] });
       toast.success("Plan deleted");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Delete failed"),
