@@ -1308,7 +1308,9 @@ export type Database = {
           created_at: string
           email: string
           full_name: string
+          has_aadhaar_docs: boolean
           id: string
+          kyc_review_notes: string
           kyc_reviewed_at: string
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           kyc_submitted_at: string
