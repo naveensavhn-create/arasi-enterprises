@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, Users } from "lucide-react";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
+
 import { useState, useMemo } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({
