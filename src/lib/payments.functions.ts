@@ -14,20 +14,18 @@ export async function assertAdmin(ctx: { supabase: any; userId: string }) {
 }
 
 /**
- * `payments.status` is a Postgres enum (`payment_status`). PostgREST on
- * PG15/16 rejects a plain `.eq("status", ...)` with an operator error
- * ("operator does not exist: payment_status = text") unless the column is
- * cast to text first. Route every equality filter on the payments status
- * column through this helper so a future callsite cannot re-introduce the
- * bug. If you need `.in(...)` or `.neq(...)`, add a sibling helper here
- * — do NOT call `.eq("status", ...)` directly on the payments table.
+ * Payments-status filter helpers now live in `@/lib/payments/status-filter`
+ * so browser components, cron routes, tests, and this server-fn module all
+ * import the exact same cast format. Re-exported here for backwards-compat
+ * with existing imports of `applyPaymentStatusEq` from this module.
  */
-export function applyPaymentStatusEq<
-  Q extends { filter: (col: string, op: string, v: unknown) => Q },
->(query: Q, status: string | null | undefined): Q {
-  if (!status) return query;
-  return query.filter("status::text", "eq", status);
-}
+export {
+  applyPaymentStatusEq,
+  applyPaymentStatusIn,
+  PAYMENT_STATUS_TEXT_COLUMN,
+} from "@/lib/payments/status-filter";
+import { applyPaymentStatusEq } from "@/lib/payments/status-filter";
+
 
 const SORT_COLUMNS = [
   "created_at",
