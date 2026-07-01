@@ -206,7 +206,7 @@ async function logAttempt(args: {
       error_message: args.errorMessage,
       is_test: args.isTest,
       triggered_by: args.triggeredBy,
-      metadata: args.metadata,
+      metadata: args.metadata as never,
     })
     .select("id")
     .single();
