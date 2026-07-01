@@ -35,6 +35,16 @@ const SORT_COLUMNS = [
   "customer_name",
 ] as const;
 type SortCol = typeof SORT_COLUMNS[number];
+const SORT_LABELS: Record<SortCol, string> = {
+  created_at: "Created",
+  paid_at: "Paid at",
+  amount: "Amount",
+  status: "Status",
+  provider_order_id: "Order ID",
+  provider_payment_id: "Payment ID",
+  customer_name: "Customer",
+};
+
 
 const searchSchema = z.object({
   page: fallback(z.number().int().min(0), 0).default(0),
