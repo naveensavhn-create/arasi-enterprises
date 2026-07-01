@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
+
 
 const filtersSchema = z.object({
   q: z.string().trim().optional().default(""),
