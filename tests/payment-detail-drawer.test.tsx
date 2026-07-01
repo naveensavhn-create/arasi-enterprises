@@ -347,7 +347,7 @@ describe("<PaymentDetailDrawer /> — invalid row surfaces", () => {
     expect(screen.getByText("Incomplete payment record")).toBeDefined();
     // …and the drawer body sections still render with safe fallbacks.
     expect(screen.getAllByText("Customer").length).toBeGreaterThan(0);
-    expect(screen.getByText("Unknown customer")).toBeDefined();
+    expect(screen.getAllByText(/Data unavailable/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Amount").length).toBeGreaterThan(0);
     // Amount value renders (row is a valid number here) rather than the drawer bailing out.
     expect(screen.getByText(/1,500/)).toBeDefined();

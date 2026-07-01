@@ -41,6 +41,27 @@ const HINTS: Record<RequiredField, string> = {
   customerName: "Linked profile is missing or has no name/email. The customer may have been deleted.",
 };
 
+/** Consistent placeholder label used across the drawer when a row is invalid. */
+const UNAVAILABLE_LABEL = "Data unavailable";
+
+/**
+ * Renders the shared "Data unavailable" placeholder. Optional `reason` is
+ * shown as a small parenthetical for extra context (e.g. "Amount invalid").
+ */
+function UnavailableTag({ reason }: { reason?: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-md border border-dashed border-destructive/40 bg-destructive/5 px-1.5 py-0.5 align-middle text-xs font-medium text-destructive"
+      title={reason ?? UNAVAILABLE_LABEL}
+      aria-label={reason ? `${UNAVAILABLE_LABEL} — ${reason}` : UNAVAILABLE_LABEL}
+    >
+      <AlertTriangle className="h-3 w-3" aria-hidden />
+      {UNAVAILABLE_LABEL}
+      {reason ? <span className="opacity-70">· {reason}</span> : null}
+    </span>
+  );
+}
+
 
 function validateRow(
   row: AdminPaymentRow,
@@ -227,12 +248,14 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
         {!row ? null : (() => {
           const validation = validateRow(row);
           const missing = validation.ok ? [] : validation.missing;
+          const missingSet = new Set(missing);
           const amountNum = Number(row.amount);
           const amountSafe = Number.isFinite(amountNum) && amountNum >= 0;
+          const hasName = Boolean(row.profile?.full_name?.trim() || row.profile?.email?.trim());
           const displayName =
             row.profile?.full_name?.trim() ||
             row.profile?.email?.trim() ||
-            "Unknown customer";
+            UNAVAILABLE_LABEL;
           return (
           <div className="mt-4 space-y-5">
             {missing.length > 0 && (
@@ -241,8 +264,9 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
                 <AlertTitle>Incomplete payment record</AlertTitle>
                 <AlertDescription>
                   <p className="text-xs">
-                    This row is missing required data. Values below fall back to
-                    safe placeholders — verify with the provider before acting on it.
+                    This row is missing required data. Missing values are shown
+                    as <span className="font-medium">“{UNAVAILABLE_LABEL}”</span> below —
+                    verify with the provider before acting on it.
                   </p>
                   <ul className="mt-2 list-inside list-disc text-xs">
                     {missing.map((f) => (
@@ -290,7 +314,13 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
             {/* Customer */}
             <div className="rounded-lg border p-3">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Customer</div>
-              <div className="mt-1 font-medium">{displayName}</div>
+              <div className="mt-1 font-medium">
+                {hasName ? (
+                  displayName
+                ) : (
+                  <UnavailableTag reason={missingSet.has("customerName") ? "Linked profile missing" : undefined} />
+                )}
+              </div>
               {row.profile?.email && (
                 <div className="text-xs text-muted-foreground">{row.profile.email}</div>
               )}
@@ -300,14 +330,28 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
             <div className="rounded-lg border p-3">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Amount</div>
               <div className="mt-1 text-2xl font-bold text-gradient-gold">
-                {row.currency || "—"}{" "}
-                {amountSafe ? amountNum.toLocaleString("en-IN") : "—"}
+                {amountSafe && row.currency ? (
+                  <>
+                    {row.currency} {amountNum.toLocaleString("en-IN")}
+                  </>
+                ) : (
+                  <UnavailableTag
+                    reason={
+                      !amountSafe && !row.currency
+                        ? "Amount and currency missing"
+                        : !amountSafe
+                          ? "Amount invalid"
+                          : "Currency missing"
+                    }
+                  />
+                )}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 Created {new Date(row.created_at).toLocaleString()}
                 {row.paid_at && ` · Paid ${new Date(row.paid_at).toLocaleString()}`}
               </div>
             </div>
+
 
 
             {/* Razorpay */}
