@@ -831,6 +831,60 @@ export type Database = {
           },
         ]
       }
+      site_settings: {
+        Row: {
+          accent_color: string
+          body_font: string
+          brand_name: string
+          favicon_url: string | null
+          footer_text: string | null
+          heading_font: string
+          id: string
+          logo_url: string | null
+          primary_color: string
+          secondary_color: string
+          support_email: string | null
+          support_phone: string | null
+          tagline: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accent_color?: string
+          body_font?: string
+          brand_name?: string
+          favicon_url?: string | null
+          footer_text?: string | null
+          heading_font?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          secondary_color?: string
+          support_email?: string | null
+          support_phone?: string | null
+          tagline?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accent_color?: string
+          body_font?: string
+          brand_name?: string
+          favicon_url?: string | null
+          footer_text?: string | null
+          heading_font?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string
+          secondary_color?: string
+          support_email?: string | null
+          support_phone?: string | null
+          tagline?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -879,6 +933,20 @@ export type Database = {
         Args: { _payment_id: string }
         Returns: undefined
       }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          banned_until: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          last_sign_in_at: string
+          membership_number: string
+          phone: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       admin_payments_totals: {
         Args: {
           _customer_ids?: string[]
@@ -897,6 +965,7 @@ export type Database = {
           total_count: number
         }[]
       }
+      count_active_admins: { Args: never; Returns: number }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]

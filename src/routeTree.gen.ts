@@ -29,6 +29,8 @@ import { Route as AuthenticatedCustomerMembershipRouteImport } from './routes/_a
 import { Route as AuthenticatedCustomerLuckyDrawRouteImport } from './routes/_authenticated/customer/lucky-draw'
 import { Route as AuthenticatedCustomerInstallmentsRouteImport } from './routes/_authenticated/customer/installments'
 import { Route as AuthenticatedCustomerEnrollRouteImport } from './routes/_authenticated/customer/enroll'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as AuthenticatedAdminSiteSettingsRouteImport } from './routes/_authenticated/admin/site-settings'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminRewardsRouteImport } from './routes/_authenticated/admin/rewards'
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin/reports'
@@ -158,6 +160,17 @@ const AuthenticatedCustomerEnrollRoute =
     path: '/enroll',
     getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
+const AuthenticatedAdminSiteSettingsRoute =
+  AuthenticatedAdminSiteSettingsRouteImport.update({
+    id: '/site-settings',
+    path: '/site-settings',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -276,6 +289,8 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
@@ -313,6 +328,8 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
@@ -352,6 +369,8 @@ export interface FileRoutesById {
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/_authenticated/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/_authenticated/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/_authenticated/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
@@ -391,6 +410,8 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rewards'
     | '/admin/settings'
+    | '/admin/site-settings'
+    | '/admin/users'
     | '/customer/enroll'
     | '/customer/installments'
     | '/customer/lucky-draw'
@@ -428,6 +449,8 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rewards'
     | '/admin/settings'
+    | '/admin/site-settings'
+    | '/admin/users'
     | '/customer/enroll'
     | '/customer/installments'
     | '/customer/lucky-draw'
@@ -466,6 +489,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/reports'
     | '/_authenticated/admin/rewards'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/site-settings'
+    | '/_authenticated/admin/users'
     | '/_authenticated/customer/enroll'
     | '/_authenticated/customer/installments'
     | '/_authenticated/customer/lucky-draw'
@@ -634,6 +659,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomerEnrollRouteImport
       parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/site-settings': {
+      id: '/_authenticated/admin/site-settings'
+      path: '/site-settings'
+      fullPath: '/admin/site-settings'
+      preLoaderRoute: typeof AuthenticatedAdminSiteSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/settings'
@@ -763,6 +802,8 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
   AuthenticatedAdminRewardsRoute: typeof AuthenticatedAdminRewardsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminSiteSettingsRoute: typeof AuthenticatedAdminSiteSettingsRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
@@ -781,6 +822,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
     AuthenticatedAdminRewardsRoute: AuthenticatedAdminRewardsRoute,
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+    AuthenticatedAdminSiteSettingsRoute: AuthenticatedAdminSiteSettingsRoute,
+    AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   }
 
 const AuthenticatedAdminRouteRouteWithChildren =
