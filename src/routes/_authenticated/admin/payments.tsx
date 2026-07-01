@@ -127,7 +127,7 @@ function AdminPaymentsPage() {
 
   const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
-  const exportFn = useServerFn(exportAdminPayments);
+  const exportCsvFn = useServerFn(exportAdminPaymentsCsv);
   const lastWebhookFn = useServerFn(getLastWebhookEvent);
 
   const { data: lastWebhook } = useQuery({
