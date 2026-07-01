@@ -98,16 +98,12 @@ function AdminPlansPage() {
       const { data, error } = await supabase
         .from("memberships")
         .select("plan_id, status")
-        .in("status", ["pending", "active"]);
+        .in("status", [...BLOCKING_STATUSES]);
       if (error) throw error;
-      const counts: Record<string, number> = {};
-      for (const row of (data ?? []) as { plan_id: string | null }[]) {
-        if (row.plan_id) counts[row.plan_id] = (counts[row.plan_id] ?? 0) + 1;
-      }
-      return counts;
+      return computePlanUsage((data ?? []) as { plan_id: string | null; status: string | null }[]);
     },
   });
-  const usageFor = (id: string) => usage?.[id] ?? 0;
+  const usageForPlan = (id: string) => usageFor(usage, id);
 
   const save = useMutation({
     mutationFn: async () => {
