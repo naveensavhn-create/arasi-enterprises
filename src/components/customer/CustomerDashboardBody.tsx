@@ -18,6 +18,8 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { KycStatusCard } from "@/components/kyc/KycStatusCard";
+
 
 type MembershipRow = {
   id: string;
@@ -114,7 +116,8 @@ export function CustomerDashboardBody() {
 
   if (!membership) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mx-auto max-w-3xl space-y-6 px-6 py-10">
+        <KycStatusCard />
         <Card>
           <CardContent className="space-y-3 p-8 text-center">
             <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
@@ -130,6 +133,7 @@ export function CustomerDashboardBody() {
       </div>
     );
   }
+
 
   const installments = installmentsQ.data ?? [];
   const paidCount = installments.filter((i) => i.status === "paid").length;
@@ -162,7 +166,9 @@ export function CustomerDashboardBody() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      <KycStatusCard />
       {/* HERO */}
+
       <div
         className="relative overflow-hidden rounded-2xl border border-white/10 p-6 text-white shadow-[var(--shadow-card)] sm:p-8"
         style={{ background: "var(--gradient-hero-value)" }}
