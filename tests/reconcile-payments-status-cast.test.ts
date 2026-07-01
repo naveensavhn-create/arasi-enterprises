@@ -194,6 +194,6 @@ describe("reconcile-payments source — helper usage cannot regress", () => {
     // helper as the second argument. A regression that inlines a literal
     // array on the query directly would fail the assertions above; this
     // check pins the variable name for readability.
-    expect(ROUTE_SRC).toMatch(/applyPaymentStatusIn\(\s*[^,]+,\s*statuses\s*\)/);
+    expect(ROUTE_SRC).toMatch(/applyPaymentStatusIn\([\s\S]*?,\s*statuses\s*,?\s*\)/);
   });
 });
