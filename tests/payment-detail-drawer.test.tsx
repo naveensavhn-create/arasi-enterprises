@@ -327,6 +327,9 @@ describe("<PaymentDetailDrawer /> — invalid row surfaces", () => {
     expect(
       toastCalls.some((t) => t.level === "success" && t.message === "Row ID copied"),
     ).toBe(false);
+  });
+
+
 
 
   it("renders every missing field with its remediation hint inside the alert", () => {
