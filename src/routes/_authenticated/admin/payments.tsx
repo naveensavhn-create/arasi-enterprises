@@ -18,7 +18,7 @@ import {
   type AdminPaymentRow,
 } from "@/lib/payments/validate-row";
 import { supabase } from "@/integrations/supabase/client";
-import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS } from "@/lib/ui-prefs";
+import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS, normalizePollingInterval } from "@/lib/ui-prefs";
 import { toast } from "sonner";
 
 
