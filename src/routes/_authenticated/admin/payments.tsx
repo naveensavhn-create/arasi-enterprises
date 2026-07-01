@@ -11,7 +11,12 @@ import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown,
 import { useEffect, useRef, useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
-import { listAdminPayments, exportAdminPayments, getLastWebhookEvent, type AdminPaymentRow } from "@/lib/payments.functions";
+import { listAdminPayments, exportAdminPayments, getLastWebhookEvent } from "@/lib/payments.functions";
+import {
+  validateAdminPaymentRowShape,
+  ADMIN_PAYMENT_ROW_FIELD_LABELS,
+  type AdminPaymentRow,
+} from "@/lib/payments/validate-row";
 import { supabase } from "@/integrations/supabase/client";
 import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS } from "@/lib/ui-prefs";
 import { toast } from "sonner";
