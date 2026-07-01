@@ -36,6 +36,8 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImportMembershipsDialog } from "@/components/admin/ImportMembershipsDialog";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
+
 
 export const Route = createFileRoute("/_authenticated/admin/memberships")({
   component: MembershipsAdminPage,
