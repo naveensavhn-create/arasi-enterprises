@@ -461,8 +461,10 @@ function CreateDrawDialog({
 
 
 function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () => void }) {
+  const qc = useQueryClient();
   const entriesFn = useServerFn(listDrawEntries);
   const winnersFn = useServerFn(listDrawWinners);
+  const pick = useServerFn(pickDrawWinners);
 
   const entries = useQuery({
     queryKey: ["admin", "draw-detail", draw?.id, "entries"],
@@ -475,6 +477,19 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
     enabled: !!draw,
   });
 
+  const pickMut = useMutation({
+    mutationFn: () => pick({ data: { drawId: draw!.id } }),
+    onSuccess: (rows: unknown) => {
+      const count = Array.isArray(rows) ? rows.length : 0;
+      toast.success(`Picked ${count} winner${count === 1 ? "" : "s"}`);
+      qc.invalidateQueries({ queryKey: ["admin", "draws"] });
+      qc.invalidateQueries({ queryKey: ["admin", "draw-detail", draw!.id, "winners"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const canPick = !!draw && draw.status !== "completed" && draw.status !== "cancelled";
+
   return (
     <Dialog open={!!draw} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl">
@@ -483,12 +498,41 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
         </DialogHeader>
         {draw && (
           <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              Prize: <span className="font-medium text-foreground">{draw.prize}</span> · Winners:{" "}
-              {draw.winners_count} · Status:{" "}
-              <Badge variant={statusVariant[draw.status]} className="capitalize">
-                {draw.status}
-              </Badge>
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-sm text-muted-foreground">
+                Prize: <span className="font-medium text-foreground">{draw.prize}</span> · Winners:{" "}
+                {draw.winners_count} · Status:{" "}
+                <Badge variant={statusVariant[draw.status]} className="capitalize">
+                  {draw.status}
+                </Badge>
+              </div>
+              {canPick && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" disabled={pickMut.isPending}>
+                      <Play className="mr-1 h-3.5 w-3.5" />
+                      {pickMut.isPending ? "Picking…" : "Pick winners"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Pick winners for "{draw.name}"?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will randomly select {draw.winners_count} winner
+                        {draw.winners_count === 1 ? "" : "s"} from eligible entries in a single
+                        transaction and mark the draw as completed. If winners were already
+                        picked, the existing selection will be returned unchanged.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => pickMut.mutate()}>
+                        Pick winners
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </div>
 
             <div>
