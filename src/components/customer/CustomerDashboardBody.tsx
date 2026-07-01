@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Loader2,
   Gift,
@@ -16,9 +17,13 @@ import {
   Wallet,
   CheckCircle2,
   Clock,
+  Sparkles,
+  ArrowRight,
+  Inbox,
 } from "lucide-react";
 import { toast } from "sonner";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
+
 
 
 type MembershipRow = {
@@ -107,32 +112,56 @@ export function CustomerDashboardBody() {
   });
 
   if (membershipsQ.isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading your dashboard…
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!membership) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 px-6 py-10">
         <KycStatusCard />
-        <Card>
-          <CardContent className="space-y-3 p-8 text-center">
-            <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h2 className="text-xl font-semibold">Welcome, {fullName}</h2>
-            <p className="text-sm text-muted-foreground">
-              You don't have an active membership yet. Pick a plan and pay the advance to activate it.
-            </p>
-            <Button asChild style={{ background: "var(--gradient-gold-value)" }}>
-              <Link to="/customer/enroll">Browse plans</Link>
-            </Button>
+        <Card className="overflow-hidden border-dashed">
+          <div
+            className="h-1 w-full"
+            style={{ background: "var(--gradient-gold-value)" }}
+            aria-hidden="true"
+          />
+          <CardContent className="space-y-5 p-8 text-center">
+            <div
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full"
+              style={{ background: "var(--gradient-gold-value)" }}
+            >
+              <Sparkles className="h-7 w-7 text-black/80" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold">Welcome, {fullName}</h2>
+              <p className="text-sm text-muted-foreground">
+                You don't have an active membership yet. Pick a plan and pay the advance
+                — we'll generate your installment schedule automatically.
+              </p>
+            </div>
+
+            <ol className="mx-auto grid max-w-md gap-2 text-left text-sm">
+              <EmptyStep n={1} title="Browse membership plans" desc="Silver, Gold, Platinum or Diamond." />
+              <EmptyStep n={2} title="Pay the one-time advance" desc="Secure checkout via Razorpay." />
+              <EmptyStep n={3} title="Track monthly installments" desc="Reminders + auto-schedule here." />
+            </ol>
+
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button asChild style={{ background: "var(--gradient-gold-value)" }}>
+                <Link to="/customer/enroll">
+                  Browse plans <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/customer/membership">Learn how it works</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
+
 
 
   const installments = installmentsQ.data ?? [];
@@ -291,26 +320,54 @@ export function CustomerDashboardBody() {
         />
       </div>
 
-      {/* Count row */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <CountCard
-          icon={<Wallet className="h-4 w-4" />}
-          value={totalCount}
-          label="Total Installments"
-        />
-        <CountCard
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          value={paidCount}
-          label="Paid"
-          tone="text-emerald-500"
-        />
-        <CountCard
-          icon={<Clock className="h-4 w-4" />}
-          value={balanceCount}
-          label="Balance Due"
-          tone="text-amber-500"
-        />
-      </div>
+
+      {/* Installments — loading / empty / summary */}
+      {installmentsQ.isLoading ? (
+        <Card>
+          <CardContent className="flex items-center gap-3 p-5 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            Loading your installment schedule…
+          </CardContent>
+        </Card>
+      ) : installments.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center gap-2 p-6 text-center">
+            <div className="rounded-full bg-primary/10 p-3 text-primary">
+              <Inbox className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <p className="text-sm font-medium">No installments generated yet</p>
+            <p className="max-w-md text-xs text-muted-foreground">
+              {membership.status === "pending"
+                ? "Your schedule will appear here as soon as your advance payment is confirmed."
+                : "We couldn't find any installments for this membership. If you paid the advance recently, please refresh in a moment."}
+            </p>
+            <Button asChild size="sm" variant="outline" className="mt-2">
+              <Link to="/customer/membership">View membership</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <CountCard
+            icon={<Wallet className="h-4 w-4" />}
+            value={totalCount}
+            label="Total Installments"
+          />
+          <CountCard
+            icon={<CheckCircle2 className="h-4 w-4" />}
+            value={paidCount}
+            label="Paid"
+            tone="text-emerald-500"
+          />
+          <CountCard
+            icon={<Clock className="h-4 w-4" />}
+            value={balanceCount}
+            label="Balance Due"
+            tone="text-amber-500"
+          />
+        </div>
+      )}
+
 
       {/* Quick actions */}
       <Card>
@@ -400,5 +457,61 @@ function CountCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function EmptyStep({ n, title, desc }: { n: number; title: string; desc: string }) {
+  return (
+    <li className="flex items-start gap-3 rounded-md border bg-card/50 p-3">
+      <span
+        className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full text-xs font-semibold text-black/80"
+        style={{ background: "var(--gradient-gold-value)" }}
+        aria-hidden="true"
+      >
+        {n}
+      </span>
+      <div>
+        <p className="text-sm font-medium leading-tight">{title}</p>
+        <p className="text-xs text-muted-foreground">{desc}</p>
+      </div>
+    </li>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div
+      className="space-y-6 px-6 py-6"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading your dashboard"
+    >
+      <Card>
+        <CardContent className="space-y-4 p-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-14 w-14 rounded-full" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="hidden h-24 w-24 rounded-full sm:block" />
+          </div>
+          <div className="grid gap-3 pt-2 sm:grid-cols-2">
+            <Skeleton className="h-16 w-full rounded-md" />
+            <Skeleton className="h-16 w-full rounded-md" />
+          </div>
+        </CardContent>
+      </Card>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Skeleton className="h-20 w-full rounded-md" />
+        <Skeleton className="h-20 w-full rounded-md" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Skeleton className="h-20 w-full rounded-md" />
+        <Skeleton className="h-20 w-full rounded-md" />
+        <Skeleton className="h-20 w-full rounded-md" />
+      </div>
+      <span className="sr-only">Loading your dashboard…</span>
+    </div>
   );
 }
