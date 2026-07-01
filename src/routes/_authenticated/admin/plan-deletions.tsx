@@ -168,15 +168,37 @@ function PlanDeletionsPage() {
                 <div className="text-muted-foreground">Plan ID</div>
                 <div className="break-all text-xs">{selected.plan_id ?? "—"}</div>
               </div>
-              <div>
-                <div className="font-medium mb-1">Enrollment counts</div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div>Pending: {selected.counts.pending}</div>
-                  <div>Active: {selected.counts.active}</div>
-                  <div>Cancelled: {selected.counts.cancelled}</div>
-                  <div>Completed: {selected.counts.completed}</div>
-                  <div>Blocking: {selected.counts.blocking}</div>
-                  <div>Total: {selected.counts.total}</div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">Blocking enrollments</div>
+                  <Badge variant={selected.counts.blocking > 0 ? "destructive" : "secondary"}>
+                    {selected.counts.blocking} total blocking
+                  </Badge>
+                </div>
+                <div className="rounded-md border divide-y text-xs">
+                  <div className="flex items-center justify-between p-2">
+                    <span className="text-muted-foreground">Pending (blocks delete)</span>
+                    <span className="font-medium">{selected.counts.pending}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2">
+                    <span className="text-muted-foreground">Active (blocks delete)</span>
+                    <span className="font-medium">{selected.counts.active}</span>
+                  </div>
+                </div>
+                <div className="font-medium pt-2">Non-blocking enrollments</div>
+                <div className="rounded-md border divide-y text-xs">
+                  <div className="flex items-center justify-between p-2">
+                    <span className="text-muted-foreground">Cancelled</span>
+                    <span className="font-medium">{selected.counts.cancelled}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2">
+                    <span className="text-muted-foreground">Completed</span>
+                    <span className="font-medium">{selected.counts.completed}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2 bg-muted/40">
+                    <span className="text-muted-foreground">All enrollments</span>
+                    <span className="font-medium">{selected.counts.total}</span>
+                  </div>
                 </div>
               </div>
               {selected.error_message && (
