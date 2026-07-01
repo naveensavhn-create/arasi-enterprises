@@ -82,7 +82,7 @@ function Field({ label, value, mono, copyable }: { label: string; value: React.R
 }
 
 interface Props {
-  row: PaymentDetailRow | null;
+  row: AdminPaymentRow | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }
