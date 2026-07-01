@@ -1322,6 +1322,24 @@ export type Database = {
           state: string
         }[]
       }
+      promoter_register_referred_customer: {
+        Args: {
+          _address_line1?: string
+          _address_line2?: string
+          _city?: string
+          _country?: string
+          _email: string
+          _full_name: string
+          _phone?: string
+          _postal_code?: string
+          _promoter_id?: string
+          _referral_note?: string
+          _referral_source?: string
+          _state?: string
+          _user_id: string
+        }
+        Returns: string
+      }
       promoter_submit_referral_for_review: {
         Args: { _note?: string; _user_id: string }
         Returns: Database["public"]["Enums"]["kyc_status"]

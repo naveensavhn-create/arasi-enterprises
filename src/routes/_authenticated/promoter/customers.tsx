@@ -381,6 +381,8 @@ function RegisterCustomerDialog({
     city: string | null;
     state: string | null;
     postal_code: string | null;
+    referral_note: string | null;
+    referral_source: string | null;
     send_invite: boolean;
   }) => void;
   submitting: boolean;
@@ -392,6 +394,8 @@ function RegisterCustomerDialog({
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pin, setPin] = useState("");
+  const [note, setNote] = useState("");
+  const [source, setSource] = useState("");
 
   const reset = () => {
     setEmail("");
@@ -401,7 +405,10 @@ function RegisterCustomerDialog({
     setCity("");
     setState("");
     setPin("");
+    setNote("");
+    setSource("");
   };
+
 
   return (
     <Dialog
@@ -459,6 +466,26 @@ function RegisterCustomerDialog({
               <Input value={pin} onChange={(e) => setPin(e.target.value)} maxLength={12} />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Referral source</Label>
+              <Input
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
+                maxLength={80}
+                placeholder="e.g. Event, WhatsApp"
+              />
+            </div>
+            <div>
+              <Label>Note to admin (optional)</Label>
+              <Input
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                maxLength={1000}
+                placeholder="Context for the referral"
+              />
+            </div>
+          </div>
           <p className="text-xs text-muted-foreground">
             A temporary password will be generated and shown once for you to share.
           </p>
@@ -478,10 +505,13 @@ function RegisterCustomerDialog({
                 city: city.trim() || null,
                 state: state.trim() || null,
                 postal_code: pin.trim() || null,
+                referral_note: note.trim() || null,
+                referral_source: source.trim() || null,
                 send_invite: true,
               })
             }
           >
+
             {submitting ? "Creating…" : "Create customer"}
           </Button>
         </DialogFooter>
