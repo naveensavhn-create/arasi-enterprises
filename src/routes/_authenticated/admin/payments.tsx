@@ -197,9 +197,13 @@ function AdminPaymentsPage() {
           from: search.from || undefined,
           to: search.to || undefined,
           q: search.q || undefined,
+          orderId: search.orderId || undefined,
+          paymentId: search.paymentId || undefined,
+          customer: search.customer || undefined,
           limit: 10_000,
         },
       });
+
       downloadCSV(all);
       if (all.length >= 10_000) {
         toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
