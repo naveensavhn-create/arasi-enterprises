@@ -39,10 +39,12 @@ import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminMembershipsRouteImport } from './routes/_authenticated/admin/memberships'
 import { Route as AuthenticatedAdminMembershipEmailsRouteImport } from './routes/_authenticated/admin/membership-emails'
 import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authenticated/admin/lucky-draw'
+import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authenticated/admin/exports'
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
+import { Route as ApiPublicHooksProcessExportJobsRouteImport } from './routes/api/public/hooks/process-export-jobs'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -215,6 +217,12 @@ const AuthenticatedAdminLuckyDrawRoute =
     path: '/lucky-draw',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminExportsRoute =
+  AuthenticatedAdminExportsRouteImport.update({
+    id: '/exports',
+    path: '/exports',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminEmailPreviewRoute =
   AuthenticatedAdminEmailPreviewRouteImport.update({
     id: '/email-preview',
@@ -239,6 +247,12 @@ const ApiPublicHooksReconcilePaymentsRoute =
     path: '/api/public/hooks/reconcile-payments',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksProcessExportJobsRoute =
+  ApiPublicHooksProcessExportJobsRouteImport.update({
+    id: '/api/public/hooks/process-export-jobs',
+    path: '/api/public/hooks/process-export-jobs',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -251,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
+  '/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -272,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
@@ -286,6 +302,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
+  '/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -307,6 +324,7 @@ export interface FileRoutesByTo {
   '/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
@@ -323,6 +341,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
+  '/_authenticated/admin/exports': typeof AuthenticatedAdminExportsRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/_authenticated/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/_authenticated/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -344,6 +363,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/commissions': typeof AuthenticatedPromoterCommissionsRoute
   '/_authenticated/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
 }
@@ -360,6 +380,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/customers'
     | '/admin/email-preview'
+    | '/admin/exports'
     | '/admin/lucky-draw'
     | '/admin/membership-emails'
     | '/admin/memberships'
@@ -381,6 +402,7 @@ export interface FileRouteTypes {
     | '/promoter/commissions'
     | '/promoter/customers'
     | '/promoter/portfolio'
+    | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -395,6 +417,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/customers'
     | '/admin/email-preview'
+    | '/admin/exports'
     | '/admin/lucky-draw'
     | '/admin/membership-emails'
     | '/admin/memberships'
@@ -416,6 +439,7 @@ export interface FileRouteTypes {
     | '/promoter/commissions'
     | '/promoter/customers'
     | '/promoter/portfolio'
+    | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   id:
@@ -431,6 +455,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/email-preview'
+    | '/_authenticated/admin/exports'
     | '/_authenticated/admin/lucky-draw'
     | '/_authenticated/admin/membership-emails'
     | '/_authenticated/admin/memberships'
@@ -452,6 +477,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/commissions'
     | '/_authenticated/promoter/customers'
     | '/_authenticated/promoter/portfolio'
+    | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
   fileRoutesById: FileRoutesById
@@ -461,6 +487,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicHooksProcessExportJobsRoute: typeof ApiPublicHooksProcessExportJobsRoute
   ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
 }
@@ -677,6 +704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLuckyDrawRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/exports': {
+      id: '/_authenticated/admin/exports'
+      path: '/exports'
+      fullPath: '/admin/exports'
+      preLoaderRoute: typeof AuthenticatedAdminExportsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/email-preview': {
       id: '/_authenticated/admin/email-preview'
       path: '/email-preview'
@@ -705,12 +739,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksReconcilePaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/process-export-jobs': {
+      id: '/api/public/hooks/process-export-jobs'
+      path: '/api/public/hooks/process-export-jobs'
+      fullPath: '/api/public/hooks/process-export-jobs'
+      preLoaderRoute: typeof ApiPublicHooksProcessExportJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminEmailPreviewRoute: typeof AuthenticatedAdminEmailPreviewRoute
+  AuthenticatedAdminExportsRoute: typeof AuthenticatedAdminExportsRoute
   AuthenticatedAdminLuckyDrawRoute: typeof AuthenticatedAdminLuckyDrawRoute
   AuthenticatedAdminMembershipEmailsRoute: typeof AuthenticatedAdminMembershipEmailsRoute
   AuthenticatedAdminMembershipsRoute: typeof AuthenticatedAdminMembershipsRoute
@@ -727,6 +769,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
   {
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
     AuthenticatedAdminEmailPreviewRoute: AuthenticatedAdminEmailPreviewRoute,
+    AuthenticatedAdminExportsRoute: AuthenticatedAdminExportsRoute,
     AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,
     AuthenticatedAdminMembershipEmailsRoute:
       AuthenticatedAdminMembershipEmailsRoute,
@@ -818,6 +861,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicHooksProcessExportJobsRoute: ApiPublicHooksProcessExportJobsRoute,
   ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
 }

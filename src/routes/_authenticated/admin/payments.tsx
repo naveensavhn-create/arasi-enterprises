@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery, keepPreviousData, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { zodValidator, fallback } from "@tanstack/zod-adapter";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Webhook, AlertTriangle, FilterX, Inbox } from "lucide-react";
+import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Webhook, AlertTriangle, FilterX, Inbox, Bell } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -23,6 +23,7 @@ import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
 import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
 import { listAdminPayments, exportAdminPaymentsCsv, getLastWebhookEvent } from "@/lib/payments.functions";
+import { createExportJob, listMyExportJobs, getExportDownloadUrl, markExportJobNotified } from "@/lib/exports.functions";
 import {
   validateAdminPaymentRowShape,
   ADMIN_PAYMENT_ROW_FIELD_LABELS,
@@ -129,6 +130,10 @@ function AdminPaymentsPage() {
   const listFn = useServerFn(listAdminPayments);
   const exportCsvFn = useServerFn(exportAdminPaymentsCsv);
   const lastWebhookFn = useServerFn(getLastWebhookEvent);
+  const createExportJobFn = useServerFn(createExportJob);
+  const listExportJobsFn = useServerFn(listMyExportJobs);
+  const getExportDownloadUrlFn = useServerFn(getExportDownloadUrl);
+  const markExportNotifiedFn = useServerFn(markExportJobNotified);
 
   const { data: lastWebhook } = useQuery({
     queryKey: ["admin-payments-last-webhook"],
@@ -292,6 +297,86 @@ function AdminPaymentsPage() {
     }
   };
 
+  // Async "Export all" path — enqueues a background job that isn't bound by
+  // the 10k inline cap. The Exports bell polls for completion; users can
+  // also navigate to /admin/exports to see the full history.
+  const onExportAsync = async () => {
+    setExporting(true);
+    try {
+      const { jobId } = await createExportJobFn({
+        data: {
+          filters: {
+            sortBy: search.sortBy,
+            sortDir: search.sortDir,
+            status: search.status || undefined,
+            from: search.from || undefined,
+            to: search.to || undefined,
+            dateField: search.dateField,
+            q: search.q || undefined,
+            orderId: search.orderId || undefined,
+            paymentId: search.paymentId || undefined,
+            customer: search.customer || undefined,
+          },
+        },
+      });
+      toast.success("Export queued", {
+        description: "We'll notify you here when the file is ready.",
+        action: {
+          label: "View exports",
+          onClick: () => navigate({ to: "/admin/exports" }),
+        },
+      });
+      queryClient.invalidateQueries({ queryKey: ["admin-export-jobs-header"] });
+      return jobId;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to queue export");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Header bell: poll the caller's recent export jobs so we can toast when
+  // a background export flips to succeeded and badge the ready count.
+  const { data: myJobs } = useQuery({
+    queryKey: ["admin-export-jobs-header"],
+    queryFn: () => listExportJobsFn({ data: { limit: 10 } }),
+    // Poll every 10s so the badge feels live without hammering the API;
+    // this is independent of the ledger's polling preference.
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const readyUnnotified = (myJobs ?? []).filter(
+    (j) => j.status === "succeeded" && !j.notified_at,
+  );
+  const anyActive = (myJobs ?? []).some(
+    (j) => j.status === "queued" || j.status === "running",
+  );
+
+  useEffect(() => {
+    if (!readyUnnotified.length) return;
+    for (const j of readyUnnotified) {
+      toast.success("Export ready to download", {
+        description: `${(j.row_count ?? 0).toLocaleString()} rows`,
+        action: {
+          label: "Download",
+          onClick: async () => {
+            try {
+              const { url } = await getExportDownloadUrlFn({ data: { jobId: j.id } });
+              window.location.href = url;
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Download failed");
+            }
+          },
+        },
+      });
+    }
+    markExportNotifiedFn({ data: { jobIds: readyUnnotified.map((j) => j.id) } })
+      .then(() => queryClient.invalidateQueries({ queryKey: ["admin-export-jobs-header"] }))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readyUnnotified.map((j) => j.id).join(",")]);
+
 
   return (
     <div className="space-y-4">
@@ -374,8 +459,38 @@ function AdminPaymentsPage() {
               <DropdownMenuItem onClick={() => onExport("filtered")}>
                 All filtered rows ({total.toLocaleString()}{total >= 10_000 ? ", capped at 10k" : ""})
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onExportAsync()}>
+                <span className="flex flex-col">
+                  <span>Export all (async){total > 10_000 ? " — recommended" : ""}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Runs in the background, up to 250k rows. We'll notify you.
+                  </span>
+                </span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          <Button
+            asChild
+            variant="outline"
+            size="sm"
+            className="relative"
+            title={anyActive ? "Background exports processing" : "Background exports"}
+          >
+            <Link to="/admin/exports" aria-label="Background exports">
+              <Bell className="mr-2 h-4 w-4" />
+              Exports
+              {anyActive && (
+                <span className="ml-1 inline-flex h-2 w-2 rounded-full bg-sky-500 animate-pulse" aria-hidden />
+              )}
+              {readyUnnotified.length > 0 && (
+                <Badge className="ml-1 h-4 min-w-4 px-1 text-[10px]" variant="default">
+                  {readyUnnotified.length}
+                </Badge>
+              )}
+            </Link>
+          </Button>
 
         </div>
       </div>

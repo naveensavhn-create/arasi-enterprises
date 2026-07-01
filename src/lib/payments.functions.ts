@@ -391,7 +391,7 @@ function emptyHistory(): StatusHistoryTimestamps {
   };
 }
 
-async function buildExportRows(
+export async function buildExportRows(
   sb: any,
   filters: z.infer<typeof baseFilterSchema>,
   offset: number,
@@ -502,7 +502,7 @@ const CSV_HEADERS = [
   "Error",
 ] as const;
 
-function rowsToCsv(rows: AdminPaymentExportRow[]): string {
+export function rowsToCsv(rows: AdminPaymentExportRow[]): string {
   const lines: string[] = [CSV_HEADERS.join(",")];
   for (const r of rows) {
     const h = r.status_history;
