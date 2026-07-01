@@ -422,7 +422,8 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
             </section>
 
           </div>
-        )}
+          );
+        })()}
       </SheetContent>
     </Sheet>
   );
