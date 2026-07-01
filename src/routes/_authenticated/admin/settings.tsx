@@ -181,36 +181,51 @@ function AdminSettings() {
         </div>
 
         <form
-          className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end"
+          className="mt-5 space-y-3"
           onSubmit={(e) => {
             e.preventDefault();
             const value = email.trim().toLowerCase();
             if (!value) return;
-            promote.mutate(value);
+            promote.mutate({ email: value, reason: promoteReason.trim() || undefined });
           }}
         >
-          <div className="flex-1">
-            <Label htmlFor="promote-email" className="text-xs">Email address</Label>
-            <Input
-              id="promote-email"
-              type="email"
-              autoComplete="email"
-              required
-              placeholder="user@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Label htmlFor="promote-email" className="text-xs">Email address</Label>
+              <Input
+                id="promote-email"
+                type="email"
+                autoComplete="email"
+                required
+                placeholder="user@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={promote.isPending}
+              />
+            </div>
+            <Button type="submit" disabled={promote.isPending || !email.trim()}>
+              {promote.isPending ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Promoting…</>
+              ) : (
+                <>Grant admin</>
+              )}
+            </Button>
+          </div>
+          <div>
+            <Label htmlFor="promote-reason" className="text-xs">Reason (recorded in audit log)</Label>
+            <Textarea
+              id="promote-reason"
+              rows={2}
+              maxLength={500}
+              placeholder="e.g. Onboarding new operations lead"
+              value={promoteReason}
+              onChange={(e) => setPromoteReason(e.target.value)}
               disabled={promote.isPending}
             />
           </div>
-          <Button type="submit" disabled={promote.isPending || !email.trim()}>
-            {promote.isPending ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Promoting…</>
-            ) : (
-              <>Grant admin</>
-            )}
-          </Button>
         </form>
       </div>
+
 
       <div className="rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-card)]">
         <div className="flex items-center justify-between">
