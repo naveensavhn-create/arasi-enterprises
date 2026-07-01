@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
                 status: "paid",
                 method: paymentEntity?.method ?? null,
                 paid_at: new Date(paidAtSec * 1000).toISOString(),
-                raw_webhook: event as unknown as Record<string, unknown>,
+                raw_webhook: event as unknown as any,
               })
               .eq("id", paymentRow.id);
 
@@ -89,14 +89,14 @@ export const Route = createFileRoute("/api/public/razorpay/webhook")({
                 status: "failed",
                 error_code: paymentEntity?.error_code ?? null,
                 error_description: paymentEntity?.error_description ?? null,
-                raw_webhook: event as unknown as Record<string, unknown>,
+                raw_webhook: event as unknown as any,
               })
               .eq("id", paymentRow.id);
           } else {
             // Unhandled event — store raw for audit but don't fail
             await supabaseAdmin
               .from("payments")
-              .update({ raw_webhook: event as unknown as Record<string, unknown> })
+              .update({ raw_webhook: event as unknown as any })
               .eq("id", paymentRow.id);
           }
 
