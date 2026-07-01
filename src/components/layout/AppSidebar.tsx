@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Plus,
   Send,
+  Mail,
   SlidersHorizontal,
 } from "lucide-react";
 
