@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  buildPlanDeletionAuditEntry,
+  computeDeletionCounts,
+} from "@/lib/plan-deletion-audit";
 
 const deleteSchema = z.object({ planId: z.string().uuid() });
 
