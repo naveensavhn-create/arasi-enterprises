@@ -137,18 +137,23 @@ function MembershipsAdminPage() {
             Create, assign, and manage customer memberships. Installments are auto-generated on create.
           </p>
         </div>
-        <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-          <DialogTrigger asChild>
-            <Button>New membership</Button>
-          </DialogTrigger>
-          <CreateMembershipDialog
-            customers={customersQ.data ?? []}
-            promoters={promotersQ.data ?? []}
-            plans={plansQ.data ?? []}
-            onSubmit={(v) => createMut.mutate(v)}
-            submitting={createMut.isPending}
-          />
-        </Dialog>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => setOpenImport(true)}>
+            Import CSV
+          </Button>
+          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+            <DialogTrigger asChild>
+              <Button>New membership</Button>
+            </DialogTrigger>
+            <CreateMembershipDialog
+              customers={customersQ.data ?? []}
+              promoters={promotersQ.data ?? []}
+              plans={plansQ.data ?? []}
+              onSubmit={(v) => createMut.mutate(v)}
+              submitting={createMut.isPending}
+            />
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
