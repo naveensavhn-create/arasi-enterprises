@@ -296,10 +296,41 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
 
             {/* Webhook events */}
             <section>
-              <h3 className="mb-1 flex items-center gap-2 text-sm font-semibold">
-                Webhook events
-                {events && <Badge variant="secondary" className="text-[10px]">{events.length}</Badge>}
-              </h3>
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
+                  Webhook events
+                  {eventsTotal > 0 && (
+                    <Badge variant="secondary" className="text-[10px]">{eventsTotal}</Badge>
+                  )}
+                </h3>
+                {eventsTotal > EVENTS_PAGE_SIZE && (
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      disabled={eventsPage === 0 || eventsLoading}
+                      onClick={() => setEventsPage((p) => Math.max(0, p - 1))}
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </Button>
+                    <span>
+                      {eventsPage + 1} / {totalPages}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      disabled={eventsPage + 1 >= totalPages || eventsLoading}
+                      onClick={() => setEventsPage((p) => p + 1)}
+                      aria-label="Next page"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="rounded-lg border">
                 {eventsLoading ? (
                   <div className="flex items-center justify-center p-4 text-xs text-muted-foreground">
@@ -328,20 +359,14 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
                             Processed {new Date(e.processed_at).toLocaleString()}
                           </div>
                         )}
-                        <details className="mt-1">
-                          <summary className="cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
-                            Raw payload
-                          </summary>
-                          <pre className="mt-1 max-h-48 overflow-auto rounded bg-muted p-2 text-[10px] leading-tight">
-                            {JSON.stringify(e.raw, null, 2)}
-                          </pre>
-                        </details>
+                        <RawPayload eventRowId={e.id} eventId={e.event_id} />
                       </li>
                     ))}
                   </ul>
                 )}
               </div>
             </section>
+
           </div>
         )}
       </SheetContent>
