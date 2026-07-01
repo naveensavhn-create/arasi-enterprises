@@ -97,6 +97,9 @@ function AdminPaymentsPage() {
   const navigate = useNavigate({ from: Route.fullPath });
   const [selected, setSelected] = useState<AdminPaymentRow | null>(null);
   const [qDraft, setQDraft] = useState(search.q);
+  const [orderDraft, setOrderDraft] = useState(search.orderId);
+  const [paymentDraft, setPaymentDraft] = useState(search.paymentId);
+  const [customerDraft, setCustomerDraft] = useState(search.customer);
   const [exporting, setExporting] = useState(false);
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
@@ -111,6 +114,7 @@ function AdminPaymentsPage() {
       "admin-payments",
       search.page, search.pageSize, search.sortBy, search.sortDir,
       search.status, search.from, search.to, search.q,
+      search.orderId, search.paymentId, search.customer,
     ],
     queryFn: () =>
       listFn({
@@ -123,6 +127,9 @@ function AdminPaymentsPage() {
           from: search.from || undefined,
           to: search.to || undefined,
           q: search.q || undefined,
+          orderId: search.orderId || undefined,
+          paymentId: search.paymentId || undefined,
+          customer: search.customer || undefined,
         },
       }),
     placeholderData: keepPreviousData,
@@ -130,6 +137,7 @@ function AdminPaymentsPage() {
     refetchInterval: liveConnected ? 120_000 : 30_000,
     refetchOnWindowFocus: true,
   });
+
 
   // Realtime: invalidate ledger + drawer queries when webhooks land.
   useEffect(() => {
