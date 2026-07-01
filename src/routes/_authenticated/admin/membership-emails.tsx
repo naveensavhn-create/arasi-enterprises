@@ -166,14 +166,18 @@ function MembershipEmailsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Mail className="h-6 w-6" /> Membership Activation Emails
-        </h1>
-        <p className="text-muted-foreground text-sm">
-          Delivery log for every <code>membership-activated</code> email. Auto-refreshes every 15s.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Mail className="h-6 w-6" /> Membership Activation Emails
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            Delivery log for every <code>membership-activated</code> email.
+          </p>
+        </div>
+        <PollingControls ariaLabel="Membership emails polling fallback interval" />
       </div>
+
 
       <div className="grid gap-4 md:grid-cols-5">
         <StatCard label="Total" value={totals.total} />
