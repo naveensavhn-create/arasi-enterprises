@@ -127,10 +127,20 @@ function AdminApprovalsPage() {
   }, [rows, q, onlyReferred]);
 
   const decideMut = useMutation({
-    mutationFn: (v: { userId: string; approve: boolean; notes: string | null }) =>
-      decideFn({ data: v }),
+    mutationFn: (v: {
+      userId: string;
+      approve: boolean;
+      notes: string | null;
+      assignRole?: "promoter" | "customer" | null;
+    }) => decideFn({ data: v }),
     onSuccess: (_r, v) => {
-      toast.success(v.approve ? "Approved" : "Rejected");
+      toast.success(
+        v.approve
+          ? v.assignRole
+            ? `Approved as ${v.assignRole}`
+            : "Approved"
+          : "Rejected",
+      );
       qc.invalidateQueries({ queryKey: ["kyc"] });
       setSelected(null);
     },
