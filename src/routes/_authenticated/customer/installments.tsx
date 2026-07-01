@@ -179,6 +179,14 @@ function InstallmentsPage() {
                   >
                     {r.status}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTimelineId(r.id)}
+                    className="h-8 gap-1 text-xs"
+                  >
+                    <History className="h-3.5 w-3.5" /> Timeline
+                  </Button>
                   {!isPaid && (
                     <PayInstallmentButton
                       installmentId={r.id}
@@ -195,6 +203,12 @@ function InstallmentsPage() {
           );
         })}
       </div>
+
+      <InstallmentTimelineDialog
+        installmentId={timelineId}
+        open={!!timelineId}
+        onOpenChange={(o) => !o && setTimelineId(null)}
+      />
     </div>
   );
 }
