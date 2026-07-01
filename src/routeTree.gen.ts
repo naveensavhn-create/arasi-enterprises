@@ -56,6 +56,7 @@ import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/publi
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
 import { Route as ApiPublicHooksProcessPaymentRemindersRouteImport } from './routes/api/public/hooks/process-payment-reminders'
 import { Route as ApiPublicHooksProcessExportJobsRouteImport } from './routes/api/public/hooks/process-export-jobs'
+import { Route as ApiPublicHooksEnqueuePaymentRemindersRouteImport } from './routes/api/public/hooks/enqueue-payment-reminders'
 import { Route as ApiAdminDrawsDrawIdPickRouteImport } from './routes/api/admin/draws.$drawId.pick'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -327,6 +328,12 @@ const ApiPublicHooksProcessExportJobsRoute =
     path: '/api/public/hooks/process-export-jobs',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksEnqueuePaymentRemindersRoute =
+  ApiPublicHooksEnqueuePaymentRemindersRouteImport.update({
+    id: '/api/public/hooks/enqueue-payment-reminders',
+    path: '/api/public/hooks/enqueue-payment-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminDrawsDrawIdPickRoute = ApiAdminDrawsDrawIdPickRouteImport.update({
   id: '/api/admin/draws/$drawId/pick',
   path: '/api/admin/draws/$drawId/pick',
@@ -376,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -424,6 +432,7 @@ export interface FileRoutesByTo {
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -475,6 +484,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
@@ -526,6 +536,7 @@ export interface FileRouteTypes {
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
     | '/admin/'
+    | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
@@ -574,6 +585,7 @@ export interface FileRouteTypes {
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
     | '/admin'
+    | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
@@ -624,6 +636,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/lucky-draw'
     | '/_authenticated/promoter/portfolio'
     | '/_authenticated/admin/'
+    | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/reconcile-payments'
@@ -636,6 +649,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicHooksEnqueuePaymentRemindersRoute: typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   ApiPublicHooksProcessExportJobsRoute: typeof ApiPublicHooksProcessExportJobsRoute
   ApiPublicHooksProcessPaymentRemindersRoute: typeof ApiPublicHooksProcessPaymentRemindersRoute
   ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
@@ -974,6 +988,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksProcessExportJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/enqueue-payment-reminders': {
+      id: '/api/public/hooks/enqueue-payment-reminders'
+      path: '/api/public/hooks/enqueue-payment-reminders'
+      fullPath: '/api/public/hooks/enqueue-payment-reminders'
+      preLoaderRoute: typeof ApiPublicHooksEnqueuePaymentRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/draws/$drawId/pick': {
       id: '/api/admin/draws/$drawId/pick'
       path: '/api/admin/draws/$drawId/pick'
@@ -1117,6 +1138,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicHooksEnqueuePaymentRemindersRoute:
+    ApiPublicHooksEnqueuePaymentRemindersRoute,
   ApiPublicHooksProcessExportJobsRoute: ApiPublicHooksProcessExportJobsRoute,
   ApiPublicHooksProcessPaymentRemindersRoute:
     ApiPublicHooksProcessPaymentRemindersRoute,
