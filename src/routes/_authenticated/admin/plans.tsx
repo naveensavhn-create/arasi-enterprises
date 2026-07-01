@@ -607,11 +607,6 @@ function AdminPlansPage() {
         </div>
       )}
 
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
           {(() => {
