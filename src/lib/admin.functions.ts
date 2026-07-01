@@ -207,15 +207,27 @@ export const setUserRole = createServerFn({ method: "POST" })
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    if (data.role !== "admin" && data.userId === context.userId) {
-      const { count } = await supabaseAdmin
+    // Last-admin safeguard: applies to ANY admin being demoted, not just self.
+    if (data.role !== "admin") {
+      const { data: targetIsAdmin } = await supabaseAdmin
         .from("user_roles")
-        .select("*", { count: "exact", head: true })
-        .eq("role", "admin");
-      if ((count ?? 0) <= 1) {
-        throw new Error("Cannot remove the last remaining admin.");
+        .select("id")
+        .eq("user_id", data.userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (targetIsAdmin) {
+        const { count } = await supabaseAdmin
+          .from("user_roles")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "admin");
+        if ((count ?? 0) <= 1) {
+          throw new Error(
+            "LAST_ADMIN: This is the only administrator account. Promote another user to admin before revoking this one — otherwise no one will be able to manage the system.",
+          );
+        }
       }
     }
+
 
     const before = await currentRole(supabaseAdmin, data.userId);
     const actorEmail = await lookupEmail(supabaseAdmin, context.userId);
