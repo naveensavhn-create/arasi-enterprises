@@ -307,7 +307,11 @@ function SignUpForm({ role }: { role: AppRole }) {
         password: pwR.data,
         options: {
           emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
-          data: { full_name: name.trim(), role },
+          // NOTE: `role` intentionally omitted. Every new account starts as
+          // 'customer' server-side (handle_new_user trigger). Promoter/admin
+          // roles are granted only through admin-controlled flows — never
+          // from client-supplied signup metadata.
+          data: { full_name: name.trim() },
         },
       });
       if (error) throw error;
