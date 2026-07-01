@@ -14,9 +14,11 @@ export type ReferredCustomer = {
   postal_code: string | null;
   country: string | null;
   aadhaar_address: string | null;
+  has_aadhaar_docs: boolean;
   kyc_status: "unsubmitted" | "pending" | "approved" | "rejected";
   kyc_submitted_at: string | null;
   kyc_reviewed_at: string | null;
+  kyc_review_notes: string | null;
   created_at: string;
   membership_number: string | null;
   membership_status: string | null;
@@ -34,6 +36,25 @@ export const listMyReferredCustomers = createServerFn({ method: "GET" })
     );
     if (error) throw new Error(error.message);
     return (data ?? []) as ReferredCustomer[];
+  });
+
+export const submitReferralForReview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        note: z.string().trim().max(1000).optional().nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }): Promise<{ kyc_status: string }> => {
+    const { data: res, error } = await context.supabase.rpc(
+      "promoter_submit_referral_for_review" as any,
+      { _user_id: data.userId, _note: data.note ?? null } as any,
+    );
+    if (error) throw new Error(error.message);
+    return { kyc_status: (res as string) ?? "pending" };
   });
 
 const registerSchema = z.object({
