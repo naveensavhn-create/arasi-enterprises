@@ -26,6 +26,7 @@ import { Route as AuthenticatedCustomerReferralsRouteImport } from './routes/_au
 import { Route as AuthenticatedCustomerMembershipRouteImport } from './routes/_authenticated/customer/membership'
 import { Route as AuthenticatedCustomerLuckyDrawRouteImport } from './routes/_authenticated/customer/lucky-draw'
 import { Route as AuthenticatedCustomerInstallmentsRouteImport } from './routes/_authenticated/customer/installments'
+import { Route as AuthenticatedCustomerEnrollRouteImport } from './routes/_authenticated/customer/enroll'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
 import { Route as AuthenticatedAdminRewardsRouteImport } from './routes/_authenticated/admin/rewards'
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin/reports'
@@ -131,6 +132,12 @@ const AuthenticatedCustomerInstallmentsRoute =
     path: '/installments',
     getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
+const AuthenticatedCustomerEnrollRoute =
+  AuthenticatedCustomerEnrollRouteImport.update({
+    id: '/enroll',
+    path: '/enroll',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
+  } as any)
 const AuthenticatedAdminSettingsRoute =
   AuthenticatedAdminSettingsRouteImport.update({
     id: '/settings',
@@ -201,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/customer/membership': typeof AuthenticatedCustomerMembershipRoute
@@ -228,6 +236,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/customer/membership': typeof AuthenticatedCustomerMembershipRoute
@@ -257,6 +266,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
   '/_authenticated/admin/rewards': typeof AuthenticatedAdminRewardsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/_authenticated/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/_authenticated/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/_authenticated/customer/membership': typeof AuthenticatedCustomerMembershipRoute
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rewards'
     | '/admin/settings'
+    | '/customer/enroll'
     | '/customer/installments'
     | '/customer/lucky-draw'
     | '/customer/membership'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/rewards'
     | '/admin/settings'
+    | '/customer/enroll'
     | '/customer/installments'
     | '/customer/lucky-draw'
     | '/customer/membership'
@@ -341,6 +353,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/reports'
     | '/_authenticated/admin/rewards'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/customer/enroll'
     | '/_authenticated/customer/installments'
     | '/_authenticated/customer/lucky-draw'
     | '/_authenticated/customer/membership'
@@ -482,6 +495,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomerInstallmentsRouteImport
       parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
+    '/_authenticated/customer/enroll': {
+      id: '/_authenticated/customer/enroll'
+      path: '/enroll'
+      fullPath: '/customer/enroll'
+      preLoaderRoute: typeof AuthenticatedCustomerEnrollRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
+    }
     '/_authenticated/admin/settings': {
       id: '/_authenticated/admin/settings'
       path: '/settings'
@@ -577,6 +597,7 @@ const AuthenticatedAdminRouteRouteWithChildren =
   )
 
 interface AuthenticatedCustomerRouteRouteChildren {
+  AuthenticatedCustomerEnrollRoute: typeof AuthenticatedCustomerEnrollRoute
   AuthenticatedCustomerInstallmentsRoute: typeof AuthenticatedCustomerInstallmentsRoute
   AuthenticatedCustomerLuckyDrawRoute: typeof AuthenticatedCustomerLuckyDrawRoute
   AuthenticatedCustomerMembershipRoute: typeof AuthenticatedCustomerMembershipRoute
@@ -586,6 +607,7 @@ interface AuthenticatedCustomerRouteRouteChildren {
 
 const AuthenticatedCustomerRouteRouteChildren: AuthenticatedCustomerRouteRouteChildren =
   {
+    AuthenticatedCustomerEnrollRoute: AuthenticatedCustomerEnrollRoute,
     AuthenticatedCustomerInstallmentsRoute:
       AuthenticatedCustomerInstallmentsRoute,
     AuthenticatedCustomerLuckyDrawRoute: AuthenticatedCustomerLuckyDrawRoute,

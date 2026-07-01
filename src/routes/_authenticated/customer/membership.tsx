@@ -59,7 +59,10 @@ function CustomerMembershipPage() {
       <Card>
         <CardHeader><CardTitle>No active membership</CardTitle></CardHeader>
         <CardContent className="space-y-3 text-sm text-muted-foreground">
-          <p>You don't have a membership yet. Contact your promoter or admin to enroll in a plan.</p>
+          <p>You don't have a membership yet. Pick a plan and pay the advance to activate it.</p>
+          <Button asChild style={{ background: "var(--gradient-gold-value)" }}>
+            <Link to="/customer/enroll">Browse plans</Link>
+          </Button>
         </CardContent>
       </Card>
     );
