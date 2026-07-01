@@ -54,7 +54,7 @@ export const deletePlanAudited = createServerFn({ method: "POST" })
     // Plan snapshot
     const { data: plan, error: planErr } = await supabaseAdmin
       .from("membership_plans")
-      .select("id, name, code, is_active")
+      .select("id, name, is_active")
       .eq("id", data.planId)
       .maybeSingle();
     if (planErr) throw new Error(planErr.message);
