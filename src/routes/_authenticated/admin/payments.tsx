@@ -1,48 +1,45 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { zodValidator, fallback } from "@tanstack/zod-adapter";
+import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Search, Download } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
+import { listAdminPayments, exportAdminPayments, type AdminPaymentRow } from "@/lib/payments.functions";
+import { toast } from "sonner";
+
+const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"] as const;
+const SORT_COLUMNS = ["created_at", "paid_at", "amount", "status"] as const;
+type SortCol = typeof SORT_COLUMNS[number];
+
+const searchSchema = z.object({
+  page: fallback(z.number().int().min(0), 0).default(0),
+  pageSize: fallback(z.number().int().min(5).max(200), 25).default(25),
+  sortBy: fallback(z.enum(SORT_COLUMNS), "created_at").default("created_at"),
+  sortDir: fallback(z.enum(["asc", "desc"]), "desc").default("desc"),
+  status: fallback(z.string(), "all").default("all"),
+  from: fallback(z.string(), "").default(""),
+  to: fallback(z.string(), "").default(""),
+  q: fallback(z.string(), "").default(""),
+});
 
 export const Route = createFileRoute("/_authenticated/admin/payments")({
   head: () => ({ meta: [{ title: "Payments — Admin" }] }),
+  validateSearch: zodValidator(searchSchema),
   component: AdminPaymentsPage,
 });
-
-type Row = {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  method: string | null;
-  provider: string;
-  provider_order_id: string | null;
-  provider_payment_id: string | null;
-  error_code: string | null;
-  error_description: string | null;
-  paid_at: string | null;
-  created_at: string;
-  customer_id: string;
-  membership_id: string;
-  installment_id: string | null;
-  memberships: { membership_number: string | null } | null;
-  installments: { sequence: number; due_date: string } | null;
-  profile?: { full_name: string | null; email: string | null } | null;
-};
-
-const STATUSES = ["all", "paid", "created", "attempted", "failed", "refunded"];
 
 function csvEscape(v: unknown): string {
   const s = v == null ? "" : String(v);
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function downloadCSV(rows: Row[]) {
+function downloadCSV(rows: AdminPaymentRow[]) {
   const headers = [
     "Created", "Paid At", "Order ID", "Payment ID", "Status", "Method",
     "Amount", "Currency", "Customer", "Email", "Membership #",
@@ -72,73 +69,84 @@ function downloadCSV(rows: Row[]) {
 }
 
 function AdminPaymentsPage() {
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState<string>("all");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [selected, setSelected] = useState<Row | null>(null);
+  const search = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const [selected, setSelected] = useState<AdminPaymentRow | null>(null);
+  const [qDraft, setQDraft] = useState(search.q);
+  const [exporting, setExporting] = useState(false);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["admin-payments"],
-    queryFn: async (): Promise<Row[]> => {
-      const { data, error } = await supabase
-        .from("payments")
-        .select(
-          `id, amount, currency, status, method, provider,
-           provider_order_id, provider_payment_id, error_code, error_description,
-           paid_at, created_at, customer_id, membership_id, installment_id,
-           memberships:membership_id ( membership_number ),
-           installments:installment_id ( sequence, due_date )`
-        )
-        .order("created_at", { ascending: false })
-        .limit(1000);
-      if (error) throw error;
-      const rows = (data ?? []) as unknown as Row[];
-      const ids = Array.from(new Set(rows.map((r) => r.customer_id))).filter(Boolean);
-      if (ids.length) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("id, full_name, email")
-          .in("id", ids);
-        const map = new Map((profs ?? []).map((p) => [p.id, p]));
-        for (const r of rows) {
-          const p = map.get(r.customer_id);
-          r.profile = p ? { full_name: p.full_name, email: p.email } : null;
-        }
-      }
-      return rows;
-    },
+  const listFn = useServerFn(listAdminPayments);
+  const exportFn = useServerFn(exportAdminPayments);
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: [
+      "admin-payments",
+      search.page, search.pageSize, search.sortBy, search.sortDir,
+      search.status, search.from, search.to, search.q,
+    ],
+    queryFn: () =>
+      listFn({
+        data: {
+          page: search.page,
+          pageSize: search.pageSize,
+          sortBy: search.sortBy,
+          sortDir: search.sortDir,
+          status: search.status || undefined,
+          from: search.from || undefined,
+          to: search.to || undefined,
+          q: search.q || undefined,
+        },
+      }),
+    placeholderData: keepPreviousData,
   });
 
-  const filtered = useMemo(() => {
-    if (!data) return [];
-    const fromT = from ? new Date(from).getTime() : null;
-    const toT = to ? new Date(to).getTime() + 86_400_000 : null;
-    const s = q.trim().toLowerCase();
-    return data.filter((r) => {
-      if (status !== "all" && r.status !== status) return false;
-      const t = new Date(r.created_at).getTime();
-      if (fromT && t < fromT) return false;
-      if (toT && t >= toT) return false;
-      if (!s) return true;
-      return (
-        r.provider_order_id?.toLowerCase().includes(s) ||
-        r.provider_payment_id?.toLowerCase().includes(s) ||
-        r.memberships?.membership_number?.toLowerCase().includes(s) ||
-        r.profile?.email?.toLowerCase().includes(s) ||
-        r.profile?.full_name?.toLowerCase().includes(s)
-      );
-    });
-  }, [data, q, status, from, to]);
+  const rows = data?.rows ?? [];
+  const total = data?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / search.pageSize));
 
-  const totals = useMemo(() => {
-    const paid = filtered.filter((r) => r.status === "paid");
-    return {
-      count: paid.length,
-      sum: paid.reduce((a, r) => a + Number(r.amount), 0),
-      total: filtered.length,
-    };
-  }, [filtered]);
+  const setSearch = (patch: Partial<z.infer<typeof searchSchema>>) => {
+    navigate({ search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, ...patch }) });
+  };
+
+  const toggleSort = (col: SortCol) => {
+    if (search.sortBy === col) {
+      setSearch({ sortDir: search.sortDir === "asc" ? "desc" : "asc", page: 0 });
+    } else {
+      setSearch({ sortBy: col, sortDir: "desc", page: 0 });
+    }
+  };
+
+  const sortIcon = (col: SortCol) => {
+    if (search.sortBy !== col) return <ArrowUpDown className="ml-1 inline h-3 w-3 opacity-40" />;
+    return search.sortDir === "asc"
+      ? <ArrowUp className="ml-1 inline h-3 w-3" />
+      : <ArrowDown className="ml-1 inline h-3 w-3" />;
+  };
+
+  const onExport = async () => {
+    setExporting(true);
+    try {
+      const all = await exportFn({
+        data: {
+          sortBy: search.sortBy,
+          sortDir: search.sortDir,
+          status: search.status || undefined,
+          from: search.from || undefined,
+          to: search.to || undefined,
+          q: search.q || undefined,
+          limit: 10_000,
+        },
+      });
+      downloadCSV(all);
+      if (all.length >= 10_000) {
+        toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -149,13 +157,11 @@ function AdminPaymentsPage() {
             All Razorpay transactions across the platform.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!filtered.length}
-          onClick={() => downloadCSV(filtered)}
-        >
-          <Download className="mr-2 h-4 w-4" /> Export CSV
+        <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
+          {exporting
+            ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            : <Download className="mr-2 h-4 w-4" />}
+          Export CSV
         </Button>
       </div>
 
@@ -163,16 +169,16 @@ function AdminPaymentsPage() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Collected (filtered)</CardTitle></CardHeader>
           <CardContent className="text-2xl font-semibold text-gradient-gold">
-            ₹{totals.sum.toLocaleString("en-IN")}
+            ₹{(data?.paidSum ?? 0).toLocaleString("en-IN")}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Successful</CardTitle></CardHeader>
-          <CardContent className="text-2xl font-semibold">{totals.count}</CardContent>
+          <CardContent className="text-2xl font-semibold">{data?.paidCount ?? 0}</CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total shown</CardTitle></CardHeader>
-          <CardContent className="text-2xl font-semibold">{totals.total}</CardContent>
+          <CardHeader className="pb-2"><CardTitle className="text-sm text-muted-foreground">Total matching</CardTitle></CardHeader>
+          <CardContent className="text-2xl font-semibold">{total}</CardContent>
         </Card>
       </div>
 
@@ -180,33 +186,60 @@ function AdminPaymentsPage() {
         <CardHeader className="flex flex-col gap-3">
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" /> Transactions
+            {isFetching && !isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
           </CardTitle>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex flex-wrap gap-1">
               {STATUSES.map((s) => (
                 <button
                   key={s}
-                  onClick={() => setStatus(s)}
+                  onClick={() => setSearch({ status: s, page: 0 })}
                   className={`rounded-md border px-2.5 py-1 text-xs capitalize ${
-                    status === s ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+                    search.status === s ? "bg-primary text-primary-foreground" : "hover:bg-accent"
                   }`}
                 >
                   {s}
                 </button>
               ))}
             </div>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-8 w-40 text-xs" />
+            <Input
+              type="date"
+              value={search.from}
+              onChange={(e) => setSearch({ from: e.target.value, page: 0 })}
+              className="h-8 w-40 text-xs"
+            />
             <span className="text-xs text-muted-foreground">to</span>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-8 w-40 text-xs" />
-            <div className="relative">
+            <Input
+              type="date"
+              value={search.to}
+              onChange={(e) => setSearch({ to: e.target.value, page: 0 })}
+              className="h-8 w-40 text-xs"
+            />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                setSearch({ q: qDraft.trim(), page: 0 });
+              }}
+              className="relative"
+            >
               <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
               <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
+                value={qDraft}
+                onChange={(e) => setQDraft(e.target.value)}
+                onBlur={() => { if (qDraft.trim() !== search.q) setSearch({ q: qDraft.trim(), page: 0 }); }}
                 placeholder="Order/payment id, customer, email, member #"
                 className="h-8 w-72 pl-7 text-xs"
               />
-            </div>
+            </form>
+            <select
+              value={search.pageSize}
+              onChange={(e) => setSearch({ pageSize: Number(e.target.value), page: 0 })}
+              className="h-8 rounded-md border bg-background px-2 text-xs"
+            >
+              {[10, 25, 50, 100, 200].map((n) => (
+                <option key={n} value={n}>{n} / page</option>
+              ))}
+            </select>
           </div>
         </CardHeader>
         <CardContent>
@@ -214,25 +247,37 @@ function AdminPaymentsPage() {
             <div className="flex items-center py-8 text-muted-foreground">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
             </div>
-          ) : filtered.length === 0 ? (
+          ) : rows.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">No transactions match filters.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
-                    <th className="py-2 pr-4 font-medium">Date</th>
+                    <th className="py-2 pr-4 font-medium">
+                      <button className="hover:text-foreground" onClick={() => toggleSort("created_at")}>
+                        Date{sortIcon("created_at")}
+                      </button>
+                    </th>
                     <th className="py-2 pr-4 font-medium">Customer</th>
                     <th className="py-2 pr-4 font-medium">Membership</th>
                     <th className="py-2 pr-4 font-medium">Inst.</th>
                     <th className="py-2 pr-4 font-medium">Order / Payment</th>
                     <th className="py-2 pr-4 font-medium">Method</th>
-                    <th className="py-2 pr-4 font-medium">Amount</th>
-                    <th className="py-2 pr-4 font-medium">Status</th>
+                    <th className="py-2 pr-4 font-medium">
+                      <button className="hover:text-foreground" onClick={() => toggleSort("amount")}>
+                        Amount{sortIcon("amount")}
+                      </button>
+                    </th>
+                    <th className="py-2 pr-4 font-medium">
+                      <button className="hover:text-foreground" onClick={() => toggleSort("status")}>
+                        Status{sortIcon("status")}
+                      </button>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((r) => {
+                  {rows.map((r) => {
                     const p = r.profile;
                     return (
                       <tr
@@ -289,11 +334,31 @@ function AdminPaymentsPage() {
               </table>
             </div>
           )}
+
+          {total > 0 && (
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+              <div>
+                Showing {search.page * search.pageSize + 1}
+                –{Math.min(total, search.page * search.pageSize + rows.length)} of {total}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={search.page === 0}
+                  onClick={() => setSearch({ page: 0 })}>« First</Button>
+                <Button variant="outline" size="sm" disabled={search.page === 0}
+                  onClick={() => setSearch({ page: search.page - 1 })}>‹ Prev</Button>
+                <span>Page {search.page + 1} of {pageCount}</span>
+                <Button variant="outline" size="sm" disabled={search.page + 1 >= pageCount}
+                  onClick={() => setSearch({ page: search.page + 1 })}>Next ›</Button>
+                <Button variant="outline" size="sm" disabled={search.page + 1 >= pageCount}
+                  onClick={() => setSearch({ page: pageCount - 1 })}>Last »</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <PaymentDetailDrawer
-        row={selected}
+        row={selected as any}
         open={!!selected}
         onOpenChange={(o) => !o && setSelected(null)}
       />
