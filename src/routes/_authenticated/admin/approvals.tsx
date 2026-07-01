@@ -275,8 +275,9 @@ function AdminApprovalsPage() {
       <ReviewDrawer
         row={selected}
         onClose={() => setSelected(null)}
-        onDecide={(approve, notes) =>
-          selected && decideMut.mutate({ userId: selected.id, approve, notes })
+        onDecide={(approve, notes, assignRole) =>
+          selected &&
+          decideMut.mutate({ userId: selected.id, approve, notes, assignRole })
         }
         pending={decideMut.isPending}
       />
