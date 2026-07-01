@@ -20,7 +20,10 @@ function AdminReportsPage() {
         supabase.from("membership_plans").select("id", { count: "exact", head: true }).eq("is_active", true),
         supabase.from("memberships").select("id, status, total_amount, paid_amount"),
         supabase.from("installments").select("status, amount"),
-        supabase.from("payments").select("amount, status, created_at").filter("status::text", "eq", "paid"),
+        applyPaymentStatusEq(
+          supabase.from("payments").select("amount, status, created_at"),
+          "paid",
+        ),
       ]);
 
       const mems = memberships.data ?? [];
