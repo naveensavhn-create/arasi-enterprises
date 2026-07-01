@@ -259,9 +259,26 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
                       size="sm"
                       variant="outline"
                       className="h-6 px-2 text-[11px]"
-                      onClick={() => {
-                        navigator.clipboard.writeText(row.id);
-                        toast.success("Row ID copied");
+                      onClick={async () => {
+                        const rowId = row.id;
+                        const toastId = `payment-row-copy-${rowId}`;
+                        try {
+                          if (!navigator.clipboard?.writeText) {
+                            throw new Error("Clipboard API unavailable in this browser.");
+                          }
+                          await navigator.clipboard.writeText(rowId);
+                          toast.success("Row ID copied", {
+                            id: toastId,
+                            description: rowId,
+                          });
+                        } catch (err) {
+                          const message =
+                            err instanceof Error ? err.message : "Unknown clipboard error";
+                          toast.error("Couldn't copy row ID", {
+                            id: toastId,
+                            description: message,
+                          });
+                        }
                       }}
                     >
                       <Copy className="mr-1 h-3 w-3" /> Copy
