@@ -308,9 +308,8 @@ function AdminPlansPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => {
-                          if (confirm(`Delete "${p.name}"?`)) remove.mutate(p.id);
-                        }}
+                        onClick={() => setConfirmDelete(p)}
+
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
