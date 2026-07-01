@@ -94,7 +94,7 @@ const searchSchema = z.object({
   pageSize: fallback(z.number().int().min(5).max(200), 25).default(25),
   sortBy: fallback(z.enum(SORT_COLUMNS), "created_at").default("created_at"),
   sortDir: fallback(z.enum(["asc", "desc"]), "desc").default("desc"),
-  status: fallback(z.string(), "all").default("all"),
+  status: fallback(z.enum(STATUS_FILTER_KEYS), "all").default("all"),
   from: fallback(z.string(), "").default(""),
   to: fallback(z.string(), "").default(""),
   dateField: fallback(z.enum(["created", "webhook_processed"]), "created").default("created"),
