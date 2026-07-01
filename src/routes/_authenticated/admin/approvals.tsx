@@ -381,15 +381,38 @@ function ReviewDrawer({
               </Section>
 
               {row.kyc_status !== "approved" && row.kyc_status !== "rejected" && (
-                <div className="space-y-1.5">
-                  <Label>Review notes (optional, shared with the user if rejected)</Label>
-                  <Textarea
-                    rows={3}
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="e.g. Aadhaar image is blurry, please re-upload"
-                  />
-                </div>
+                <>
+                  <div className="space-y-1.5">
+                    <Label>Review notes (optional, shared with the user if rejected)</Label>
+                    <Textarea
+                      rows={3}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="e.g. Aadhaar image is blurry, please re-upload"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Approve as</Label>
+                    <Select
+                      value={assignRole}
+                      onValueChange={(v) => setAssignRole(v as "promoter" | "customer")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="customer">Customer</SelectItem>
+                        <SelectItem value="promoter">Promoter</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Current role:{" "}
+                      <span className="font-medium capitalize">{row.role ?? "—"}</span>
+                      . Approving will assign the selected role
+                      {row.role && row.role !== assignRole ? " (this changes their role)" : ""}.
+                    </p>
+                  </div>
+                </>
               )}
 
               {(row.kyc_status === "approved" || row.kyc_status === "rejected") &&
@@ -408,7 +431,7 @@ function ReviewDrawer({
                 <Button
                   variant="destructive"
                   disabled={pending}
-                  onClick={() => onDecide(false, notes.trim() || null)}
+                  onClick={() => onDecide(false, notes.trim() || null, null)}
                 >
                   Reject
                 </Button>
@@ -416,9 +439,9 @@ function ReviewDrawer({
               {row.kyc_status !== "approved" && (
                 <Button
                   disabled={pending}
-                  onClick={() => onDecide(true, notes.trim() || null)}
+                  onClick={() => onDecide(true, notes.trim() || null, assignRole)}
                 >
-                  Approve
+                  Approve as {assignRole}
                 </Button>
               )}
             </SheetFooter>
