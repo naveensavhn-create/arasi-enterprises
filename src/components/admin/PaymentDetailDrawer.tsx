@@ -203,36 +203,72 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
 
         {!row ? null : (() => {
           const validation = validateRow(row);
-          if (!validation.ok) {
-            return (
-              <Alert variant="destructive" className="mt-4">
+          const missing = validation.ok ? [] : validation.missing;
+          const amountNum = Number(row.amount);
+          const amountSafe = Number.isFinite(amountNum) && amountNum >= 0;
+          const displayName =
+            row.profile?.full_name?.trim() ||
+            row.profile?.email?.trim() ||
+            "Unknown customer";
+          return (
+          <div className="mt-4 space-y-5">
+            {missing.length > 0 && (
+              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Incomplete payment record</AlertTitle>
                 <AlertDescription>
-                  This row is missing required data and cannot be shown safely:
+                  <p className="text-xs">
+                    This row is missing required data. Values below fall back to
+                    safe placeholders — verify with the provider before acting on it.
+                  </p>
                   <ul className="mt-2 list-inside list-disc text-xs">
-                    {validation.missing.map((f) => (
-                      <li key={f}>{FIELD_LABELS[f]}</li>
+                    {missing.map((f) => (
+                      <li key={f}>
+                        <span className="font-medium">{FIELD_LABELS[f]}</span>
+                        <span className="opacity-80"> — {HINTS[f]}</span>
+                      </li>
                     ))}
                   </ul>
-                  <div className="mt-2 text-xs opacity-80">Row ID: <span className="font-mono">{row.id}</span></div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                    <span className="opacity-80">Row ID:</span>
+                    <span className="font-mono">{row.id}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-[11px]"
+                      onClick={() => {
+                        navigator.clipboard.writeText(row.id);
+                        toast.success("Row ID copied");
+                      }}
+                    >
+                      <Copy className="mr-1 h-3 w-3" /> Copy
+                    </Button>
+                  </div>
                 </AlertDescription>
               </Alert>
-            );
-          }
-          return (
-          <div className="mt-4 space-y-5">
+            )}
+            {/* Customer */}
+            <div className="rounded-lg border p-3">
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">Customer</div>
+              <div className="mt-1 font-medium">{displayName}</div>
+              {row.profile?.email && (
+                <div className="text-xs text-muted-foreground">{row.profile.email}</div>
+              )}
+            </div>
+
             {/* Amount */}
             <div className="rounded-lg border p-3">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Amount</div>
               <div className="mt-1 text-2xl font-bold text-gradient-gold">
-                {row.currency} {Number(row.amount).toLocaleString("en-IN")}
+                {row.currency || "—"}{" "}
+                {amountSafe ? amountNum.toLocaleString("en-IN") : "—"}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 Created {new Date(row.created_at).toLocaleString()}
                 {row.paid_at && ` · Paid ${new Date(row.paid_at).toLocaleString()}`}
               </div>
             </div>
+
 
             {/* Razorpay */}
             <section>
