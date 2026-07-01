@@ -1112,3 +1112,41 @@ function AuditDetailsDrawer({
   );
 }
 
+
+function StatusPill({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
+    sent: {
+      label: "Sent",
+      cls: "bg-emerald-500/15 text-emerald-500",
+      icon: <CheckCircle2 className="h-3 w-3" />,
+    },
+    pending: {
+      label: "Pending",
+      cls: "bg-amber-500/15 text-amber-500",
+      icon: <Clock className="h-3 w-3" />,
+    },
+    failed: {
+      label: "Failed",
+      cls: "bg-destructive/15 text-destructive",
+      icon: <XCircle className="h-3 w-3" />,
+    },
+    skipped_no_email_infra: {
+      label: "Not delivered",
+      cls: "bg-muted text-muted-foreground",
+      icon: <Mail className="h-3 w-3" />,
+    },
+  };
+  const cfg = map[status] ?? {
+    label: status,
+    cls: "bg-muted text-muted-foreground",
+    icon: <Mail className="h-3 w-3" />,
+  };
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${cfg.cls}`}
+    >
+      {cfg.icon}
+      {cfg.label}
+    </span>
+  );
+}
