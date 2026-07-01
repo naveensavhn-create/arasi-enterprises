@@ -105,6 +105,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Lucky Draw", url: "/customer/lucky-draw", icon: Ticket },
         { title: "Referrals", url: "/customer/referrals", icon: Share2 },
       ],
+    },
     {
       label: "System",
       items: [{ title: "Preferences", url: "/settings", icon: SlidersHorizontal }],
