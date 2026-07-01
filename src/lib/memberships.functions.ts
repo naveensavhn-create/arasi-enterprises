@@ -17,7 +17,8 @@ export const listMembershipsAdmin = createServerFn({ method: "GET" })
   .inputValidator((d: { status?: string; search?: string } | undefined) => d ?? {})
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    let q = context.supabase
+    const sb: any = context.supabase;
+    let q = sb
       .from("memberships")
       .select(
         "id, membership_number, user_id, plan_id, promoter_id, status, start_date, end_date, advance_paid, total_amount, paid_amount, notes, created_at",
