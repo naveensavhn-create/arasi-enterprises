@@ -33,6 +33,12 @@ function Dashboard() {
   const { data: role } = useCurrentRole(user);
   const meta = role ? ROLE_META[role] : null;
 
+  if (role === "customer") {
+    return <CustomerDashboardBody />;
+  }
+
+
+
 
 
 
