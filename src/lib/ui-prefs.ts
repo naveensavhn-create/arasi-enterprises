@@ -52,7 +52,7 @@ function coerce(parsed: Partial<UiPrefs> | undefined | null): UiPrefs {
   return {
     sidebarMode: p.sidebarMode === "collapsed" ? "collapsed" : "expanded",
     density: p.density === "compact" ? "compact" : "comfortable",
-    paymentsPollingMs: normalizePolling(p.paymentsPollingMs),
+    paymentsPollingMs: normalizePollingInterval(p.paymentsPollingMs),
   };
 }
 
