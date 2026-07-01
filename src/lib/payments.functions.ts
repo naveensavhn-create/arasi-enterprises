@@ -218,7 +218,7 @@ async function fetchPaymentRows(
     }
   }
 
-  if (n.status) query = query.filter("status::text", "eq", n.status);
+  query = applyPaymentStatusEq(query, n.status);
   // Date range: applies to payments.created_at unless the admin picked
   // "webhook processed", in which case the caller resolved a list of
   // payment IDs whose webhook events landed in the range.
