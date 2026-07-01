@@ -41,23 +41,39 @@ function csvEscape(v: unknown): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function downloadCSV(rows: AdminPaymentRow[]) {
+type ExportRow = Awaited<ReturnType<typeof exportAdminPayments>>[number];
+
+function downloadCSV(rows: ExportRow[]) {
   const headers = [
-    "Created", "Paid At", "Order ID", "Payment ID", "Status", "Method",
-    "Amount", "Currency", "Customer", "Email", "Membership #",
-    "Installment #", "Due Date", "Error",
+    "Created", "Paid At", "Razorpay Order ID", "Razorpay Payment ID",
+    "Status", "Method", "Provider", "Amount", "Currency",
+    "Customer Name", "Customer Email",
+    "Membership #", "Installment #", "Installment Due Date",
+    "Order Paid At", "Authorized At", "Captured At", "Failed At", "Refunded At",
+    "First Event At", "Last Event At", "Webhook Event Count",
+    "Error",
   ];
   const lines = [headers.join(",")];
   for (const r of rows) {
+    const h = r.status_history;
     lines.push([
-      r.created_at, r.paid_at ?? "", r.provider_order_id ?? "",
-      r.provider_payment_id ?? "", r.status, r.method ?? "",
+      r.created_at, r.paid_at ?? "",
+      r.provider_order_id ?? "", r.provider_payment_id ?? "",
+      r.status, r.method ?? "", r.provider,
       r.amount, r.currency,
       r.profile?.full_name ?? "",
       r.profile?.email ?? "",
       r.memberships?.membership_number ?? "",
       r.installments?.sequence ?? (r.installment_id ? "" : "advance"),
       r.installments?.due_date ?? "",
+      h.order_created_at ?? "",
+      h.authorized_at ?? "",
+      h.captured_at ?? "",
+      h.failed_at ?? "",
+      h.refunded_at ?? "",
+      h.first_event_at ?? "",
+      h.last_event_at ?? "",
+      h.event_count,
       r.error_code ? `${r.error_code}: ${r.error_description ?? ""}` : "",
     ].map(csvEscape).join(","));
   }
