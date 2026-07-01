@@ -221,8 +221,12 @@ function CustomerMembershipPage() {
                                     <PayInstallmentButton
                                       installmentId={r.id}
                                       amount={Number(r.amount)}
-                                      customer={{ name: fullName, email, phone }}
+                                      sequence={r.sequence}
+                                      customerName={fullName}
+                                      customerEmail={email}
+                                      customerPhone={phone}
                                     />
+
                                   ) : (
                                     <span className="text-[10px] text-muted-foreground">
                                       {r.paid_at ? new Date(r.paid_at).toLocaleDateString() : "Paid"}
