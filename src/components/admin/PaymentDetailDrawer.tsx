@@ -253,6 +253,34 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
                 <Field label="Payment ID" value={row.provider_payment_id ?? "—"} mono copyable={row.provider_payment_id ?? undefined} />
                 <Field label="Method" value={<span className="capitalize">{row.method ?? "—"}</span>} />
                 <Field label="Provider" value={<span className="capitalize">{row.provider}</span>} />
+                {eventsPage === 0 && events && events[0] && (
+                  <>
+                    <Separator className="my-2" />
+                    <Field
+                      label="Latest webhook"
+                      value={
+                        <span className="flex items-center gap-1.5">
+                          {events[0].status && (
+                            <Badge variant="outline" className="text-[10px] capitalize">{events[0].status}</Badge>
+                          )}
+                          <span className="text-[11px] text-muted-foreground">{events[0].event_type ?? "—"}</span>
+                        </span>
+                      }
+                    />
+                    <Field
+                      label="Webhook event ID"
+                      value={events[0].event_id}
+                      mono
+                      copyable={events[0].event_id}
+                    />
+                    <Field
+                      label="Webhook row ID"
+                      value={events[0].id}
+                      mono
+                      copyable={events[0].id}
+                    />
+                  </>
+                )}
                 {row.provider_payment_id && (
                   <div className="pt-2">
                     <Button
@@ -396,17 +424,40 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
                   </p>
                 ) : (
                   <ul className="divide-y">
-                    {events.map((e) => (
+                    {events.map((e, idx) => (
                       <li key={e.id} className="p-3 text-xs">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="font-medium">{e.event_type ?? "—"}</span>
+                          <span className="font-medium flex items-center gap-1.5">
+                            {e.event_type ?? "—"}
+                            {idx === 0 && eventsPage === 0 && (
+                              <Badge variant="default" className="h-4 px-1 text-[9px]">Latest</Badge>
+                            )}
+                          </span>
                           <span className="text-muted-foreground">
                             {new Date(e.received_at).toLocaleString()}
                           </span>
                         </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-muted-foreground">
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-muted-foreground">
                           {e.status && <Badge variant="outline" className="text-[10px] capitalize">{e.status}</Badge>}
                           <span className="font-mono text-[10px] break-all">{e.event_id}</span>
+                          <button
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={() => copy(e.event_id, "Event ID")}
+                            aria-label="Copy event ID"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                          <span className="uppercase tracking-wider">DB row</span>
+                          <span className="font-mono break-all">{e.id}</span>
+                          <button
+                            className="hover:text-foreground"
+                            onClick={() => copy(e.id, "Webhook row ID")}
+                            aria-label="Copy webhook row ID"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
                         </div>
                         {e.processed_at && (
                           <div className="mt-0.5 text-[10px] text-muted-foreground">
