@@ -219,7 +219,7 @@ function AdminPaymentsPage() {
           pageSize: search.pageSize,
           sortBy: search.sortBy,
           sortDir: search.sortDir,
-          status: search.status || undefined,
+          status: toPaymentStatusFilter(search.status),
           from: search.from || undefined,
           to: search.to || undefined,
           dateField: search.dateField,
@@ -347,7 +347,7 @@ function AdminPaymentsPage() {
         data: {
           sortBy: search.sortBy,
           sortDir: search.sortDir,
-          status: search.status || undefined,
+          status: toPaymentStatusFilter(search.status),
           from: search.from || undefined,
           to: search.to || undefined,
           dateField: search.dateField,
@@ -406,7 +406,7 @@ function AdminPaymentsPage() {
           filters: {
             sortBy: search.sortBy,
             sortDir: search.sortDir,
-            status: search.status || undefined,
+            status: toPaymentStatusFilter(search.status),
             from: search.from || undefined,
             to: search.to || undefined,
             dateField: search.dateField,
@@ -1163,7 +1163,7 @@ function AdminPaymentsPage() {
         open={reconcileOpen}
         onOpenChange={setReconcileOpen}
         filters={{
-          status: search.status || undefined,
+          status: toPaymentStatusFilter(search.status),
           from: search.from || undefined,
           to: search.to || undefined,
           q: search.q || undefined,
