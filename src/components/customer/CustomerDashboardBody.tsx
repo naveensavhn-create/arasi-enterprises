@@ -162,7 +162,9 @@ export function CustomerDashboardBody() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      <KycStatusCard />
       {/* HERO */}
+
       <div
         className="relative overflow-hidden rounded-2xl border border-white/10 p-6 text-white shadow-[var(--shadow-card)] sm:p-8"
         style={{ background: "var(--gradient-hero-value)" }}
