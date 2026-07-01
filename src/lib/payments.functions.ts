@@ -264,7 +264,10 @@ async function fetchPaymentRows(
       code: (error as any).code,
       filters: n,
     });
-    throw new Error(`${error.message}${(error as any).details ? ` | details: ${(error as any).details}` : ""}${(error as any).hint ? ` | hint: ${(error as any).hint}` : ""}`);
+    // Encode PostgREST fields inside the message so the client can render
+    // hint/code safely in a toast + error boundary (RPC only preserves .message).
+    const { serializePostgrestErrorMessage } = await import("./payments/postgrest-error");
+    throw new Error(serializePostgrestErrorMessage(error, "Payments query failed"));
   }
 
   // Latest reconciliation per payment (batched)
