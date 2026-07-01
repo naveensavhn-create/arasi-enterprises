@@ -85,13 +85,26 @@ function AdminPaymentsPage() {
           `id, amount, currency, status, method, provider,
            provider_order_id, provider_payment_id, error_code, error_description,
            paid_at, created_at, customer_id, membership_id, installment_id,
-           memberships:membership_id ( membership_number, profiles:customer_id ( full_name, email ) ),
+           memberships:membership_id ( membership_number ),
            installments:installment_id ( sequence, due_date )`
         )
         .order("created_at", { ascending: false })
         .limit(1000);
       if (error) throw error;
-      return (data ?? []) as unknown as Row[];
+      const rows = (data ?? []) as unknown as Row[];
+      const ids = Array.from(new Set(rows.map((r) => r.customer_id))).filter(Boolean);
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id, full_name, email")
+          .in("id", ids);
+        const map = new Map((profs ?? []).map((p) => [p.id, p]));
+        for (const r of rows) {
+          const p = map.get(r.customer_id);
+          r.profile = p ? { full_name: p.full_name, email: p.email } : null;
+        }
+      }
+      return rows;
     },
   });
 
