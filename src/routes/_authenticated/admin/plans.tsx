@@ -377,16 +377,17 @@ function AdminPlansPage() {
                   <AlertDialogDescription>
                     {blocked ? (
                       <>
-                        <span className="font-semibold">{confirmDelete?.name}</span> is used by{" "}
-                        <span className="font-semibold">{inUse}</span> existing membership
-                        {inUse === 1 ? "" : "s"}. Deleting it would orphan those records.
-                        Deactivate the plan instead to stop new enrollments while preserving history.
+                        <span className="font-semibold">{confirmDelete?.name}</span> has{" "}
+                        <span className="font-semibold">{inUse}</span> active enrollment
+                        {inUse === 1 ? "" : "s"} (pending or active memberships). Deleting it
+                        would orphan those records. Deactivate the plan instead to stop new
+                        enrollments while preserving history.
                       </>
                     ) : (
                       <>
                         This will permanently delete{" "}
-                        <span className="font-semibold">{confirmDelete?.name}</span>. No memberships
-                        reference this plan. This action cannot be undone.
+                        <span className="font-semibold">{confirmDelete?.name}</span>. No active
+                        enrollments reference this plan. This action cannot be undone.
                       </>
                     )}
                   </AlertDialogDescription>
