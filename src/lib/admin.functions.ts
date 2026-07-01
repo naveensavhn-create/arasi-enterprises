@@ -394,3 +394,87 @@ export const listAdminAuditLog = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data;
   });
+
+const testEmailSchema = z.object({
+  kind: z.enum(["promote", "revoke"]),
+  recipientEmail: z.string().trim().toLowerCase().email().max(255).optional(),
+});
+
+/**
+ * Sends a role-change email to the caller (or a chosen address) to validate
+ * template rendering + delivery infrastructure. Records the attempt in
+ * role_email_notifications with is_test=true.
+ */
+export const sendRoleChangeTestEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => testEmailSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleErr) throw new Error(roleErr.message);
+    if (!isAdmin) throw new Error("Forbidden: admin role required.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const actor = await lookupProfile(supabaseAdmin, context.userId);
+    const recipient = data.recipientEmail ?? actor.email;
+    if (!recipient) throw new Error("No recipient email available for test send.");
+
+    const { sendRoleChangeEmail } = await import("@/lib/email/send-role-change.server");
+    const result = await sendRoleChangeEmail({
+      kind: data.kind,
+      recipientEmail: recipient,
+      recipientName: actor.fullName,
+      actorName: actor.fullName ?? actor.email ?? "Administrator",
+      actorEmail: actor.email ?? "unknown@arasienterprises.com",
+      previousRole: data.kind === "promote" ? "customer" : "admin",
+      newRole: data.kind === "promote" ? "admin" : "customer",
+      changedAt: new Date().toISOString(),
+      reason: "Test email triggered from Admin Settings to verify delivery.",
+      targetUserId: context.userId,
+      triggeredBy: context.userId,
+      isTest: true,
+    });
+    return result;
+  });
+
+export interface RoleEmailNotification {
+  id: string;
+  audit_id: string | null;
+  target_user_id: string | null;
+  recipient_email: string;
+  template_name: string;
+  subject: string | null;
+  status: string;
+  message_id: string | null;
+  error_message: string | null;
+  is_test: boolean;
+  triggered_by: string | null;
+  metadata: unknown;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Lists the 100 most recent role-change email notifications (admin only).
+ */
+export const listRoleEmailNotifications = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<RoleEmailNotification[]> => {
+    const { data: isAdmin, error: roleErr } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (roleErr) throw new Error(roleErr.message);
+    if (!isAdmin) throw new Error("Forbidden: admin role required.");
+
+    const { data, error } = await context.supabase
+      .from("role_email_notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return (data ?? []) as RoleEmailNotification[];
+  });
+
