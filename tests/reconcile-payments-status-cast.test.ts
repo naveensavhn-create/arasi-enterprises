@@ -19,7 +19,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
-  applyPaymentStatusIn,
+  applyPaymentStatusEq,
   PAYMENT_STATUS_TEXT_COLUMN,
 } from "@/lib/payments/status-filter";
 
