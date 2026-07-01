@@ -3,10 +3,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
-  const { data, error } = await ctx.supabase.rpc("has_role", {
+  const sb: any = ctx.supabase;
+  const { data, error } = await sb.rpc("has_role", {
     _user_id: ctx.userId,
-    _role: "admin" as any,
+    _role: "admin",
   });
+  if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden");
 }
 
@@ -137,7 +139,8 @@ export const createMembershipAdmin = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => createSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { data: row, error } = await context.supabase
+    const sb: any = context.supabase;
+    const { data: row, error } = await sb
       .from("memberships")
       .insert({
         user_id: data.user_id,
@@ -171,7 +174,8 @@ export const updateMembershipAdmin = createServerFn({ method: "POST" })
     const { id, ...patch } = data;
     const clean: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(patch)) if (v !== undefined) clean[k] = v;
-    const { error } = await context.supabase.from("memberships").update(clean).eq("id", id);
+    const sb: any = context.supabase;
+    const { error } = await sb.from("memberships").update(clean).eq("id", id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
