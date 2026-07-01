@@ -6,13 +6,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Loader2, RefreshCw, CheckCircle2, AlertTriangle, ShieldCheck, Download } from "lucide-react";
 import { toast } from "sonner";
 import {
   reconcilePayments,
   listOpenReconciliations,
   resolveReconciliation,
   type ReconciliationResult,
+  type ReconciliationRow,
 } from "@/lib/payments.functions";
 
 type Filters = {
@@ -118,7 +119,18 @@ export function ReconcileDialog({
           <div>
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold">Open mismatches</h3>
-              {openList.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+              <div className="flex items-center gap-2">
+                {openList.isFetching && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={openRows.length === 0}
+                  onClick={() => exportMismatchesCsv(openRows)}
+                >
+                  <Download className="mr-2 h-3.5 w-3.5" />
+                  Export CSV
+                </Button>
+              </div>
             </div>
             {openRows.length === 0 ? (
               <div className="flex items-center gap-2 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
@@ -205,4 +217,67 @@ function Stat({ label, value, tone }: { label: string; value: number; tone?: "ok
       </div>
     </div>
   );
+}
+
+function csvEscape(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  const s = String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function exportMismatchesCsv(rows: ReconciliationRow[]) {
+  const headers = [
+    "reconciliation_id",
+    "payment_id",
+    "provider_order_id",
+    "provider_payment_id",
+    "stored_status",
+    "provider_status",
+    "provider_amount",
+    "provider_method",
+    "provider_error",
+    "amount",
+    "currency",
+    "customer_id",
+    "membership_id",
+    "note",
+    "created_at",
+    "resolved_at",
+  ];
+  const lines = [headers.join(",")];
+  for (const r of rows) {
+    lines.push(
+      [
+        r.id,
+        r.payment_id,
+        r.payment?.provider_order_id ?? "",
+        r.payment?.provider_payment_id ?? "",
+        r.stored_status,
+        r.provider_status ?? "",
+        r.provider_amount ?? "",
+        r.provider_method ?? "",
+        r.provider_error ?? "",
+        r.payment?.amount ?? "",
+        r.payment?.currency ?? "",
+        r.payment?.customer_id ?? "",
+        r.payment?.membership_id ?? "",
+        r.note ?? "",
+        r.created_at,
+        r.resolved_at ?? "",
+      ]
+        .map(csvEscape)
+        .join(","),
+    );
+  }
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `reconciliation-mismatches-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
