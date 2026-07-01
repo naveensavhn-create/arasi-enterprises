@@ -87,11 +87,6 @@ export const Route = createFileRoute("/_authenticated/admin/payments")({
   component: AdminPaymentsPage,
 });
 
-function csvEscape(v: unknown): string {
-  const s = v == null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
 function formatRelative(iso: string): string {
   const then = new Date(iso).getTime();
   if (!Number.isFinite(then)) return "—";
@@ -106,47 +101,12 @@ function formatRelative(iso: string): string {
   return `${d}d ago`;
 }
 
-type ExportRow = Awaited<ReturnType<typeof exportAdminPayments>>[number];
-
-function downloadCSV(rows: ExportRow[]) {
-  const headers = [
-    "Created", "Paid At", "Razorpay Order ID", "Razorpay Payment ID",
-    "Status", "Method", "Provider", "Amount", "Currency",
-    "Customer Name", "Customer Email",
-    "Membership #", "Installment #", "Installment Due Date",
-    "Order Paid At", "Authorized At", "Captured At", "Failed At", "Refunded At",
-    "First Event At", "Last Event At", "Webhook Event Count",
-    "Error",
-  ];
-  const lines = [headers.join(",")];
-  for (const r of rows) {
-    const h = r.status_history;
-    lines.push([
-      r.created_at, r.paid_at ?? "",
-      r.provider_order_id ?? "", r.provider_payment_id ?? "",
-      r.status, r.method ?? "", r.provider,
-      r.amount, r.currency,
-      r.profile?.full_name ?? "",
-      r.profile?.email ?? "",
-      r.memberships?.membership_number ?? "",
-      r.installments?.sequence ?? (r.installment_id ? "" : "advance"),
-      r.installments?.due_date ?? "",
-      h.order_created_at ?? "",
-      h.authorized_at ?? "",
-      h.captured_at ?? "",
-      h.failed_at ?? "",
-      h.refunded_at ?? "",
-      h.first_event_at ?? "",
-      h.last_event_at ?? "",
-      h.event_count,
-      r.error_code ? `${r.error_code}: ${r.error_description ?? ""}` : "",
-    ].map(csvEscape).join(","));
-  }
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+function saveCsvBlob(csv: string, filename: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `payments-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
