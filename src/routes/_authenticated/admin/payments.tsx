@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Radio, Webhook, AlertTriangle } from "lucide-react";
+import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Webhook, AlertTriangle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
 import { listAdminPayments, exportAdminPayments, getLastWebhookEvent } from "@/lib/payments.functions";
 import {
   validateAdminPaymentRowShape,
@@ -18,8 +19,8 @@ import {
   type AdminPaymentRow,
 } from "@/lib/payments/validate-row";
 import { supabase } from "@/integrations/supabase/client";
-import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS, normalizePollingInterval } from "@/lib/ui-prefs";
 import { toast } from "sonner";
+
 
 
 
@@ -133,7 +134,7 @@ function AdminPaymentsPage() {
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
   const lastLiveAt = useRef<number>(0);
-  const { paymentsPollingMs } = useUiPrefs();
+  const listRefetchInterval = useListRefetchInterval(liveConnected);
 
   const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
@@ -143,11 +144,13 @@ function AdminPaymentsPage() {
   const { data: lastWebhook } = useQuery({
     queryKey: ["admin-payments-last-webhook"],
     queryFn: () => lastWebhookFn(),
-    refetchInterval: liveConnected
-      ? (paymentsPollingMs === 0 ? false : Math.max(paymentsPollingMs, 120_000))
-      : (paymentsPollingMs === 0 ? 60_000 : paymentsPollingMs),
+    // Even when the admin turns polling "Off", we still tick the last-webhook
+    // badge on a slow interval when realtime is down — otherwise the "no
+    // webhooks yet" state can lie for hours.
+    refetchInterval: listRefetchInterval === false && !liveConnected ? 60_000 : listRefetchInterval,
     refetchOnWindowFocus: true,
   });
+
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
@@ -174,14 +177,12 @@ function AdminPaymentsPage() {
         },
       }),
     placeholderData: keepPreviousData,
-    // Polling fallback interval is admin-configurable. Realtime pauses polling
-    // to a longer interval; when disconnected we honor the admin's setting
-    // (0 disables background polling entirely).
-    refetchInterval: liveConnected
-      ? (paymentsPollingMs === 0 ? false : Math.max(paymentsPollingMs, 120_000))
-      : (paymentsPollingMs === 0 ? false : paymentsPollingMs),
+    // Shared polling fallback: honors the cross-device admin preference.
+    // Realtime caps the interval at 120s; "Off" disables background polling.
+    refetchInterval: listRefetchInterval,
     refetchOnWindowFocus: true,
   });
+
 
 
   // Realtime: invalidate ledger + drawer queries when webhooks land.
@@ -297,54 +298,33 @@ function AdminPaymentsPage() {
             All Razorpay transactions across the platform.
           </p>
         </div>
+        <PollingControls
+          liveConnected={liveConnected}
+          ariaLabel="Payments polling fallback interval"
+          rightSlot={
+            lastWebhook ? (
+              <Badge
+                variant="outline"
+                className="gap-1.5 text-[10px] font-mono normal-case"
+                title={`Event ID: ${lastWebhook.event_id}\nType: ${lastWebhook.event_type}\nReceived: ${new Date(lastWebhook.received_at).toLocaleString()}${lastWebhook.processed_at ? `\nProcessed: ${new Date(lastWebhook.processed_at).toLocaleString()}` : "\nNot yet processed"}`}
+              >
+                <Webhook className="h-3 w-3 text-muted-foreground" />
+                <span className="hidden md:inline text-muted-foreground">Last webhook</span>
+                <span>{formatRelative(lastWebhook.processed_at ?? lastWebhook.received_at)}</span>
+                <span className="hidden lg:inline text-muted-foreground truncate max-w-[140px]">
+                  · {lastWebhook.event_id.slice(-14)}
+                </span>
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="gap-1.5 text-[10px] normal-case text-muted-foreground">
+                <Webhook className="h-3 w-3" />
+                No webhooks yet
+              </Badge>
+            )
+          }
+        />
         <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant="outline"
-            className="gap-1.5 text-[10px] uppercase tracking-wider"
-            title={
-              liveConnected
-                ? "Realtime updates connected"
-                : paymentsPollingMs === 0
-                  ? "Realtime disconnected — background polling is off"
-                  : `Realtime disconnected — polling every ${Math.round(paymentsPollingMs / 1000)}s`
-            }
-          >
-            <Radio className={`h-3 w-3 ${liveConnected ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
-            {liveConnected ? "Live" : paymentsPollingMs === 0 ? "Manual" : "Polling"}
-          </Badge>
-          {lastWebhook ? (
-            <Badge
-              variant="outline"
-              className="gap-1.5 text-[10px] font-mono normal-case"
-              title={`Event ID: ${lastWebhook.event_id}\nType: ${lastWebhook.event_type}\nReceived: ${new Date(lastWebhook.received_at).toLocaleString()}${lastWebhook.processed_at ? `\nProcessed: ${new Date(lastWebhook.processed_at).toLocaleString()}` : "\nNot yet processed"}`}
-            >
-              <Webhook className="h-3 w-3 text-muted-foreground" />
-              <span className="hidden md:inline text-muted-foreground">Last webhook</span>
-              <span>{formatRelative(lastWebhook.processed_at ?? lastWebhook.received_at)}</span>
-              <span className="hidden lg:inline text-muted-foreground truncate max-w-[140px]">
-                · {lastWebhook.event_id.slice(-14)}
-              </span>
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1.5 text-[10px] normal-case text-muted-foreground">
-              <Webhook className="h-3 w-3" />
-              No webhooks yet
-            </Badge>
-          )}
-          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span className="hidden sm:inline">Poll every</span>
-            <select
-              value={paymentsPollingMs}
-              onChange={(e) => setUiPrefs({ paymentsPollingMs: normalizePollingInterval(e.target.value) })}
-              className="rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
-              aria-label="Payments polling fallback interval"
-              title="Fallback refresh interval when realtime is unavailable"
-            >
-              {PAYMENTS_POLLING_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </label>
+
           <Button
             variant="outline"
             size="sm"

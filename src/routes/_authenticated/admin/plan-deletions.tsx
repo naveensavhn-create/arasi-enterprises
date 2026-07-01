@@ -6,6 +6,8 @@ import { listPlanDeletionAudit, exportPlanDeletionAudit, type PlanDeletionRow } 
 import { toast } from "sonner";
 import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -38,10 +40,13 @@ function PlanDeletionsPage() {
     [q, actor, plan, status, from, to, page],
   );
 
+  const refetchInterval = useListRefetchInterval();
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "plan-deletions", filters],
     queryFn: () => fetchList({ data: filters }),
+    refetchInterval,
   });
+
 
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;
@@ -83,10 +88,14 @@ function PlanDeletionsPage() {
             Every blocked and successful plan-deletion attempt, from admin_audit_log.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
-          <Download className="h-4 w-4 mr-2" />
-          {exporting ? "Exporting…" : "Export CSV"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <PollingControls ariaLabel="Plan deletion audit polling fallback interval" />
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+            <Download className="h-4 w-4 mr-2" />
+            {exporting ? "Exporting…" : "Export CSV"}
+          </Button>
+        </div>
+
       </div>
 
       <Card>

@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, Users } from "lucide-react";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
+
 import { useState, useMemo } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/customers")({
@@ -23,8 +25,11 @@ type Row = {
 
 function AdminCustomersPage() {
   const [q, setQ] = useState("");
+  const refetchInterval = useListRefetchInterval();
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-customers"],
+    refetchInterval,
+
     queryFn: async (): Promise<Row[]> => {
       const { data: roleRows, error: rErr } = await supabase
         .from("user_roles")
@@ -64,16 +69,20 @@ function AdminCustomersPage() {
             All registered customer accounts.
           </p>
         </div>
-        <div className="relative w-full max-w-xs">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search name, email, phone…"
-            className="pl-9"
-          />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-full max-w-xs">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search name, email, phone…"
+              className="pl-9"
+            />
+          </div>
+          <PollingControls ariaLabel="Customers polling fallback interval" />
         </div>
       </div>
+
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

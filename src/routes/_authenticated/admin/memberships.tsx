@@ -36,6 +36,8 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImportMembershipsDialog } from "@/components/admin/ImportMembershipsDialog";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
+
 
 export const Route = createFileRoute("/_authenticated/admin/memberships")({
   component: MembershipsAdminPage,
@@ -71,10 +73,13 @@ function MembershipsAdminPage() {
   const [openImport, setOpenImport] = useState(false);
   const [editing, setEditing] = useState<any>(null);
 
+  const refetchInterval = useListRefetchInterval();
   const membershipsQ = useQuery({
     queryKey: ["admin-memberships", status, search],
     queryFn: () => list({ data: { status, search } }),
+    refetchInterval,
   });
+
   const customersQ = useQuery({ queryKey: ["opt-customers"], queryFn: () => customers() });
   const promotersQ = useQuery({ queryKey: ["opt-promoters"], queryFn: () => promoters() });
   const plansQ = useQuery({ queryKey: ["opt-plans"], queryFn: () => plans() });
@@ -138,6 +143,7 @@ function MembershipsAdminPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <PollingControls ariaLabel="Memberships polling fallback interval" />
           <Button variant="outline" onClick={() => setOpenImport(true)}>
             Import CSV
           </Button>
@@ -154,6 +160,7 @@ function MembershipsAdminPage() {
             />
           </Dialog>
         </div>
+
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

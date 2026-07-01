@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, UserCog } from "lucide-react";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
+
 
 export const Route = createFileRoute("/_authenticated/admin/promoters")({
   head: () => ({ meta: [{ title: "Promoters — Admin" }] }),
@@ -20,8 +22,11 @@ type Row = {
 };
 
 function AdminPromotersPage() {
+  const refetchInterval = useListRefetchInterval();
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-promoters"],
+    refetchInterval,
+
     queryFn: async (): Promise<Row[]> => {
       const { data: roleRows, error: rErr } = await supabase
         .from("user_roles")
@@ -42,12 +47,16 @@ function AdminPromotersPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Promoters</h1>
-        <p className="text-sm text-muted-foreground">
-          Field agents who onboard and support customers. Assign the promoter role from Settings.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Promoters</h1>
+          <p className="text-sm text-muted-foreground">
+            Field agents who onboard and support customers. Assign the promoter role from Settings.
+          </p>
+        </div>
+        <PollingControls ariaLabel="Promoters polling fallback interval" />
       </div>
+
 
       <Card>
         <CardHeader>
