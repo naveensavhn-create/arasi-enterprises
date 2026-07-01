@@ -195,7 +195,7 @@ async function fetchPaymentRows(
     }
   }
 
-  if (n.status) query = query.eq("status", n.status);
+  if (n.status) query = query.filter("status::text", "eq", n.status);
   // Date range: applies to payments.created_at unless the admin picked
   // "webhook processed", in which case the caller resolved a list of
   // payment IDs whose webhook events landed in the range.
@@ -232,7 +232,17 @@ async function fetchPaymentRows(
 
 
   const { data: rows, error } = await query.range(fromIdx, toIdx);
-  if (error) throw new Error(error.message);
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error("[listAdminPayments] payments select failed", {
+      message: error.message,
+      details: (error as any).details,
+      hint: (error as any).hint,
+      code: (error as any).code,
+      filters: n,
+    });
+    throw new Error(`${error.message}${(error as any).details ? ` | details: ${(error as any).details}` : ""}${(error as any).hint ? ` | hint: ${(error as any).hint}` : ""}`);
+  }
 
   // Latest reconciliation per payment (batched)
   const paymentIds = (rows ?? []).map((r: any) => r.id).filter(Boolean);
@@ -293,7 +303,7 @@ export const listAdminPayments = createServerFn({ method: "GET" })
             }
             let tq = sb.from("payments").select("amount, status", { count: "exact" });
             tq = tq.in("id", webhookPaymentIds);
-            if (n.status) tq = tq.eq("status", n.status);
+            if (n.status) tq = tq.filter("status::text", "eq", n.status);
             if (n.orderId) tq = tq.ilike("provider_order_id", `%${n.orderId}%`);
             if (n.paymentId) tq = tq.ilike("provider_payment_id", `%${n.paymentId}%`);
             if (customerIdsExact && customerIdsExact.length) tq = tq.in("customer_id", customerIdsExact);
@@ -707,7 +717,7 @@ export const reconcilePayments = createServerFn({ method: "POST" })
       .select("id, status, amount, provider_order_id, provider_payment_id, customer_id, membership_id, currency")
       .order("created_at", { ascending: false })
       .limit(data.limit);
-    if (n.status) query = query.eq("status", n.status);
+    if (n.status) query = query.filter("status::text", "eq", n.status);
     if (n.fromISO) query = query.gte("created_at", n.fromISO);
     if (n.toISO) query = query.lt("created_at", n.toISO);
     if (n.q) {
