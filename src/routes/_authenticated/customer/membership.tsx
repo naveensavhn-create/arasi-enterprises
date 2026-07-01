@@ -4,14 +4,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, CalendarClock, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { PayInstallmentButton } from "@/components/payments/PayInstallmentButton";
 
 export const Route = createFileRoute("/_authenticated/customer/membership")({
-  head: () => ({ meta: [{ title: "My Membership — Arasi" }] }),
+  head: () => ({ meta: [{ title: "Membership Status — Arasi" }] }),
   component: CustomerMembershipPage,
 });
+
+type Installment = {
+  id: string;
+  sequence: number;
+  due_date: string;
+  amount: number;
+  status: string;
+  paid_at: string | null;
+  membership_id: string;
+};
+
 
 type Row = {
   id: string;
