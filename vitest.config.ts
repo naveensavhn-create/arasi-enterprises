@@ -8,6 +8,19 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "src/**/*.test.tsx", "tests/**/*.test.ts", "tests/**/*.test.tsx"],
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary", "json-summary", "html", "lcov"],
+      reportsDirectory: "./coverage",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.test.{ts,tsx}",
+        "src/**/*.d.ts",
+        "src/routeTree.gen.ts",
+        "src/integrations/supabase/**",
+        "src/components/ui/**",
+      ],
+    },
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") },
