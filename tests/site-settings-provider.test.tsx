@@ -47,7 +47,7 @@ function Consumer() {
 }
 
 const INITIAL = {
-  brand_name: "ARASI Enterprises",
+  brand_name: "ARASI Test Suite Brand",
   tagline: "Advance Booking & Monthly Installments",
   support_email: null,
   support_phone: null,
