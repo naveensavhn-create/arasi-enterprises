@@ -381,12 +381,27 @@ function AdminPaymentsPage() {
             Reconcile
           </Button>
 
-          <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
-            {exporting
-              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              : <Download className="mr-2 h-4 w-4" />}
-            Export CSV
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={!total || exporting}>
+                {exporting
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <Download className="mr-2 h-4 w-4" />}
+                Export CSV
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Export current filters</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onExport("page")}>
+                Current page ({Math.min(search.pageSize, Math.max(0, total - search.page * search.pageSize))} row{Math.min(search.pageSize, Math.max(0, total - search.page * search.pageSize)) === 1 ? "" : "s"})
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport("filtered")}>
+                All filtered rows ({total.toLocaleString()}{total >= 10_000 ? ", capped at 10k" : ""})
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
         </div>
       </div>
 
