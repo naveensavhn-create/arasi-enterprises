@@ -143,6 +143,7 @@ function MembershipsAdminPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <PollingControls ariaLabel="Memberships polling fallback interval" />
           <Button variant="outline" onClick={() => setOpenImport(true)}>
             Import CSV
           </Button>
@@ -159,6 +160,7 @@ function MembershipsAdminPage() {
             />
           </Dialog>
         </div>
+
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
