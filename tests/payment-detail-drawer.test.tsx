@@ -157,8 +157,8 @@ describe("<PaymentDetailDrawer /> — invalid row surfaces", () => {
     const alert = title.closest('[role="alert"]') as HTMLElement | null;
     expect(alert).not.toBeNull();
     const body = within(alert!);
-    expect(body.getByText(/Razorpay payment ID/i)).toBeDefined();
-    expect(body.getByText(/Customer name/i)).toBeDefined();
+    expect(body.getAllByText(/Razorpay payment ID/i).length).toBeGreaterThan(0);
+    expect(body.getAllByText(/Customer name/i).length).toBeGreaterThan(0);
 
     // Row ID should appear inside the alert for copy support
     expect(body.getByText(invalid.id)).toBeDefined();
