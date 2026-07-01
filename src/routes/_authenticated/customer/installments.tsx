@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
 import { PayInstallmentButton } from "@/components/payments/PayInstallmentButton";
+import { InstallmentTimelineDialog } from "@/components/payments/InstallmentTimelineDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CalendarClock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, CalendarClock, AlertTriangle, CheckCircle2, History } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/customer/installments")({
   head: () => ({ meta: [{ title: "Installments — Arasi Enterprises" }] }),
@@ -29,6 +32,7 @@ function InstallmentsPage() {
   const phone = session?.user.phone ?? undefined;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fullName = (session?.user.user_metadata as any)?.full_name as string | undefined;
+  const [timelineId, setTimelineId] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["my-installments", session?.user.id],
@@ -175,6 +179,14 @@ function InstallmentsPage() {
                   >
                     {r.status}
                   </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTimelineId(r.id)}
+                    className="h-8 gap-1 text-xs"
+                  >
+                    <History className="h-3.5 w-3.5" /> Timeline
+                  </Button>
                   {!isPaid && (
                     <PayInstallmentButton
                       installmentId={r.id}
@@ -191,6 +203,12 @@ function InstallmentsPage() {
           );
         })}
       </div>
+
+      <InstallmentTimelineDialog
+        installmentId={timelineId}
+        open={!!timelineId}
+        onOpenChange={(o) => !o && setTimelineId(null)}
+      />
     </div>
   );
 }
