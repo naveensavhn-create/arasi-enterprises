@@ -139,6 +139,7 @@ function AdminSettings() {
 
   const [testKind, setTestKind] = useState<"promote" | "revoke">("promote");
   const [testEmail, setTestEmail] = useState("");
+  const [promoteReason, setPromoteReason] = useState("");
   const [revokeTarget, setRevokeTarget] = useState<null | {
     userId: string;
     email: string | null;
