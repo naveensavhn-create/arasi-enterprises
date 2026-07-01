@@ -49,7 +49,7 @@ function CustomerLuckyDrawPage() {
   const qc = useQueryClient();
 
   const listDrawsFn = useServerFn(listOpenDrawsForCustomer);
-  const enterDrawFn = useServerFn(enterDraw);
+  const createDrawEntryFn = useServerFn(createDrawEntry);
 
   const drawsQ = useQuery({
     queryKey: ["customer-open-draws", session?.user.id],
@@ -83,13 +83,33 @@ function CustomerLuckyDrawPage() {
     },
   });
 
+  function friendlyEntryError(err: unknown): string {
+    const raw = err instanceof Error ? err.message : String(err ?? "");
+    const m = raw.toLowerCase();
+    if (m.includes("already entered")) return "You've already joined this draw.";
+    if (m.includes("not found")) return "This draw is no longer available.";
+    if (m.includes("not allowed") || m.includes("permission")) {
+      return "You're not eligible to enter this draw.";
+    }
+    if (m.includes("active membership")) return "An active membership is required to enter.";
+    if (m.includes("closed") || m.includes("window")) return "Entries for this draw are closed.";
+    if (m.includes("not open") || m.includes("opens")) return "This draw isn't open yet.";
+    if (m.includes("plan")) return "Your membership plan isn't eligible for this draw.";
+    return raw || "Could not join the draw. Please try again.";
+  }
+
   const enterMut = useMutation({
-    mutationFn: (drawId: string) => enterDrawFn({ data: { drawId } }),
-    onSuccess: (row) => {
-      toast.success(`You're in! Entry #${row.entry_number}`);
-      qc.invalidateQueries({ queryKey: ["customer-open-draws"] });
+    mutationFn: (drawId: string) => createDrawEntryFn({ data: { drawId } }),
+    onSuccess: async (row) => {
+      const entryNo = (row as { entry_number: number | null }).entry_number;
+      const createdAt = (row as { created_at: string | null }).created_at;
+      toast.success(
+        entryNo != null ? `You're in! Entry #${entryNo}` : "You're in!",
+        { description: createdAt ? `Joined ${fmtDate(createdAt)}` : undefined },
+      );
+      await qc.invalidateQueries({ queryKey: ["customer-open-draws"] });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Could not enter draw"),
+    onError: (err) => toast.error(friendlyEntryError(err)),
   });
 
   const draws = drawsQ.data ?? [];
