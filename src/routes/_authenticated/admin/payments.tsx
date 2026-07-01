@@ -532,10 +532,22 @@ function AdminPaymentsPage() {
                         Date{sortIcon("created_at")}
                       </button>
                     </th>
-                    <th className="py-2 pr-4 font-medium">Customer</th>
+                    <th className="py-2 pr-4 font-medium">
+                      <button className="hover:text-foreground" onClick={() => toggleSort("customer_name")}>
+                        Customer{sortIcon("customer_name")}
+                      </button>
+                    </th>
                     <th className="py-2 pr-4 font-medium">Membership</th>
                     <th className="py-2 pr-4 font-medium">Inst.</th>
-                    <th className="py-2 pr-4 font-medium">Order / Payment</th>
+                    <th className="py-2 pr-4 font-medium">
+                      <button className="hover:text-foreground" onClick={() => toggleSort("provider_order_id")}>
+                        Order{sortIcon("provider_order_id")}
+                      </button>
+                      {" / "}
+                      <button className="hover:text-foreground" onClick={() => toggleSort("provider_payment_id")}>
+                        Payment{sortIcon("provider_payment_id")}
+                      </button>
+                    </th>
                     <th className="py-2 pr-4 font-medium">Method</th>
                     <th className="py-2 pr-4 font-medium">
                       <button className="hover:text-foreground" onClick={() => toggleSort("amount")}>
