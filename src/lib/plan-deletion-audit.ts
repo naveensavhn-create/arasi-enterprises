@@ -102,7 +102,9 @@ export function parseBlockingCountFromTriggerError(
   if (!msg) return null;
 
   const toInt = (s: string): number | null => {
-    const n = Number(s.replace(/[,_\s]/g, ""));
+    const cleaned = s.replace(/[,_\s]/g, "");
+    if (!/^\d+$/.test(cleaned)) return null;
+    const n = Number(cleaned);
     return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : null;
   };
 
