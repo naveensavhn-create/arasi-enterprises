@@ -23,6 +23,7 @@ import { Route as AuthenticatedPromoterCommissionsRouteImport } from './routes/_
 import { Route as AuthenticatedPromoterCollectionsRouteImport } from './routes/_authenticated/promoter/collections'
 import { Route as AuthenticatedCustomerRewardsRouteImport } from './routes/_authenticated/customer/rewards'
 import { Route as AuthenticatedCustomerReferralsRouteImport } from './routes/_authenticated/customer/referrals'
+import { Route as AuthenticatedCustomerPaymentsRouteImport } from './routes/_authenticated/customer/payments'
 import { Route as AuthenticatedCustomerMembershipRouteImport } from './routes/_authenticated/customer/membership'
 import { Route as AuthenticatedCustomerLuckyDrawRouteImport } from './routes/_authenticated/customer/lucky-draw'
 import { Route as AuthenticatedCustomerInstallmentsRouteImport } from './routes/_authenticated/customer/installments'
@@ -113,6 +114,12 @@ const AuthenticatedCustomerReferralsRoute =
   AuthenticatedCustomerReferralsRouteImport.update({
     id: '/referrals',
     path: '/referrals',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
+  } as any)
+const AuthenticatedCustomerPaymentsRoute =
+  AuthenticatedCustomerPaymentsRouteImport.update({
+    id: '/payments',
+    path: '/payments',
     getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerMembershipRoute =
@@ -220,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/customer/membership': typeof AuthenticatedCustomerMembershipRoute
+  '/customer/payments': typeof AuthenticatedCustomerPaymentsRoute
   '/customer/referrals': typeof AuthenticatedCustomerReferralsRoute
   '/customer/rewards': typeof AuthenticatedCustomerRewardsRoute
   '/promoter/collections': typeof AuthenticatedPromoterCollectionsRoute
@@ -249,6 +257,7 @@ export interface FileRoutesByTo {
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/customer/membership': typeof AuthenticatedCustomerMembershipRoute
+  '/customer/payments': typeof AuthenticatedCustomerPaymentsRoute
   '/customer/referrals': typeof AuthenticatedCustomerReferralsRoute
   '/customer/rewards': typeof AuthenticatedCustomerRewardsRoute
   '/promoter/collections': typeof AuthenticatedPromoterCollectionsRoute
@@ -280,6 +289,7 @@ export interface FileRoutesById {
   '/_authenticated/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/_authenticated/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/_authenticated/customer/membership': typeof AuthenticatedCustomerMembershipRoute
+  '/_authenticated/customer/payments': typeof AuthenticatedCustomerPaymentsRoute
   '/_authenticated/customer/referrals': typeof AuthenticatedCustomerReferralsRoute
   '/_authenticated/customer/rewards': typeof AuthenticatedCustomerRewardsRoute
   '/_authenticated/promoter/collections': typeof AuthenticatedPromoterCollectionsRoute
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/customer/installments'
     | '/customer/lucky-draw'
     | '/customer/membership'
+    | '/customer/payments'
     | '/customer/referrals'
     | '/customer/rewards'
     | '/promoter/collections'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/customer/installments'
     | '/customer/lucky-draw'
     | '/customer/membership'
+    | '/customer/payments'
     | '/customer/referrals'
     | '/customer/rewards'
     | '/promoter/collections'
@@ -370,6 +382,7 @@ export interface FileRouteTypes {
     | '/_authenticated/customer/installments'
     | '/_authenticated/customer/lucky-draw'
     | '/_authenticated/customer/membership'
+    | '/_authenticated/customer/payments'
     | '/_authenticated/customer/referrals'
     | '/_authenticated/customer/rewards'
     | '/_authenticated/promoter/collections'
@@ -485,6 +498,13 @@ declare module '@tanstack/react-router' {
       path: '/referrals'
       fullPath: '/customer/referrals'
       preLoaderRoute: typeof AuthenticatedCustomerReferralsRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
+    }
+    '/_authenticated/customer/payments': {
+      id: '/_authenticated/customer/payments'
+      path: '/payments'
+      fullPath: '/customer/payments'
+      preLoaderRoute: typeof AuthenticatedCustomerPaymentsRouteImport
       parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/customer/membership': {
@@ -623,6 +643,7 @@ interface AuthenticatedCustomerRouteRouteChildren {
   AuthenticatedCustomerInstallmentsRoute: typeof AuthenticatedCustomerInstallmentsRoute
   AuthenticatedCustomerLuckyDrawRoute: typeof AuthenticatedCustomerLuckyDrawRoute
   AuthenticatedCustomerMembershipRoute: typeof AuthenticatedCustomerMembershipRoute
+  AuthenticatedCustomerPaymentsRoute: typeof AuthenticatedCustomerPaymentsRoute
   AuthenticatedCustomerReferralsRoute: typeof AuthenticatedCustomerReferralsRoute
   AuthenticatedCustomerRewardsRoute: typeof AuthenticatedCustomerRewardsRoute
 }
@@ -634,6 +655,7 @@ const AuthenticatedCustomerRouteRouteChildren: AuthenticatedCustomerRouteRouteCh
       AuthenticatedCustomerInstallmentsRoute,
     AuthenticatedCustomerLuckyDrawRoute: AuthenticatedCustomerLuckyDrawRoute,
     AuthenticatedCustomerMembershipRoute: AuthenticatedCustomerMembershipRoute,
+    AuthenticatedCustomerPaymentsRoute: AuthenticatedCustomerPaymentsRoute,
     AuthenticatedCustomerReferralsRoute: AuthenticatedCustomerReferralsRoute,
     AuthenticatedCustomerRewardsRoute: AuthenticatedCustomerRewardsRoute,
   }
