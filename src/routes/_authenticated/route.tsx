@@ -3,6 +3,7 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { Button } from "@/components/ui/button";
 import { useSession, useCurrentRole, useSignOut } from "@/lib/auth";
 import { useEffect, useState } from "react";
@@ -78,12 +79,15 @@ function AuthenticatedShell() {
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar role={role} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-2 border-b border-border bg-card/80 px-3 backdrop-blur sm:px-4">
+          <header className="sticky top-0 z-10 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-border bg-card/80 px-3 backdrop-blur sm:px-4">
             <div className="flex min-w-0 items-center gap-2">
               <SidebarTrigger />
               <div className="hidden text-xs uppercase tracking-[0.2em] text-muted-foreground sm:block">
                 {role ? `${role} portal` : "Loading…"}
               </div>
+            </div>
+            <div className="min-w-0 justify-self-stretch sm:justify-self-center sm:w-full sm:max-w-md">
+              <GlobalSearch role={role} />
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               <div className="hidden max-w-[200px] text-right sm:block">
