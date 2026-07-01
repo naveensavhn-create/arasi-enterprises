@@ -212,7 +212,26 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
           </SheetDescription>
         </SheetHeader>
 
-        {!row ? null : (
+        {!row ? null : (() => {
+          const validation = validateRow(row);
+          if (!validation.ok) {
+            return (
+              <Alert variant="destructive" className="mt-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Incomplete payment record</AlertTitle>
+                <AlertDescription>
+                  This row is missing required data and cannot be shown safely:
+                  <ul className="mt-2 list-inside list-disc text-xs">
+                    {validation.missing.map((f) => (
+                      <li key={f}>{FIELD_LABELS[f]}</li>
+                    ))}
+                  </ul>
+                  <div className="mt-2 text-xs opacity-80">Row ID: <span className="font-mono">{row.id}</span></div>
+                </AlertDescription>
+              </Alert>
+            );
+          }
+          return (
           <div className="mt-4 space-y-5">
             {/* Amount */}
             <div className="rounded-lg border p-3">
