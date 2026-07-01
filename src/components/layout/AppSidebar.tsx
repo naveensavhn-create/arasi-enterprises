@@ -15,6 +15,7 @@ import {
   Receipt,
   Briefcase,
   ShieldCheck,
+  Plus,
 } from "lucide-react";
 
 import {
