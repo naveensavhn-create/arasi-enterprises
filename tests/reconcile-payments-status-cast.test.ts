@@ -77,7 +77,7 @@ function makeSpyQuery() {
  */
 async function buildReconcileSelect(
   client: ReturnType<typeof makeSpyQuery>,
-  statuses: string[],
+  statuses: readonly ("created" | "attempted" | "paid" | "failed" | "refunded")[],
   sinceISO: string,
   maxPayments: number,
 ) {
@@ -95,13 +95,14 @@ async function buildReconcileSelect(
 }
 
 describe("reconcile-payments cron — status filter cast", () => {
+  // Aligned with the route handler post-coercion: "pending" is not a
+  // `payment_status` enum value, so it's dropped before the filter is built.
   const defaultStatuses = [
     "created",
     "attempted",
-    "pending",
     "paid",
     "failed",
-  ];
+  ] as const;
 
   it("issues exactly one status filter, on 'status::text' via IN, for the default statuses", async () => {
     const q = makeSpyQuery();
