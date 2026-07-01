@@ -152,6 +152,34 @@ function AdminPlansPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-plans"] }),
   });
 
+  // Explicit, idempotent "deactivate" — used from the delete dialog so a
+  // single click reliably disables future enrollments without touching
+  // existing memberships.
+  const deactivate = useMutation({
+    mutationFn: async (p: Plan) => {
+      if (!p.is_active) return { alreadyInactive: true as const };
+      const { error } = await supabase
+        .from("membership_plans")
+        .update({ is_active: false })
+        .eq("id", p.id);
+      if (error) throw error;
+      return { alreadyInactive: false as const };
+    },
+    onSuccess: (res, p) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      qc.invalidateQueries({ queryKey: ["admin-plans-usage"] });
+      toast.success(
+        res?.alreadyInactive ? `${p.name} is already inactive` : `${p.name} deactivated`,
+        {
+          description: res?.alreadyInactive
+            ? undefined
+            : "Existing memberships are unchanged; new enrollments are now blocked.",
+        },
+      );
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not deactivate plan"),
+  });
+
   const remove = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("membership_plans").delete().eq("id", id);
@@ -436,26 +464,33 @@ function AdminPlansPage() {
                     )}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={remove.isPending}>
+                <AlertDialogFooter className="gap-2 sm:gap-2">
+                  <AlertDialogCancel disabled={remove.isPending || deactivate.isPending}>
                     {blocked ? "Close" : "Cancel"}
                   </AlertDialogCancel>
-                  {blocked ? (
+
+                  {confirmDelete?.is_active && (
                     <Button
                       variant="secondary"
                       onClick={() => {
-                        if (!confirmDelete || !confirmDelete.is_active) return;
-                        toggleActive.mutate(confirmDelete, {
+                        if (!confirmDelete) return;
+                        deactivate.mutate(confirmDelete, {
                           onSuccess: () => setConfirmDelete(null),
                         });
                       }}
-                      disabled={toggleActive.isPending || !confirmDelete?.is_active}
+                      disabled={deactivate.isPending || remove.isPending}
                     >
-                      {confirmDelete?.is_active ? "Deactivate plan" : "Already inactive"}
+                      {deactivate.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Deactivate plan"
+                      )}
                     </Button>
-                  ) : (
+                  )}
+
+                  {!blocked && (
                     <AlertDialogAction
-                      disabled={remove.isPending}
+                      disabled={remove.isPending || deactivate.isPending}
                       onClick={(e) => {
                         e.preventDefault();
                         if (!confirmDelete) return;
@@ -465,7 +500,11 @@ function AdminPlansPage() {
                       }}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      {remove.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete plan"}
+                      {remove.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        "Delete plan"
+                      )}
                     </AlertDialogAction>
                   )}
                 </AlertDialogFooter>
