@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { applyPaymentStatusIn } from "@/lib/payments/status-filter";
+import { applyPaymentStatusEq } from "@/lib/payments/status-filter";
 
 
 /**
