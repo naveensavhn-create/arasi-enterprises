@@ -41,7 +41,20 @@ export const getMyKyc = createServerFn({ method: "GET" })
       .eq("id", context.userId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return (data ?? null) as KycProfile | null;
+    if (!data) return null;
+    const { data: roleRows } = await context.supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", context.userId);
+    const roles = (roleRows ?? []).map((r) => r.role as string);
+    const role: KycProfile["role"] = roles.includes("admin")
+      ? "admin"
+      : roles.includes("promoter")
+        ? "promoter"
+        : roles.includes("customer")
+          ? "customer"
+          : null;
+    return { ...(data as KycProfile), role };
   });
 
 const optionalTrim = z
