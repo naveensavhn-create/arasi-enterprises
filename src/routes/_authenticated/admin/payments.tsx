@@ -163,6 +163,7 @@ function AdminPaymentsPage() {
       queryClient.invalidateQueries({ queryKey: ["payment-webhook-events"] });
       queryClient.invalidateQueries({ queryKey: ["payment-installment"] });
       queryClient.invalidateQueries({ queryKey: ["payment-membership"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-payments-last-webhook"] });
     };
     const channel = supabase
       .channel("admin-payments-live")
@@ -279,6 +280,7 @@ function AdminPaymentsPage() {
                 queryClient.invalidateQueries({ queryKey: ["payment-webhook-events"] }),
                 queryClient.invalidateQueries({ queryKey: ["payment-installment"] }),
                 queryClient.invalidateQueries({ queryKey: ["payment-membership"] }),
+                queryClient.invalidateQueries({ queryKey: ["admin-payments-last-webhook"] }),
               ]);
               toast.success("Ledger refreshed");
             }}
