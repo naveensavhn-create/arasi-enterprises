@@ -18,6 +18,8 @@ import {
   Clock,
 } from "lucide-react";
 import { toast } from "sonner";
+import { KycStatusCard } from "@/components/kyc/KycStatusCard";
+
 
 type MembershipRow = {
   id: string;
