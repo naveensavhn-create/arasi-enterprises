@@ -729,6 +729,31 @@ function AdminPaymentsPage() {
                   onClick={() => setSearch({ page: search.page + 1 })}>Next ›</Button>
                 <Button variant="outline" size="sm" disabled={search.page + 1 >= pageCount}
                   onClick={() => setSearch({ page: pageCount - 1 })}>Last »</Button>
+                <form
+                  className="flex items-center gap-1"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const n = Number((e.currentTarget.elements.namedItem("jump") as HTMLInputElement).value);
+                    if (!Number.isFinite(n)) return;
+                    const clamped = Math.min(pageCount, Math.max(1, Math.floor(n)));
+                    if (clamped - 1 !== search.page) setSearch({ page: clamped - 1 });
+                  }}
+                >
+                  <label htmlFor="jump-to-page" className="text-xs">Go to</label>
+                  <Input
+                    id="jump-to-page"
+                    name="jump"
+                    type="number"
+                    min={1}
+                    max={pageCount}
+                    defaultValue={search.page + 1}
+                    key={search.page}
+                    className="h-8 w-16"
+                    aria-label="Jump to page"
+                  />
+                  <Button type="submit" variant="outline" size="sm">Go</Button>
+                </form>
+
               </div>
             </div>
           )}
