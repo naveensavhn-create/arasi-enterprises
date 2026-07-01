@@ -22,8 +22,11 @@ type Row = {
 };
 
 function AdminPromotersPage() {
+  const refetchInterval = useListRefetchInterval();
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-promoters"],
+    refetchInterval,
+
     queryFn: async (): Promise<Row[]> => {
       const { data: roleRows, error: rErr } = await supabase
         .from("user_roles")
