@@ -861,7 +861,7 @@ export const reconcilePayments = createServerFn({ method: "POST" })
       .select("id, status, amount, provider_order_id, provider_payment_id, customer_id, membership_id, currency")
       .order("created_at", { ascending: false })
       .limit(data.limit);
-    if (n.status) query = query.filter("status::text", "eq", n.status);
+    query = applyPaymentStatusEq(query, n.status);
     if (n.fromISO) query = query.gte("created_at", n.fromISO);
     if (n.toISO) query = query.lt("created_at", n.toISO);
     if (n.q) {
