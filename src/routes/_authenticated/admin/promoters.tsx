@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, UserCog } from "lucide-react";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
+
 
 export const Route = createFileRoute("/_authenticated/admin/promoters")({
   head: () => ({ meta: [{ title: "Promoters — Admin" }] }),
