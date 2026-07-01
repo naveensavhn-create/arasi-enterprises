@@ -339,39 +339,68 @@ async function processJob(
       }
     ).plan?.duration_months ?? null;
 
-  const html = await render(
-    React.createElement(PaymentReminder, {
-      recipientName: profile?.full_name ?? undefined,
-      membershipNumber: membership.membership_number,
-      memberDisplayId: membership.member_display_id ?? undefined,
-      planName: planName ?? undefined,
-      installmentSequence: installment.sequence,
-      installmentTotal: totalMonths ?? undefined,
-      amountDue: Number(installment.amount),
-      currency: "INR",
-      dueDate: installment.due_date,
-      brand,
-    }),
-  );
+  const amountFormatted = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(Number(installment.amount));
+  const dueFormatted = formatDueDate(installment.due_date);
 
-  const dispatched = await dispatchEmail({
-    to: recipient,
-    subject: reminderTemplate.subject,
-    html,
-    // Stable per (job + attempt) so retries never re-send an already-accepted email.
-    idempotencyKey: `payment-reminder:${job.id}:${job.attempts}`,
-  });
+  let dispatched:
+    | Awaited<ReturnType<typeof dispatchEmail>>
+    | Awaited<ReturnType<typeof dispatchSms>>;
+  let providerName: string;
+  let skippedInfraCode: "skipped_no_email_infra" | "skipped_no_sms_infra";
+
+  if (job.channel === "email") {
+    const html = await render(
+      React.createElement(PaymentReminder, {
+        recipientName: profile?.full_name ?? undefined,
+        membershipNumber: membership.membership_number,
+        memberDisplayId: membership.member_display_id ?? undefined,
+        planName: planName ?? undefined,
+        installmentSequence: installment.sequence,
+        installmentTotal: totalMonths ?? undefined,
+        amountDue: Number(installment.amount),
+        currency: "INR",
+        dueDate: installment.due_date,
+        brand,
+      }),
+    );
+    dispatched = await dispatchEmail({
+      to: recipient,
+      subject: reminderTemplate.subject,
+      html,
+      idempotencyKey: `payment-reminder:${job.id}:${job.attempts}`,
+    });
+    providerName = "lovable-emails";
+    skippedInfraCode = "skipped_no_email_infra";
+  } else {
+    dispatched = await dispatchSms({
+      to: recipient,
+      variables: {
+        name: (profile?.full_name ?? "Member").slice(0, 30),
+        amount: amountFormatted,
+        due: dueFormatted,
+        membership:
+          membership.member_display_id ?? membership.membership_number,
+      },
+      idempotencyKey: `payment-reminder:${job.id}:${job.attempts}`,
+    });
+    providerName = "msg91";
+    skippedInfraCode = "skipped_no_sms_infra";
+  }
 
   if (dispatched.status === "sent") {
     await finalize(supabase, job.id, {
       status: "sent",
-      provider: "lovable-emails",
+      provider: providerName,
       providerMessageId: dispatched.providerMessageId ?? null,
     });
     return { jobId: job.id, outcome: "sent" };
   }
 
-  if (dispatched.status === "skipped_no_email_infra") {
+  if (dispatched.status === skippedInfraCode) {
     await finalize(supabase, job.id, {
       status: "skipped",
       errorCode: dispatched.errorCode ?? null,
@@ -380,7 +409,6 @@ async function processJob(
     return { jobId: job.id, outcome: "skipped_no_infra" };
   }
 
-  // Transient failure — let finalize decide retry vs dead-letter.
   await finalize(supabase, job.id, {
     status: "failed",
     errorCode: dispatched.errorCode ?? null,
