@@ -79,6 +79,60 @@ export function computeDeletionCounts(raw: {
 }
 
 /**
+ * Extract the blocking-enrollment count from a
+ * `prevent_plan_delete_with_memberships` trigger error message.
+ *
+ * The canonical message today is:
+ *   "Cannot delete plan: 3 active enrollment(s) still reference this plan.
+ *    Deactivate the plan instead."
+ *
+ * But past/alternate phrasings and Postgres wrappers (`ERROR: ...`,
+ * `error: ...`, translated `enrollments`, thousands separators like
+ * `1,234`, or a `count=3` / `(3)` suffix) all exist in the wild. This helper
+ * tries the most specific patterns first and falls back to the first
+ * standalone integer near the keyword "enrollment". Returns `null` when no
+ * count can be recovered so callers can fall back to a pre-fetched count.
+ */
+export function parseBlockingCountFromTriggerError(
+  raw: string | null | undefined,
+): number | null {
+  if (!raw) return null;
+  // Strip common Postgres prefixes ("ERROR:  ", "error:", "PL/pgSQL ...").
+  const msg = String(raw).replace(/^\s*(error|hint|detail)\s*:\s*/gi, "").trim();
+  if (!msg) return null;
+
+  const toInt = (s: string): number | null => {
+    const n = Number(s.replace(/[,_\s]/g, ""));
+    return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : null;
+  };
+
+  const patterns: RegExp[] = [
+    // "Cannot delete plan: 3 active enrollment(s) still reference this plan."
+    /cannot\s+delete\s+plan[^0-9]*([\d,_\s]+)\s+active\s+enrollment/i,
+    // "3 active enrollment(s) still reference this plan"
+    /([\d,_\s]+)\s+active\s+enrollments?\b/i,
+    // "3 pending/active memberships reference this plan"
+    /([\d,_\s]+)\s+(?:pending|active|blocking)\s+(?:membership|enrollment)s?/i,
+    // "blocking=3", "count=3", "blocking: 3"
+    /(?:blocking|count|enrollments?)\s*[:=]\s*([\d,_\s]+)/i,
+    // "(3 enrollments)" or "(3)"
+    /\(\s*([\d,_\s]+)\s*(?:enrollments?|memberships?)?\s*\)/i,
+    // Any integer within 40 chars of "enrollment" / "membership"
+    /([\d,_\s]+)[^\d]{0,40}(?:enrollment|membership)s?/i,
+    /(?:enrollment|membership)s?[^\d]{0,40}([\d,_\s]+)/i,
+  ];
+
+  for (const re of patterns) {
+    const m = msg.match(re);
+    if (m?.[1]) {
+      const n = toInt(m[1]);
+      if (n !== null) return n;
+    }
+  }
+  return null;
+}
+
+/**
  * Build the exact row we insert into `admin_audit_log` for a plan-delete
  * attempt. `blocked` is derived from the presence of a delete error so a
  * caller cannot accidentally desynchronize the action name from db_error.
