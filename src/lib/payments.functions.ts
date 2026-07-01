@@ -53,7 +53,15 @@ export type AdminPaymentRow = {
   memberships: { membership_number: string | null } | null;
   installments: { sequence: number; due_date: string } | null;
   profile: { full_name: string | null; email: string | null } | null;
+  reconciliation: {
+    last_checked_at: string;
+    mismatch: boolean;
+    resolved_at: string | null;
+    provider_status: string | null;
+    stored_status: string | null;
+  } | null;
 };
+
 
 export type AdminPaymentsResult = {
   rows: AdminPaymentRow[];
