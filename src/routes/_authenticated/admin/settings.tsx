@@ -179,6 +179,32 @@ function AdminSettings() {
     enabled: role === "admin",
   });
 
+  const notifications = useQuery({
+    queryKey: ["role-email-notifications"],
+    queryFn: () => notificationsFn(),
+    enabled: role === "admin",
+    refetchInterval: 15_000,
+  });
+
+  const sendTest = useMutation({
+    mutationFn: (vars: { kind: "promote" | "revoke"; recipientEmail?: string }) =>
+      testEmailFn({ data: vars }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["role-email-notifications"] });
+      if (res.status === "sent") {
+        toast.success("Test email sent", { description: `Message ID: ${res.logId}` });
+      } else if (res.status === "skipped_no_email_infra") {
+        toast.warning("Logged but not delivered", {
+          description:
+            "Set up a sender domain in Cloud → Emails to activate live sending. The attempt is recorded below.",
+          duration: 8000,
+        });
+      } else {
+        toast.error("Test send failed", { description: res.error ?? res.status });
+      }
+    },
+    onError: (e: Error) => toast.error("Test send failed", { description: e.message }),
+
   const claim = useMutation({
     mutationFn: () => claimFn(),
     onSuccess: () => {
