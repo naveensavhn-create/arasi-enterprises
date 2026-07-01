@@ -314,8 +314,16 @@ function AdminPlansPage() {
                       )}
                     </div>
                     <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => startEdit(p)}>
+                      <Button size="icon" variant="ghost" onClick={() => startEdit(p)} title="Edit">
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => setHistoryPlan(p)}
+                        title="Audit history"
+                      >
+                        <History className="h-4 w-4" />
                       </Button>
                       <Button
                         size="icon"
@@ -329,7 +337,7 @@ function AdminPlansPage() {
                         size="icon"
                         variant="ghost"
                         onClick={() => setConfirmDelete(p)}
-
+                        title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
