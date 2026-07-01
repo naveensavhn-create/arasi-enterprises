@@ -155,14 +155,24 @@ function AdminApprovalsPage() {
             <TabsTrigger value="unsubmitted">Not submitted</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder="Search name, email, phone, city, aadhaar…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+        <div className="flex items-center gap-2">
+          <Button
+            variant={onlyReferred ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOnlyReferred((v) => !v)}
+          >
+            <UserRoundCog className="mr-1.5 h-3.5 w-3.5" />
+            {onlyReferred ? "Referred by promoter" : "All submissions"}
+          </Button>
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-8"
+              placeholder="Search name, email, phone, city, promoter, aadhaar…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
