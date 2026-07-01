@@ -112,32 +112,56 @@ export function CustomerDashboardBody() {
   });
 
   if (membershipsQ.isLoading) {
-    return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading your dashboard…
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (!membership) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 px-6 py-10">
         <KycStatusCard />
-        <Card>
-          <CardContent className="space-y-3 p-8 text-center">
-            <ShieldCheck className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h2 className="text-xl font-semibold">Welcome, {fullName}</h2>
-            <p className="text-sm text-muted-foreground">
-              You don't have an active membership yet. Pick a plan and pay the advance to activate it.
-            </p>
-            <Button asChild style={{ background: "var(--gradient-gold-value)" }}>
-              <Link to="/customer/enroll">Browse plans</Link>
-            </Button>
+        <Card className="overflow-hidden border-dashed">
+          <div
+            className="h-1 w-full"
+            style={{ background: "var(--gradient-gold-value)" }}
+            aria-hidden="true"
+          />
+          <CardContent className="space-y-5 p-8 text-center">
+            <div
+              className="mx-auto flex h-16 w-16 items-center justify-center rounded-full"
+              style={{ background: "var(--gradient-gold-value)" }}
+            >
+              <Sparkles className="h-7 w-7 text-black/80" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold">Welcome, {fullName}</h2>
+              <p className="text-sm text-muted-foreground">
+                You don't have an active membership yet. Pick a plan and pay the advance
+                — we'll generate your installment schedule automatically.
+              </p>
+            </div>
+
+            <ol className="mx-auto grid max-w-md gap-2 text-left text-sm">
+              <EmptyStep n={1} title="Browse membership plans" desc="Silver, Gold, Platinum or Diamond." />
+              <EmptyStep n={2} title="Pay the one-time advance" desc="Secure checkout via Razorpay." />
+              <EmptyStep n={3} title="Track monthly installments" desc="Reminders + auto-schedule here." />
+            </ol>
+
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button asChild style={{ background: "var(--gradient-gold-value)" }}>
+                <Link to="/customer/enroll">
+                  Browse plans <ArrowRight className="ml-1 h-4 w-4" aria-hidden="true" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/customer/membership">Learn how it works</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
     );
   }
+
 
 
   const installments = installmentsQ.data ?? [];
