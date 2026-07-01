@@ -21,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/plan-deletions")({
 
 function PlanDeletionsPage() {
   const fetchList = useServerFn(listPlanDeletionAudit);
+  const runExport = useServerFn(exportPlanDeletionAudit);
   const [q, setQ] = useState("");
   const [actor, setActor] = useState("");
   const [plan, setPlan] = useState("");
@@ -30,6 +31,7 @@ function PlanDeletionsPage() {
   const [page, setPage] = useState(1);
   const pageSize = 50;
   const [selected, setSelected] = useState<PlanDeletionRow | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const filters = useMemo(
     () => ({ q, actor, plan, status, from, to, page, pageSize }),
