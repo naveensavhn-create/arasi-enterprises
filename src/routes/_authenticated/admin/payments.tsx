@@ -13,6 +13,7 @@ import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
 import { listAdminPayments, exportAdminPayments, type AdminPaymentRow } from "@/lib/payments.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS } from "@/lib/ui-prefs";
 import { toast } from "sonner";
 
 
@@ -104,6 +105,7 @@ function AdminPaymentsPage() {
   const [reconcileOpen, setReconcileOpen] = useState(false);
   const [liveConnected, setLiveConnected] = useState(false);
   const lastLiveAt = useRef<number>(0);
+  const { paymentsPollingMs } = useUiPrefs();
 
   const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
@@ -133,8 +135,12 @@ function AdminPaymentsPage() {
         },
       }),
     placeholderData: keepPreviousData,
-    // Polling fallback: refresh every 30s while realtime is off, 2m otherwise.
-    refetchInterval: liveConnected ? 120_000 : 30_000,
+    // Polling fallback interval is admin-configurable. Realtime pauses polling
+    // to a longer interval; when disconnected we honor the admin's setting
+    // (0 disables background polling entirely).
+    refetchInterval: liveConnected
+      ? (paymentsPollingMs === 0 ? false : Math.max(paymentsPollingMs, 120_000))
+      : (paymentsPollingMs === 0 ? false : paymentsPollingMs),
     refetchOnWindowFocus: true,
   });
 
@@ -224,15 +230,35 @@ function AdminPaymentsPage() {
             All Razorpay transactions across the platform.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge
             variant="outline"
             className="gap-1.5 text-[10px] uppercase tracking-wider"
-            title={liveConnected ? "Realtime updates connected" : "Realtime disconnected — polling every 30s"}
+            title={
+              liveConnected
+                ? "Realtime updates connected"
+                : paymentsPollingMs === 0
+                  ? "Realtime disconnected — background polling is off"
+                  : `Realtime disconnected — polling every ${Math.round(paymentsPollingMs / 1000)}s`
+            }
           >
             <Radio className={`h-3 w-3 ${liveConnected ? "text-emerald-500 animate-pulse" : "text-muted-foreground"}`} />
-            {liveConnected ? "Live" : "Polling"}
+            {liveConnected ? "Live" : paymentsPollingMs === 0 ? "Manual" : "Polling"}
           </Badge>
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="hidden sm:inline">Poll every</span>
+            <select
+              value={paymentsPollingMs}
+              onChange={(e) => setUiPrefs({ paymentsPollingMs: Number(e.target.value) as typeof paymentsPollingMs })}
+              className="rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+              aria-label="Payments polling fallback interval"
+              title="Fallback refresh interval when realtime is unavailable"
+            >
+              {PAYMENTS_POLLING_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </label>
           <Button variant="outline" size="sm" onClick={() => setReconcileOpen(true)}>
             <RefreshCw className="mr-2 h-4 w-4" />
             Reconcile
