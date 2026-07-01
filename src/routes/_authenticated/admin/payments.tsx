@@ -110,6 +110,16 @@ function AdminPaymentsPage() {
   const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
   const exportFn = useServerFn(exportAdminPayments);
+  const lastWebhookFn = useServerFn(getLastWebhookEvent);
+
+  const { data: lastWebhook } = useQuery({
+    queryKey: ["admin-payments-last-webhook"],
+    queryFn: () => lastWebhookFn(),
+    refetchInterval: liveConnected
+      ? (paymentsPollingMs === 0 ? false : Math.max(paymentsPollingMs, 120_000))
+      : (paymentsPollingMs === 0 ? 60_000 : paymentsPollingMs),
+    refetchOnWindowFocus: true,
+  });
 
   const { data, isLoading, isFetching } = useQuery({
     queryKey: [
