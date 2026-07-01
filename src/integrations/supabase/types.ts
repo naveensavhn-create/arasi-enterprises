@@ -454,9 +454,11 @@ export type Database = {
       memberships: {
         Row: {
           advance_paid: number
+          coupon_no: string | null
           created_at: string
           end_date: string | null
           id: string
+          member_display_id: string | null
           membership_number: string
           notes: string | null
           paid_amount: number
@@ -470,9 +472,11 @@ export type Database = {
         }
         Insert: {
           advance_paid?: number
+          coupon_no?: string | null
           created_at?: string
           end_date?: string | null
           id?: string
+          member_display_id?: string | null
           membership_number: string
           notes?: string | null
           paid_amount?: number
@@ -486,9 +490,11 @@ export type Database = {
         }
         Update: {
           advance_paid?: number
+          coupon_no?: string | null
           created_at?: string
           end_date?: string | null
           id?: string
+          member_display_id?: string | null
           membership_number?: string
           notes?: string | null
           paid_amount?: number

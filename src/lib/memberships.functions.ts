@@ -21,7 +21,7 @@ export const listMembershipsAdmin = createServerFn({ method: "GET" })
     let q = sb
       .from("memberships")
       .select(
-        "id, membership_number, user_id, plan_id, promoter_id, status, start_date, end_date, advance_paid, total_amount, paid_amount, notes, created_at",
+        "id, membership_number, member_display_id, coupon_no, user_id, plan_id, promoter_id, status, start_date, end_date, advance_paid, total_amount, paid_amount, notes, created_at",
       )
       .order("created_at", { ascending: false })
       .limit(500);
@@ -62,6 +62,8 @@ export const listMembershipsAdmin = createServerFn({ method: "GET" })
       enriched = enriched.filter(
         (r: any) =>
           r.membership_number?.toLowerCase().includes(s) ||
+          r.member_display_id?.toLowerCase().includes(s) ||
+          r.coupon_no?.toLowerCase().includes(s) ||
           r.customer?.full_name?.toLowerCase().includes(s) ||
           r.customer?.email?.toLowerCase().includes(s) ||
           r.plan?.name?.toLowerCase().includes(s),
@@ -165,6 +167,8 @@ const updateSchema = z.object({
   status: z.enum(["pending", "active", "completed", "cancelled", "defaulted"]).optional(),
   notes: z.string().max(1000).nullable().optional(),
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  member_display_id: z.string().trim().min(3).max(32).regex(/^[A-Za-z0-9-]+$/, "letters, digits, or dashes only").nullable().optional(),
+  coupon_no: z.string().trim().min(3).max(16).regex(/^[A-Za-z0-9-]+$/, "letters, digits, or dashes only").nullable().optional(),
 });
 
 export const updateMembershipAdmin = createServerFn({ method: "POST" })

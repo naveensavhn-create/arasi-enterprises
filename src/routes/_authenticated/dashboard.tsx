@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Users, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
 import { useSession, useCurrentRole } from "@/lib/auth";
+import { CustomerDashboardBody } from "@/components/customer/CustomerDashboardBody";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -31,6 +32,12 @@ function Dashboard() {
   const { user } = useSession();
   const { data: role } = useCurrentRole(user);
   const meta = role ? ROLE_META[role] : null;
+
+  if (role === "customer") {
+    return <CustomerDashboardBody />;
+  }
+
+
 
 
 
