@@ -32,6 +32,16 @@ import {
  */
 type RequiredField = AdminPaymentRowRequiredField;
 
+/** Short remediation hints shown under each missing-field bullet in the drawer. */
+const HINTS: Record<RequiredField, string> = {
+  amount: "Reconcile with Razorpay dashboard; the stored value is invalid or negative.",
+  currency: "Currency code is empty. Check the originating order metadata.",
+  status: "Payment status is blank. Trigger a webhook replay or manual reconcile.",
+  paymentId: "Marked paid without a Razorpay payment ID. Verify the webhook fired.",
+  customerName: "Linked profile is missing or has no name/email. The customer may have been deleted.",
+};
+
+
 function validateRow(
   row: AdminPaymentRow,
 ): { ok: true } | { ok: false; missing: RequiredField[] } {
