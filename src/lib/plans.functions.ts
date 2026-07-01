@@ -65,7 +65,10 @@ export const deletePlanAudited = createServerFn({ method: "POST" })
     if (!plan) throw new Error("Plan not found.");
 
     // Enrollment counts by status
-    const rawCounts = { pending: 0, active: 0, cancelled: 0, completed: 0 };
+    const statuses = ["pending", "active", "cancelled", "completed"] as const;
+    const rawCounts: Record<(typeof statuses)[number], number> = {
+      pending: 0, active: 0, cancelled: 0, completed: 0,
+    };
     await Promise.all(
       statuses.map(async (s) => {
         const { count } = await supabaseAdmin
