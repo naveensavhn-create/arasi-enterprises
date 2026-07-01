@@ -367,12 +367,15 @@ function AdminPaymentsPage() {
   const readyUnnotified = (myJobs ?? []).filter(
     (j) => j.status === "succeeded" && !j.notified_at,
   );
+  const failedUnnotified = (myJobs ?? []).filter(
+    (j) => (j.status === "failed" || j.status === "expired") && !j.notified_at,
+  );
   const anyActive = (myJobs ?? []).some(
     (j) => j.status === "queued" || j.status === "running",
   );
 
   useEffect(() => {
-    if (!readyUnnotified.length) return;
+    if (!readyUnnotified.length && !failedUnnotified.length) return;
     for (const j of readyUnnotified) {
       toast.success("Export ready to download", {
         description: `${(j.row_count ?? 0).toLocaleString()} rows`,
@@ -383,17 +386,40 @@ function AdminPaymentsPage() {
               const { url } = await getExportDownloadUrlFn({ data: { jobId: j.id } });
               window.location.href = url;
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Download failed");
+              toast.error("Download failed", {
+                description: e instanceof Error ? e.message : "Unknown error",
+              });
             }
           },
         },
       });
     }
-    markExportNotifiedFn({ data: { jobIds: readyUnnotified.map((j) => j.id) } })
+    for (const j of failedUnnotified) {
+      toast.error(
+        j.status === "expired" ? "Export expired" : "Export failed",
+        {
+          description:
+            j.error ??
+            (j.status === "expired"
+              ? "The file passed its retention window. Re-run the export."
+              : "The background job could not complete. Open Exports to retry."),
+          duration: 10000,
+          action: {
+            label: "Open Exports",
+            onClick: () => navigate({ to: "/admin/exports" }),
+          },
+        },
+      );
+    }
+    const ids = [...readyUnnotified, ...failedUnnotified].map((j) => j.id);
+    markExportNotifiedFn({ data: { jobIds: ids } })
       .then(() => queryClient.invalidateQueries({ queryKey: ["admin-export-jobs-header"] }))
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readyUnnotified.map((j) => j.id).join(",")]);
+  }, [
+    readyUnnotified.map((j) => j.id).join(","),
+    failedUnnotified.map((j) => j.id).join(","),
+  ]);
 
 
   return (
