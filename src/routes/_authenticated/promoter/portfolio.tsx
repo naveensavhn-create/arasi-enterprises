@@ -40,11 +40,13 @@ function PromoterPortfolioPage() {
     queryFn: async () => {
       const [ms, ps] = await Promise.all([
         supabase.from("memberships").select("id, total_amount, paid_amount").eq("promoter_id", session!.user.id),
-        supabase
-          .from("payments")
-          .select("amount, memberships!inner(promoter_id)")
-          .filter("status::text", "eq", "paid")
-          .eq("memberships.promoter_id", session!.user.id),
+        applyPaymentStatusEq(
+          supabase
+            .from("payments")
+            .select("amount, memberships!inner(promoter_id)"),
+          "paid",
+        ).eq("memberships.promoter_id", session!.user.id),
+
       ]);
       const mems = ms.data ?? [];
       const pays = ps.data ?? [];
