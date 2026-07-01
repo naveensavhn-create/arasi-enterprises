@@ -884,7 +884,9 @@ function AdminPaymentsPage() {
                             const labels = validation.missing
                               .map((m) => ADMIN_PAYMENT_ROW_FIELD_LABELS[m])
                               .join(", ");
-                            toast.warning(`Payment row is missing: ${labels}`);
+                            toast.warning(`Payment row is missing: ${labels}`, {
+                              id: `payment-row-missing-${r.id}`,
+                            });
                           }
                           setSelected(r);
                         }}
