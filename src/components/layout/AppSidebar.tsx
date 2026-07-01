@@ -49,6 +49,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Customers", url: "/admin/customers", icon: Users },
         { title: "Promoters", url: "/admin/promoters", icon: UserCog },
         { title: "Plans", url: "/admin/plans", icon: Package },
+        { title: "Memberships", url: "/admin/memberships", icon: ShieldCheck },
         { title: "Payments", url: "/admin/payments", icon: CreditCard },
       ],
     },
