@@ -172,7 +172,8 @@ describeIfDb("plan-delete DB trigger (integration)", () => {
     // Retire the two blocking rows created above.
     await client.query(
       `UPDATE public.memberships
-          SET status = CASE WHEN status = 'pending' THEN 'cancelled' ELSE 'completed' END
+          SET status = CASE WHEN status = 'pending' THEN 'cancelled'::membership_status
+                            ELSE 'completed'::membership_status END
         WHERE plan_id = $1 AND status IN ('pending','active')`,
       [planId],
     );
