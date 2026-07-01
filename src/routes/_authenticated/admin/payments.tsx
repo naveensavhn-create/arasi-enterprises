@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Radio, Webhook, AlertTriangle } from "lucide-react";
+import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Webhook, AlertTriangle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
 import { ReconcileDialog } from "@/components/admin/ReconcileDialog";
+import { PollingControls, useListRefetchInterval } from "@/components/admin/PollingControls";
 import { listAdminPayments, exportAdminPayments, getLastWebhookEvent } from "@/lib/payments.functions";
 import {
   validateAdminPaymentRowShape,
@@ -18,8 +19,8 @@ import {
   type AdminPaymentRow,
 } from "@/lib/payments/validate-row";
 import { supabase } from "@/integrations/supabase/client";
-import { useUiPrefs, setUiPrefs, PAYMENTS_POLLING_OPTIONS, normalizePollingInterval } from "@/lib/ui-prefs";
 import { toast } from "sonner";
+
 
 
 
