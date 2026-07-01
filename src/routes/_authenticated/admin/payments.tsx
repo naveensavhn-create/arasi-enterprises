@@ -9,6 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, CreditCard, Search, Download, ArrowUp, ArrowDown, ArrowUpDown, RefreshCw, Webhook, AlertTriangle, FilterX, Inbox } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { useEffect, useRef, useState } from "react";
 import { PaymentDetailDrawer } from "@/components/admin/PaymentDetailDrawer";
@@ -271,9 +279,15 @@ function AdminPaymentsPage() {
       : <ArrowDown className="ml-1 inline h-3 w-3" />;
   };
 
-  const onExport = async () => {
+  const onExport = async (scope: "page" | "filtered") => {
     setExporting(true);
     try {
+      // "page" respects the current filters AND the visible page window
+      // (page * pageSize .. +pageSize). "filtered" exports every row that
+      // matches the current filters, capped at 10,000.
+      const limit = scope === "page" ? search.pageSize : 10_000;
+      const offsetRows = scope === "page" ? search.page * search.pageSize : 0;
+
       const all = await exportFn({
         data: {
           sortBy: search.sortBy,
@@ -286,12 +300,22 @@ function AdminPaymentsPage() {
           orderId: search.orderId || undefined,
           paymentId: search.paymentId || undefined,
           customer: search.customer || undefined,
-          limit: 10_000,
+          limit: offsetRows + limit,
         },
       });
 
-      downloadCSV(all);
-      if (all.length >= 10_000) {
+      const slice = scope === "page" ? all.slice(offsetRows, offsetRows + limit) : all;
+      if (slice.length === 0) {
+        toast.info("Nothing to export for current filters.");
+        return;
+      }
+      downloadCSV(slice);
+      toast.success(
+        scope === "page"
+          ? `Exported ${slice.length} row(s) from page ${search.page + 1}.`
+          : `Exported ${slice.length} row(s) matching current filters.`,
+      );
+      if (scope === "filtered" && all.length >= 10_000) {
         toast.warning("Export capped at 10,000 rows. Narrow filters to export the rest.");
       }
     } catch (e) {
@@ -300,6 +324,7 @@ function AdminPaymentsPage() {
       setExporting(false);
     }
   };
+
 
   return (
     <div className="space-y-4">
@@ -364,12 +389,27 @@ function AdminPaymentsPage() {
             Reconcile
           </Button>
 
-          <Button variant="outline" size="sm" disabled={!total || exporting} onClick={onExport}>
-            {exporting
-              ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              : <Download className="mr-2 h-4 w-4" />}
-            Export CSV
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={!total || exporting}>
+                {exporting
+                  ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  : <Download className="mr-2 h-4 w-4" />}
+                Export CSV
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Export current filters</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onExport("page")}>
+                Current page ({Math.min(search.pageSize, Math.max(0, total - search.page * search.pageSize))} row{Math.min(search.pageSize, Math.max(0, total - search.page * search.pageSize)) === 1 ? "" : "s"})
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onExport("filtered")}>
+                All filtered rows ({total.toLocaleString()}{total >= 10_000 ? ", capped at 10k" : ""})
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
         </div>
       </div>
 
