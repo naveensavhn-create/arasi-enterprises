@@ -22,12 +22,16 @@ const SORT_COLUMNS = [
 ] as const;
 export type PaymentSortColumn = typeof SORT_COLUMNS[number];
 
+const DATE_FIELDS = ["created", "webhook_processed"] as const;
+export type PaymentDateField = typeof DATE_FIELDS[number];
+
 const baseFilterSchema = z.object({
   sortBy: z.enum(SORT_COLUMNS).default("created_at"),
   sortDir: z.enum(["asc", "desc"]).default("desc"),
   status: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  dateField: z.enum(DATE_FIELDS).default("created"),
   q: z.string().optional(),
   orderId: z.string().optional(),
   paymentId: z.string().optional(),
