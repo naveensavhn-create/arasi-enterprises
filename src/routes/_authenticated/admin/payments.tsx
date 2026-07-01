@@ -95,8 +95,10 @@ function AdminPaymentsPage() {
   const [qDraft, setQDraft] = useState(search.q);
   const [exporting, setExporting] = useState(false);
   const [reconcileOpen, setReconcileOpen] = useState(false);
+  const [liveConnected, setLiveConnected] = useState(false);
+  const lastLiveAt = useRef<number>(0);
 
-
+  const queryClient = useQueryClient();
   const listFn = useServerFn(listAdminPayments);
   const exportFn = useServerFn(exportAdminPayments);
 
@@ -120,7 +122,34 @@ function AdminPaymentsPage() {
         },
       }),
     placeholderData: keepPreviousData,
+    // Polling fallback: refresh every 30s while realtime is off, 2m otherwise.
+    refetchInterval: liveConnected ? 120_000 : 30_000,
+    refetchOnWindowFocus: true,
   });
+
+  // Realtime: invalidate ledger + drawer queries when webhooks land.
+  useEffect(() => {
+    const invalidate = () => {
+      lastLiveAt.current = Date.now();
+      queryClient.invalidateQueries({ queryKey: ["admin-payments"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-webhook-events"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-installment"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-membership"] });
+    };
+    const channel = supabase
+      .channel("admin-payments-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "payments" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "razorpay_webhook_events" }, invalidate)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "installments" }, invalidate)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "memberships" }, invalidate)
+      .subscribe((status) => {
+        setLiveConnected(status === "SUBSCRIBED");
+      });
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
 
   const rows = data?.rows ?? [];
   const total = data?.total ?? 0;
