@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ImportMembershipsDialog } from "@/components/admin/ImportMembershipsDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/memberships")({
   component: MembershipsAdminPage,
@@ -67,6 +68,7 @@ function MembershipsAdminPage() {
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [openCreate, setOpenCreate] = useState(false);
+  const [openImport, setOpenImport] = useState(false);
   const [editing, setEditing] = useState<any>(null);
 
   const membershipsQ = useQuery({
@@ -135,18 +137,23 @@ function MembershipsAdminPage() {
             Create, assign, and manage customer memberships. Installments are auto-generated on create.
           </p>
         </div>
-        <Dialog open={openCreate} onOpenChange={setOpenCreate}>
-          <DialogTrigger asChild>
-            <Button>New membership</Button>
-          </DialogTrigger>
-          <CreateMembershipDialog
-            customers={customersQ.data ?? []}
-            promoters={promotersQ.data ?? []}
-            plans={plansQ.data ?? []}
-            onSubmit={(v) => createMut.mutate(v)}
-            submitting={createMut.isPending}
-          />
-        </Dialog>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" onClick={() => setOpenImport(true)}>
+            Import CSV
+          </Button>
+          <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+            <DialogTrigger asChild>
+              <Button>New membership</Button>
+            </DialogTrigger>
+            <CreateMembershipDialog
+              customers={customersQ.data ?? []}
+              promoters={promotersQ.data ?? []}
+              plans={plansQ.data ?? []}
+              onSubmit={(v) => createMut.mutate(v)}
+              submitting={createMut.isPending}
+            />
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -239,6 +246,12 @@ function MembershipsAdminPage() {
           submitting={updateMut.isPending}
         />
       )}
+
+      <ImportMembershipsDialog
+        open={openImport}
+        onOpenChange={setOpenImport}
+        onImported={invalidate}
+      />
     </div>
   );
 }
