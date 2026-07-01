@@ -87,7 +87,7 @@ export const deletePlanAudited = createServerFn({ method: "POST" })
     const metadata = {
       plan_id: plan.id,
       plan_name: plan.name,
-      plan_code: plan.code,
+      plan_code: null,
       plan_was_active: plan.is_active,
       counts: { ...counts, blocking, total },
       db_error: blocked
@@ -122,7 +122,7 @@ export const deletePlanAudited = createServerFn({ method: "POST" })
       blocked,
       planId: plan.id,
       planName: plan.name,
-      planCode: plan.code,
+      planCode: null,
       counts: { ...counts, blocking, total },
       auditLogId: audit?.id ?? null,
       error: blocked ? (deleteErr?.message ?? "Delete blocked") : undefined,
