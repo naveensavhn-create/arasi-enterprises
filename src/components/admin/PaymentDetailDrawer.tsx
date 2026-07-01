@@ -95,15 +95,22 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
   const membershipId = row?.membership_id ?? null;
   const installmentId = row?.installment_id ?? null;
 
-  const { data: events, isLoading: eventsLoading } = useQuery({
-    queryKey: ["payment-webhook-events", orderId, paymentId],
+  const [eventsPage, setEventsPage] = useState(0);
+
+  const { data: eventsResult, isLoading: eventsLoading } = useQuery({
+    queryKey: ["payment-webhook-events", orderId, paymentId, eventsPage],
     enabled: open && (!!orderId || !!paymentId),
-    queryFn: async (): Promise<WebhookEvent[]> => {
+    queryFn: async (): Promise<{ rows: WebhookEvent[]; total: number }> => {
+      const from = eventsPage * EVENTS_PAGE_SIZE;
+      const to = from + EVENTS_PAGE_SIZE - 1;
       let q = supabase
         .from("razorpay_webhook_events")
-        .select("id, event_id, event_type, order_id, payment_id, status, received_at, processed_at, raw")
+        .select(
+          "id, event_id, event_type, order_id, payment_id, status, received_at, processed_at",
+          { count: "exact" },
+        )
         .order("received_at", { ascending: false })
-        .limit(50);
+        .range(from, to);
       if (orderId && paymentId) {
         q = q.or(`order_id.eq.${orderId},payment_id.eq.${paymentId}`);
       } else if (orderId) {
@@ -111,11 +118,16 @@ export function PaymentDetailDrawer({ row, open, onOpenChange }: Props) {
       } else if (paymentId) {
         q = q.eq("payment_id", paymentId);
       }
-      const { data, error } = await q;
+      const { data, error, count } = await q;
       if (error) throw error;
-      return (data ?? []) as WebhookEvent[];
+      return { rows: (data ?? []) as WebhookEvent[], total: count ?? 0 };
     },
   });
+
+  const events = eventsResult?.rows;
+  const eventsTotal = eventsResult?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(eventsTotal / EVENTS_PAGE_SIZE));
+
 
   const { data: membership } = useQuery({
     queryKey: ["payment-membership", membershipId],
