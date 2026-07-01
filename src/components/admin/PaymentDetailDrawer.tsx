@@ -17,34 +17,29 @@ import { Loader2, Copy, ExternalLink, ChevronLeft, ChevronRight, Download, Alert
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useServerFn } from "@tanstack/react-start";
-import { getWebhookEventPayload, type AdminPaymentRow } from "@/lib/payments.functions";
+import {
+  getWebhookEventPayload,
+  validateAdminPaymentRow,
+  type AdminPaymentRow,
+  type AdminPaymentRowRequiredField,
+} from "@/lib/payments.functions";
 
 /**
  * Runtime validation of the ledger row before the drawer renders it.
  *
- * The `AdminPaymentRow` type is derived from a joined SELECT that may
- * silently return null profiles/memberships (RLS gaps, deleted parents,
- * partial webhook data). TypeScript won't catch those at compile time, so
- * we defensively assert here and surface a clear error instead of blanking
- * the drawer or crashing on `Number(undefined).toLocaleString(...)`.
- *
- * Required per product spec: numeric amount, currency, status, payment id,
- * and a customer name we can display in the header.
+ * Delegates to the shared Zod schema in `payments.functions.ts` so the
+ * drawer, ledger, and any future consumers share one source of truth for
+ * what a valid `AdminPaymentRow` looks like. Adds the drawer-specific
+ * business rules (paid rows must carry a Razorpay payment ID, a display
+ * name must be resolvable) on top of the base schema.
  */
-type RequiredField = "amount" | "currency" | "status" | "paymentId" | "customerName";
+type RequiredField = AdminPaymentRowRequiredField;
 
-function validateRow(row: AdminPaymentRow): { ok: true } | { ok: false; missing: RequiredField[] } {
-  const missing: RequiredField[] = [];
-  const amountNum = typeof row.amount === "string" ? Number(row.amount) : row.amount;
-  if (!Number.isFinite(amountNum) || amountNum < 0) missing.push("amount");
-  if (!row.currency || typeof row.currency !== "string") missing.push("currency");
-  if (!row.status || typeof row.status !== "string") missing.push("status");
-  // A payment ID is required for any settled row. Pending/created rows may
-  // not have one yet; treat those as valid so the drawer still opens.
-  if (row.status === "paid" && !row.provider_payment_id) missing.push("paymentId");
-  const name = row.profile?.full_name?.trim() || row.profile?.email?.trim() || "";
-  if (!name) missing.push("customerName");
-  return missing.length ? { ok: false, missing } : { ok: true };
+function validateRow(
+  row: AdminPaymentRow,
+): { ok: true } | { ok: false; missing: RequiredField[] } {
+  const result = validateAdminPaymentRow(row);
+  return result.ok ? { ok: true } : { ok: false, missing: result.missing };
 }
 
 const FIELD_LABELS: Record<RequiredField, string> = {
@@ -54,6 +49,7 @@ const FIELD_LABELS: Record<RequiredField, string> = {
   paymentId: "Razorpay payment ID",
   customerName: "Customer name",
 };
+
 
 const EVENTS_PAGE_SIZE = 10;
 const RAW_MAX_BYTES = 96 * 1024; // 96 KB inline cap; larger payloads must be downloaded

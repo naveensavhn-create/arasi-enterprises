@@ -47,33 +47,94 @@ const exportSchema = baseFilterSchema.extend({
   limit: z.number().int().min(1).max(10_000).default(5000),
 });
 
-export type AdminPaymentRow = {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  method: string | null;
-  provider: string;
-  provider_order_id: string | null;
-  provider_payment_id: string | null;
-  error_code: string | null;
-  error_description: string | null;
-  paid_at: string | null;
-  created_at: string;
-  customer_id: string;
-  membership_id: string;
-  installment_id: string | null;
-  memberships: { membership_number: string | null } | null;
-  installments: { sequence: number; due_date: string } | null;
-  profile: { full_name: string | null; email: string | null } | null;
-  reconciliation: {
-    last_checked_at: string;
-    mismatch: boolean;
-    resolved_at: string | null;
-    provider_status: string | null;
-    stored_status: string | null;
-  } | null;
-};
+/**
+ * Zod schema for a joined admin payments ledger row.
+ *
+ * This is the single source of truth for the shape and runtime validation
+ * of `AdminPaymentRow`. The exported TypeScript type is inferred from this
+ * schema so drawer/table consumers stay in sync automatically.
+ */
+export const adminPaymentRowSchema = z.object({
+  id: z.string().min(1),
+  amount: z.number().finite().nonnegative(),
+  currency: z.string().min(1),
+  status: z.string().min(1),
+  method: z.string().nullable(),
+  provider: z.string().min(1),
+  provider_order_id: z.string().nullable(),
+  provider_payment_id: z.string().nullable(),
+  error_code: z.string().nullable(),
+  error_description: z.string().nullable(),
+  paid_at: z.string().nullable(),
+  created_at: z.string().min(1),
+  customer_id: z.string().min(1),
+  membership_id: z.string().min(1),
+  installment_id: z.string().nullable(),
+  memberships: z
+    .object({ membership_number: z.string().nullable() })
+    .nullable(),
+  installments: z
+    .object({ sequence: z.number(), due_date: z.string() })
+    .nullable(),
+  profile: z
+    .object({
+      full_name: z.string().nullable(),
+      email: z.string().nullable(),
+    })
+    .nullable(),
+  reconciliation: z
+    .object({
+      last_checked_at: z.string(),
+      mismatch: z.boolean(),
+      resolved_at: z.string().nullable(),
+      provider_status: z.string().nullable(),
+      stored_status: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+export type AdminPaymentRow = z.infer<typeof adminPaymentRowSchema>;
+
+/**
+ * Validate a drawer-bound row against product-required display fields.
+ *
+ * Stricter than the base schema: enforces a resolvable customer name and
+ * requires `provider_payment_id` when the payment is settled (`status === "paid"`).
+ * Returns a discriminated result the drawer can render inline.
+ */
+export type AdminPaymentRowRequiredField =
+  | "amount"
+  | "currency"
+  | "status"
+  | "paymentId"
+  | "customerName";
+
+export function validateAdminPaymentRow(
+  input: unknown,
+):
+  | { ok: true; row: AdminPaymentRow }
+  | { ok: false; missing: AdminPaymentRowRequiredField[] } {
+  const missing: AdminPaymentRowRequiredField[] = [];
+  const parsed = adminPaymentRowSchema.safeParse(input);
+  if (!parsed.success) {
+    const paths = new Set(
+      parsed.error.issues.map((i) => String(i.path[0] ?? "")),
+    );
+    if (paths.has("amount")) missing.push("amount");
+    if (paths.has("currency")) missing.push("currency");
+    if (paths.has("status")) missing.push("status");
+    if (paths.has("provider_payment_id")) missing.push("paymentId");
+    if (paths.has("profile")) missing.push("customerName");
+    return { ok: false, missing: missing.length ? missing : ["status"] };
+  }
+  const row = parsed.data;
+  if (row.status === "paid" && !row.provider_payment_id) missing.push("paymentId");
+  const name =
+    row.profile?.full_name?.trim() || row.profile?.email?.trim() || "";
+  if (!name) missing.push("customerName");
+  return missing.length ? { ok: false, missing } : { ok: true, row };
+}
+
 
 
 export type AdminPaymentsResult = {
