@@ -51,6 +51,19 @@ import {
   type KycProfile,
   type KycStatus,
 } from "@/lib/kyc.functions";
+import {
+  adminListPromoters,
+  adminSetCustomerPromoter,
+  type PromoterOption,
+} from "@/lib/promoter.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UserRoundCog } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/approvals")({
   head: () => ({ meta: [{ title: "Approvals — Admin" }] }),
