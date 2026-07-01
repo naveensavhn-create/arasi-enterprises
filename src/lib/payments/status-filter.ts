@@ -21,30 +21,49 @@ type FilterableQuery<Q> = { filter: (col: string, op: string, v: unknown) => Q }
 export const PAYMENT_STATUS_TEXT_COLUMN = "status::text" as const;
 
 /**
- * `WHERE status::text = <status>` — no-op when status is null/undefined/"".
- * Use for every equality filter against `payments.status`.
+ * Unified payments-status filter. Accepts either a single status string or a
+ * list of status strings and emits the correct PostgREST cast filter:
+ *
+ *   - `"paid"`                  → `filter("status::text","eq","paid")`
+ *   - `["paid"]`                → `filter("status::text","eq","paid")`
+ *   - `["paid","refunded"]`     → `filter("status::text","in","(paid,refunded)")`
+ *   - `null | undefined | ""`   → no-op (query returned untouched)
+ *   - `[]`                      → no-op
+ *
+ * Use for every equality/membership filter against `payments.status`; a
+ * single callsite type means callers can pass URL search-param strings or
+ * multi-select chip arrays without branching.
  */
 export function applyPaymentStatusEq<Q extends FilterableQuery<Q>>(
   query: Q,
-  status: string | null | undefined,
+  status: string | readonly string[] | null | undefined,
 ): Q {
-  if (!status) return query;
+  if (status == null) return query;
+  if (Array.isArray(status)) {
+    const values = status.filter((s): s is string => typeof s === "string" && s.length > 0);
+    if (values.length === 0) return query;
+    if (values.length === 1) {
+      return query.filter(PAYMENT_STATUS_TEXT_COLUMN, "eq", values[0]);
+    }
+    return query.filter(
+      PAYMENT_STATUS_TEXT_COLUMN,
+      "in",
+      `(${values.join(",")})`,
+    );
+  }
+  if (typeof status !== "string" || status.length === 0) return query;
   return query.filter(PAYMENT_STATUS_TEXT_COLUMN, "eq", status);
 }
 
 /**
- * `WHERE status::text IN (<list>)` — no-op when the list is empty/nullish.
- * Values are joined with commas exactly as PostgREST expects; callers must
- * not pre-quote them.
+ * @deprecated Use `applyPaymentStatusEq(query, statuses)` — the unified
+ * helper now accepts arrays. Kept as a thin alias so existing callsites and
+ * tests keep working; new code should import `applyPaymentStatusEq`.
  */
 export function applyPaymentStatusIn<Q extends FilterableQuery<Q>>(
   query: Q,
   statuses: readonly string[] | null | undefined,
 ): Q {
-  if (!statuses || statuses.length === 0) return query;
-  return query.filter(
-    PAYMENT_STATUS_TEXT_COLUMN,
-    "in",
-    `(${statuses.join(",")})`,
-  );
+  return applyPaymentStatusEq(query, statuses);
 }
+

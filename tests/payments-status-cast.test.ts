@@ -109,6 +109,58 @@ describe("applyPaymentStatusIn (status::text IN helper)", () => {
   });
 });
 
+describe("applyPaymentStatusEq — unified array/scalar handling", () => {
+  function makeQuery() {
+    const calls: Array<{ col: string; op: string; v: unknown }> = [];
+    const q: any = {
+      calls,
+      filter(col: string, op: string, v: unknown) {
+        calls.push({ col, op, v });
+        return q;
+      },
+    };
+    return q;
+  }
+
+  it("collapses a single-element array to an equality filter", () => {
+    const q = makeQuery();
+    applyPaymentStatusEq(q, ["paid"]);
+    expect(q.calls).toEqual([{ col: "status::text", op: "eq", v: "paid" }]);
+  });
+
+  it("emits an IN filter for a multi-element array", () => {
+    const q = makeQuery();
+    applyPaymentStatusEq(q, ["paid", "refunded"]);
+    expect(q.calls).toEqual([
+      { col: "status::text", op: "in", v: "(paid,refunded)" },
+    ]);
+  });
+
+  it("filters out empty strings inside an array before deciding op", () => {
+    const q = makeQuery();
+    applyPaymentStatusEq(q, ["", "paid", ""]);
+    expect(q.calls).toEqual([{ col: "status::text", op: "eq", v: "paid" }]);
+  });
+
+  it("is a no-op for empty arrays and arrays of only empty strings", () => {
+    for (const v of [[], ["", ""]] as const) {
+      const q = makeQuery();
+      applyPaymentStatusEq(q, v);
+      expect(q.calls).toEqual([]);
+    }
+  });
+
+  it("still handles scalar strings and null/undefined the same way", () => {
+    const q = makeQuery();
+    applyPaymentStatusEq(q, "failed");
+    applyPaymentStatusEq(q, null);
+    applyPaymentStatusEq(q, undefined);
+    applyPaymentStatusEq(q, "");
+    expect(q.calls).toEqual([{ col: "status::text", op: "eq", v: "failed" }]);
+  });
+});
+
+
 
 // ---------------------------------------------------------------------------
 // 2. Source-level audit: no raw payments.status equality anywhere

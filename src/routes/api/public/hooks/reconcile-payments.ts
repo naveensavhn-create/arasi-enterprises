@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { applyPaymentStatusIn } from "@/lib/payments/status-filter";
+import { applyPaymentStatusEq } from "@/lib/payments/status-filter";
 
 
 /**
@@ -58,7 +58,7 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
           Date.now() - lookbackDays * 86_400_000,
         ).toISOString();
 
-        const { data: payments, error } = await applyPaymentStatusIn(
+        const { data: payments, error } = await applyPaymentStatusEq(
           supabaseAdmin
             .from("payments")
             .select("id, provider_order_id, provider_payment_id, status, created_at"),
