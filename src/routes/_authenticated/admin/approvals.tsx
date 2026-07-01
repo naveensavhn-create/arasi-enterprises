@@ -51,6 +51,19 @@ import {
   type KycProfile,
   type KycStatus,
 } from "@/lib/kyc.functions";
+import {
+  adminListPromoters,
+  adminSetCustomerPromoter,
+  type PromoterOption,
+} from "@/lib/promoter.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { UserRoundCog } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/approvals")({
   head: () => ({ meta: [{ title: "Approvals — Admin" }] }),
@@ -94,18 +107,24 @@ function AdminApprovalsPage() {
       listFn({ data: { status: tab } }) as Promise<KycProfile[]>,
   });
 
+  const [onlyReferred, setOnlyReferred] = useState(false);
+
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter(
+    let out = rows;
+    if (onlyReferred) out = out.filter((r) => !!r.referred_by_promoter_id);
+    if (!term) return out;
+    return out.filter(
       (r) =>
         (r.email ?? "").toLowerCase().includes(term) ||
         (r.full_name ?? "").toLowerCase().includes(term) ||
         (r.phone ?? "").toLowerCase().includes(term) ||
         (r.city ?? "").toLowerCase().includes(term) ||
+        (r.referred_by_name ?? "").toLowerCase().includes(term) ||
+        (r.referred_by_email ?? "").toLowerCase().includes(term) ||
         (r.aadhaar_number ?? "").includes(term),
     );
-  }, [rows, q]);
+  }, [rows, q, onlyReferred]);
 
   const decideMut = useMutation({
     mutationFn: (v: { userId: string; approve: boolean; notes: string | null }) =>
@@ -136,14 +155,24 @@ function AdminApprovalsPage() {
             <TabsTrigger value="unsubmitted">Not submitted</TabsTrigger>
           </TabsList>
         </Tabs>
-        <div className="relative w-full max-w-sm">
-          <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            className="pl-8"
-            placeholder="Search name, email, phone, city, aadhaar…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+        <div className="flex items-center gap-2">
+          <Button
+            variant={onlyReferred ? "default" : "outline"}
+            size="sm"
+            onClick={() => setOnlyReferred((v) => !v)}
+          >
+            <UserRoundCog className="mr-1.5 h-3.5 w-3.5" />
+            {onlyReferred ? "Referred by promoter" : "All submissions"}
+          </Button>
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-8"
+              placeholder="Search name, email, phone, city, promoter, aadhaar…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
         </div>
       </div>
 
@@ -167,6 +196,7 @@ function AdminApprovalsPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Referred by</TableHead>
                   <TableHead>Phone</TableHead>
                   <TableHead>City</TableHead>
                   <TableHead>Aadhaar</TableHead>
@@ -190,6 +220,20 @@ function AdminApprovalsPage() {
                         </Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {r.referred_by_promoter_id ? (
+                        <>
+                          <div className="font-medium">
+                            {r.referred_by_name || r.referred_by_email}
+                          </div>
+                          {r.referred_by_name && r.referred_by_email && (
+                            <div className="text-muted-foreground">{r.referred_by_email}</div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-muted-foreground">Direct</span>
                       )}
                     </TableCell>
                     <TableCell className="font-mono text-xs">{r.phone || "—"}</TableCell>
@@ -288,6 +332,10 @@ function ReviewDrawer({
               <Section title="Contact">
                 <Row icon={<Mail className="h-3.5 w-3.5" />} label="Email" value={row.email} mono />
                 <Row icon={<Phone className="h-3.5 w-3.5" />} label="Phone" value={row.phone} mono />
+              </Section>
+
+              <Section title="Referring promoter">
+                <ReferrerEditor row={row} />
               </Section>
 
               <Section title="Residential address">
@@ -433,6 +481,72 @@ function Doc({
           </a>
         </Button>
       )}
+    </div>
+  );
+}
+
+function ReferrerEditor({ row }: { row: KycProfile }) {
+  const qc = useQueryClient();
+  const listPromotersFn = useServerFn(adminListPromoters);
+  const setPromoterFn = useServerFn(adminSetCustomerPromoter);
+  const [value, setValue] = useState<string>(row.referred_by_promoter_id ?? "none");
+
+  useEffect(() => {
+    setValue(row.referred_by_promoter_id ?? "none");
+  }, [row.id, row.referred_by_promoter_id]);
+
+  const promotersQ = useQuery({
+    queryKey: ["admin-promoters-list"],
+    queryFn: () => listPromotersFn() as Promise<PromoterOption[]>,
+    staleTime: 5 * 60_000,
+  });
+
+  const saveMut = useMutation({
+    mutationFn: (promoterId: string | null) =>
+      setPromoterFn({ data: { userId: row.id, promoterId } } as any),
+    onSuccess: () => {
+      toast.success("Referring promoter updated");
+      qc.invalidateQueries({ queryKey: ["kyc"] });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Failed to update"),
+  });
+
+  const currentLabel = row.referred_by_promoter_id
+    ? row.referred_by_name || row.referred_by_email || row.referred_by_promoter_id.slice(0, 8)
+    : "Direct signup";
+
+  return (
+    <div className="space-y-2">
+      <Row
+        icon={<UserRoundCog className="h-3.5 w-3.5" />}
+        label="Current"
+        value={currentLabel}
+      />
+      <div className="flex items-center gap-2">
+        <Select value={value} onValueChange={setValue}>
+          <SelectTrigger className="h-9 flex-1">
+            <SelectValue placeholder="Select promoter" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Direct (no promoter)</SelectItem>
+            {(promotersQ.data ?? []).map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.full_name || p.email}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          size="sm"
+          disabled={
+            saveMut.isPending ||
+            value === (row.referred_by_promoter_id ?? "none")
+          }
+          onClick={() => saveMut.mutate(value === "none" ? null : value)}
+        >
+          {saveMut.isPending ? "Saving…" : "Save"}
+        </Button>
+      </div>
     </div>
   );
 }
