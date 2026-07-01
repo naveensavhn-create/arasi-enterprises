@@ -29,19 +29,19 @@ export const listMembershipsAdmin = createServerFn({ method: "GET" })
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
-    const userIds = Array.from(
+    const userIds: string[] = Array.from(
       new Set(
-        (rows ?? []).flatMap((r: any) => [r.user_id, r.promoter_id].filter(Boolean)),
+        (rows ?? []).flatMap((r: any) => [r.user_id, r.promoter_id].filter(Boolean) as string[]),
       ),
     );
-    const planIds = Array.from(new Set((rows ?? []).map((r: any) => r.plan_id)));
+    const planIds: string[] = Array.from(new Set((rows ?? []).map((r: any) => r.plan_id as string)));
 
     const [profilesRes, plansRes] = await Promise.all([
       userIds.length
-        ? context.supabase.from("profiles").select("id, full_name, email, phone").in("id", userIds)
+        ? sb.from("profiles").select("id, full_name, email, phone").in("id", userIds)
         : Promise.resolve({ data: [] as any[], error: null }),
       planIds.length
-        ? context.supabase.from("membership_plans").select("id, name, code").in("id", planIds)
+        ? sb.from("membership_plans").select("id, name, code").in("id", planIds)
         : Promise.resolve({ data: [] as any[], error: null }),
     ]);
     if (profilesRes.error) throw new Error(profilesRes.error.message);
