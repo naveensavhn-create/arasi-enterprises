@@ -21,6 +21,7 @@ import { getWebhookEventPayload } from "@/lib/payments.functions";
 import {
   validateAdminPaymentRowShape,
   ADMIN_PAYMENT_ROW_FIELD_LABELS as FIELD_LABELS,
+  ADMIN_PAYMENT_ROW_FIELD_HINTS as HINTS,
   type AdminPaymentRow,
   type AdminPaymentRowRequiredField,
 } from "@/lib/payments/validate-row";
@@ -28,18 +29,12 @@ import {
 /**
  * Runtime validation of the ledger row before the drawer renders it.
  * Delegates to the shared helper so the drawer and ledger apply the same
- * required-field rules (see `@/lib/payments/validate-row`).
+ * required-field rules (see `@/lib/payments/validate-row`). Labels and
+ * hints are both derived from a single Zod-schema-linked map there, so a
+ * renamed schema field fails the build instead of silently dropping UI copy.
  */
 type RequiredField = AdminPaymentRowRequiredField;
 
-/** Short remediation hints shown under each missing-field bullet in the drawer. */
-const HINTS: Record<RequiredField, string> = {
-  amount: "Reconcile with Razorpay dashboard; the stored value is invalid or negative.",
-  currency: "Currency code is empty. Check the originating order metadata.",
-  status: "Payment status is blank. Trigger a webhook replay or manual reconcile.",
-  paymentId: "Marked paid without a Razorpay payment ID. Verify the webhook fired.",
-  customerName: "Linked profile is missing or has no name/email. The customer may have been deleted.",
-};
 
 /** Consistent placeholder label used across the drawer when a row is invalid. */
 const UNAVAILABLE_LABEL = "Data unavailable";
