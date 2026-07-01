@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPromoterRouteRouteImport } from './routes/_authenticated/promoter/route'
 import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/customer/route'
@@ -44,6 +45,7 @@ import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authenticated/admin/exports'
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
+import { Route as AuthenticatedAdminApprovalsRouteImport } from './routes/_authenticated/admin/approvals'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
 import { Route as ApiPublicHooksProcessExportJobsRouteImport } from './routes/api/public/hooks/process-export-jobs'
@@ -70,6 +72,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedKycRoute = AuthenticatedKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -248,6 +255,12 @@ const AuthenticatedAdminCustomersRoute =
     path: '/customers',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminApprovalsRoute =
+  AuthenticatedAdminApprovalsRouteImport.update({
+    id: '/approvals',
+    path: '/approvals',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const ApiPublicRazorpayWebhookRoute =
   ApiPublicRazorpayWebhookRouteImport.update({
     id: '/api/public/razorpay/webhook',
@@ -275,7 +288,9 @@ export interface FileRoutesByFullPath {
   '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/kyc': typeof AuthenticatedKycRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
@@ -314,7 +329,9 @@ export interface FileRoutesByTo {
   '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/kyc': typeof AuthenticatedKycRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
@@ -355,7 +372,9 @@ export interface FileRoutesById {
   '/_authenticated/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/_authenticated/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/kyc': typeof AuthenticatedKycRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/_authenticated/admin/exports': typeof AuthenticatedAdminExportsRoute
@@ -396,7 +415,9 @@ export interface FileRouteTypes {
     | '/customer'
     | '/promoter'
     | '/dashboard'
+    | '/kyc'
     | '/settings'
+    | '/admin/approvals'
     | '/admin/customers'
     | '/admin/email-preview'
     | '/admin/exports'
@@ -435,7 +456,9 @@ export interface FileRouteTypes {
     | '/customer'
     | '/promoter'
     | '/dashboard'
+    | '/kyc'
     | '/settings'
+    | '/admin/approvals'
     | '/admin/customers'
     | '/admin/email-preview'
     | '/admin/exports'
@@ -475,7 +498,9 @@ export interface FileRouteTypes {
     | '/_authenticated/customer'
     | '/_authenticated/promoter'
     | '/_authenticated/dashboard'
+    | '/_authenticated/kyc'
     | '/_authenticated/settings'
+    | '/_authenticated/admin/approvals'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/email-preview'
     | '/_authenticated/admin/exports'
@@ -552,6 +577,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/kyc': {
+      id: '/_authenticated/kyc'
+      path: '/kyc'
+      fullPath: '/kyc'
+      preLoaderRoute: typeof AuthenticatedKycRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -764,6 +796,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCustomersRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/approvals': {
+      id: '/_authenticated/admin/approvals'
+      path: '/approvals'
+      fullPath: '/admin/approvals'
+      preLoaderRoute: typeof AuthenticatedAdminApprovalsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/api/public/razorpay/webhook': {
       id: '/api/public/razorpay/webhook'
       path: '/api/public/razorpay/webhook'
@@ -789,6 +828,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminApprovalsRoute: typeof AuthenticatedAdminApprovalsRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminEmailPreviewRoute: typeof AuthenticatedAdminEmailPreviewRoute
   AuthenticatedAdminExportsRoute: typeof AuthenticatedAdminExportsRoute
@@ -808,6 +848,7 @@ interface AuthenticatedAdminRouteRouteChildren {
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminApprovalsRoute: AuthenticatedAdminApprovalsRoute,
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
     AuthenticatedAdminEmailPreviewRoute: AuthenticatedAdminEmailPreviewRoute,
     AuthenticatedAdminExportsRoute: AuthenticatedAdminExportsRoute,
@@ -885,6 +926,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCustomerRouteRoute: typeof AuthenticatedCustomerRouteRouteWithChildren
   AuthenticatedPromoterRouteRoute: typeof AuthenticatedPromoterRouteRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedKycRoute: typeof AuthenticatedKycRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
 
@@ -893,6 +935,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCustomerRouteRoute: AuthenticatedCustomerRouteRouteWithChildren,
   AuthenticatedPromoterRouteRoute: AuthenticatedPromoterRouteRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedKycRoute: AuthenticatedKycRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
 

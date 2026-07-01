@@ -20,6 +20,8 @@ import {
   Mail,
   SlidersHorizontal,
   FileSpreadsheet,
+  IdCard,
+  UserCheck,
 } from "lucide-react";
 
 
@@ -53,6 +55,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
       items: [
         { title: "Customers", url: "/admin/customers", icon: Users },
         { title: "Promoters", url: "/admin/promoters", icon: UserCog },
+        { title: "Approvals", url: "/admin/approvals", icon: UserCheck },
         { title: "Plans", url: "/admin/plans", icon: Package },
         { title: "Memberships", url: "/admin/memberships", icon: ShieldCheck },
         { title: "Payments", url: "/admin/payments", icon: CreditCard },
@@ -96,7 +99,10 @@ const NAV: Record<AppRole, NavGroup[]> = {
     },
     {
       label: "System",
-      items: [{ title: "Preferences", url: "/settings", icon: SlidersHorizontal }],
+      items: [
+        { title: "Profile & KYC", url: "/kyc", icon: IdCard },
+        { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
+      ],
     },
   ],
   customer: [
@@ -118,7 +124,10 @@ const NAV: Record<AppRole, NavGroup[]> = {
     },
     {
       label: "System",
-      items: [{ title: "Preferences", url: "/settings", icon: SlidersHorizontal }],
+      items: [
+        { title: "Profile & KYC", url: "/kyc", icon: IdCard },
+        { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
+      ],
     },
   ],
 };
