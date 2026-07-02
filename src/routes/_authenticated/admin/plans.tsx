@@ -147,6 +147,20 @@ function AdminPlansPage() {
   const [form, setForm] = useState<FormState>(empty);
   const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null);
   const [historyPlan, setHistoryPlan] = useState<Plan | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
+
+  const validation = useMemo(() => planFormSchema.safeParse(form), [form]);
+  const errors = useMemo(() => {
+    const map: Partial<Record<keyof FormState, string>> = {};
+    if (!validation.success) {
+      for (const issue of validation.error.issues) {
+        const key = issue.path[0] as keyof FormState | undefined;
+        if (key && !map[key]) map[key] = issue.message;
+      }
+    }
+    return map;
+  }, [validation]);
+  const showErr = (k: keyof FormState) => (showErrors ? errors[k] : undefined);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-plans"],
