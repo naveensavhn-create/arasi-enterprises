@@ -389,6 +389,9 @@ export function CustomerDashboardBody() {
       )}
 
 
+      {/* Lucky draw status */}
+      <NextDrawCard ctaTo="/customer/lucky-draw" />
+
       {/* Quick actions */}
       <Card>
         <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
