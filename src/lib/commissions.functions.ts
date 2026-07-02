@@ -248,7 +248,7 @@ export type PromoterDashboard = {
   remainingToNext: number;
   progressPercent: number;
   commissionPercent: number;
-  monthlyIncentive: number;
+  oneTimeIncentive: number;
   giftName: string | null;
   todayEarnings: number;
   monthEarnings: number;
