@@ -220,19 +220,14 @@ async function fetchPaymentRows(
        provider_order_id, provider_payment_id, error_code, error_description,
        paid_at, created_at, customer_id, membership_id, installment_id,
        memberships:membership_id ( membership_number ),
-       installments:installment_id ( sequence, due_date ),
-       profiles:customer_id ( full_name, email )`,
+       installments:installment_id ( sequence, due_date )`,
     );
 
-  // Sorting: customer_name sorts by the embedded profiles.full_name;
-  // everything else is a direct payments column. Secondary sort on
-  // created_at keeps ordering stable for ties.
+  // Sorting: customer_name can't be pushed down (profiles isn't embeddable —
+  // payments.customer_id FKs auth.users, not public.profiles), so for that
+  // option we order by created_at at the DB level and re-sort the fetched
+  // page by resolved profile name below. Everything else is a direct column.
   if (n.sortBy === "customer_name") {
-    query = query.order("full_name", {
-      ascending: n.sortDir === "asc",
-      nullsFirst: false,
-      referencedTable: "profiles",
-    });
     query = query.order("created_at", { ascending: false });
   } else {
     query = query.order(n.sortBy, { ascending: n.sortDir === "asc", nullsFirst: false });
