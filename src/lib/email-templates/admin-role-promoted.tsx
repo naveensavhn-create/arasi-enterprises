@@ -10,7 +10,14 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { brand, styles, formatTimestamp } from "./_shared";
+import {
+  brand as defaultBrand,
+  styles,
+  formatTimestamp,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
 export interface AdminRolePromotedProps {
   /** Name or email of the person being promoted (target). */
@@ -29,6 +36,8 @@ export interface AdminRolePromotedProps {
   reason: string;
   /** Optional deep link to the admin dashboard. */
   dashboardUrl?: string;
+  /** Site Settings brand overrides (logo URL, colours, support email). */
+  brand?: BrandOverrides;
 }
 
 const AdminRolePromoted: React.FC<AdminRolePromotedProps> = ({
@@ -40,29 +49,28 @@ const AdminRolePromoted: React.FC<AdminRolePromotedProps> = ({
   changedAt,
   reason,
   dashboardUrl,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   return (
     <Html lang="en" dir="ltr">
       <Head />
       <Preview>
-        Your role at {brand.name} has been upgraded to {newRole}.
+        Your role at {b.name} has been upgraded to {newRole}.
       </Preview>
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
 
             <Heading as="h1" style={styles.h1}>
               You've been promoted to {newRole}
             </Heading>
             <Text style={styles.p}>{greeting}</Text>
             <Text style={styles.p}>
-              Your account role on {brand.name} has just been elevated. You now
-              have full <strong style={{ color: "#f5d97a" }}>{newRole}</strong>{" "}
+              Your account role on {b.name} has just been elevated. You now
+              have full <strong style={{ color: b.accent }}>{newRole}</strong>{" "}
               privileges across the platform.
             </Text>
 
@@ -88,7 +96,7 @@ const AdminRolePromoted: React.FC<AdminRolePromotedProps> = ({
 
             {dashboardUrl ? (
               <Text style={{ ...styles.p, margin: "8px 0 4px" }}>
-                <a href={dashboardUrl} style={styles.button}>
+                <a href={dashboardUrl} style={{ ...styles.button, backgroundColor: b.primary }}>
                   Open admin dashboard
                 </a>
               </Text>
@@ -97,12 +105,12 @@ const AdminRolePromoted: React.FC<AdminRolePromotedProps> = ({
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
               If you did not expect this change, reply to this email or contact{" "}
-              {brand.supportEmail} immediately so we can investigate.
+              {b.supportEmail} immediately so we can investigate.
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             security notification.
           </Text>
         </Container>
@@ -116,7 +124,7 @@ export default AdminRolePromoted;
 // Optional registry entry (used once transactional email infra is wired up).
 export const template = {
   component: AdminRolePromoted,
-  subject: `[${brand.name}] Your role has been upgraded`,
+  subject: `[${defaultBrand.name}] Your role has been upgraded`,
   displayName: "Admin role promoted",
   previewData: {
     recipientName: "Priya Sharma",
