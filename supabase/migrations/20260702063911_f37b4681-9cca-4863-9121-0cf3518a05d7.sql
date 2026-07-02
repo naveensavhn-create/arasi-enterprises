@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.orchestrate_post_payment() FROM PUBLIC, anon, authenticated;
