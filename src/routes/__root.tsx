@@ -88,10 +88,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "Arasi Enterprises — advance booking & monthly installment membership program. Manage memberships, payments, rewards and lucky draws.",
       },
-      { property: "og:title", content: "Arasi Enterprises" },
-      { property: "og:description", content: "Your Dream, Our Commitment." },
+      { property: "og:title", content: "Arasi Enterprises — Your Dream, Our Commitment" },
+      { property: "og:description", content: "Arasi Ascent is a comprehensive ERP web application for advance booking and installment memberships." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: "Arasi Enterprises — Your Dream, Our Commitment" },
+      { name: "description", content: "Arasi Ascent is a comprehensive ERP web application for advance booking and installment memberships." },
+      { name: "twitter:description", content: "Arasi Ascent is a comprehensive ERP web application for advance booking and installment memberships." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/883d0ebb-1470-46f8-982a-b1b150b2749c/id-preview-64699c4c--2ace29a4-9bbe-4253-b885-8813918965ea.lovable.app-1782985011996.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/883d0ebb-1470-46f8-982a-b1b150b2749c/id-preview-64699c4c--2ace29a4-9bbe-4253-b885-8813918965ea.lovable.app-1782985011996.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
