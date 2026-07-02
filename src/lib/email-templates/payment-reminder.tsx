@@ -40,6 +40,11 @@ export interface PaymentReminderProps {
   payUrl?: string;
   dashboardUrl?: string;
 
+  /** Admin-editable overrides (from public.reminder_templates). */
+  headingOverride?: string | null;
+  introOverride?: string | null;
+  outroOverride?: string | null;
+
   brand?: PaymentReminderBrand;
 }
 
@@ -81,6 +86,9 @@ const PaymentReminder: React.FC<PaymentReminderProps> = ({
   dueDate,
   payUrl,
   dashboardUrl,
+  headingOverride,
+  introOverride,
+  outroOverride,
   brand,
 }) => {
   // Resolve brand tokens from site settings, falling back to shared defaults.
