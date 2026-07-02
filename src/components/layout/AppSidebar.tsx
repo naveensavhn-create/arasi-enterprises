@@ -22,6 +22,8 @@ import {
   FileSpreadsheet,
   IdCard,
   UserCheck,
+  Award,
+
 } from "lucide-react";
 
 
@@ -69,9 +71,14 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Rewards", url: "/admin/rewards", icon: Gift },
         { title: "Lucky Draw", url: "/admin/lucky-draw", icon: Trophy },
         { title: "Draw Results", url: "/admin/draw-results", icon: Trophy },
+        { title: "Ranks", url: "/admin/ranks", icon: Award },
+        { title: "Commissions", url: "/admin/commissions", icon: Receipt },
+        { title: "Incentives", url: "/admin/incentives", icon: Wallet },
+        { title: "Gifts", url: "/admin/gifts", icon: Gift },
         { title: "Reports", url: "/admin/reports", icon: BarChart3 },
       ],
     },
+
     {
       label: "System",
       items: [
@@ -98,6 +105,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
     {
       label: "Business",
       items: [
+        { title: "My Rank", url: "/promoter/rank", icon: Award },
         { title: "My Customers", url: "/promoter/customers", icon: Users },
         { title: "Collections", url: "/promoter/collections", icon: Wallet },
         { title: "Commissions", url: "/promoter/commissions", icon: Receipt },
@@ -105,6 +113,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Lucky Draw", url: "/promoter/lucky-draw", icon: Trophy },
       ],
     },
+
     {
       label: "System",
       items: [

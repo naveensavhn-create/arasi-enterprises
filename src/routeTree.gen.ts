@@ -21,6 +21,7 @@ import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedReceiptsReceiptNumberRouteImport } from './routes/_authenticated/receipts.$receiptNumber'
+import { Route as AuthenticatedPromoterRankRouteImport } from './routes/_authenticated/promoter/rank'
 import { Route as AuthenticatedPromoterPortfolioRouteImport } from './routes/_authenticated/promoter/portfolio'
 import { Route as AuthenticatedPromoterLuckyDrawRouteImport } from './routes/_authenticated/promoter/lucky-draw'
 import { Route as AuthenticatedPromoterCustomersRouteImport } from './routes/_authenticated/promoter/customers'
@@ -44,6 +45,7 @@ import { Route as AuthenticatedAdminRemindersRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminReminderTemplatesRouteImport } from './routes/_authenticated/admin/reminder-templates'
 import { Route as AuthenticatedAdminReminderJobsRouteImport } from './routes/_authenticated/admin/reminder-jobs'
 import { Route as AuthenticatedAdminReceiptsRouteImport } from './routes/_authenticated/admin/receipts'
+import { Route as AuthenticatedAdminRanksRouteImport } from './routes/_authenticated/admin/ranks'
 import { Route as AuthenticatedAdminPromotersRouteImport } from './routes/_authenticated/admin/promoters'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin/plans'
 import { Route as AuthenticatedAdminPlanDeletionsRouteImport } from './routes/_authenticated/admin/plan-deletions'
@@ -52,10 +54,13 @@ import { Route as AuthenticatedAdminMembershipsRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminMembershipEmailsRouteImport } from './routes/_authenticated/admin/membership-emails'
 import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authenticated/admin/lucky-draw'
 import { Route as AuthenticatedAdminKycEmailsRouteImport } from './routes/_authenticated/admin/kyc-emails'
+import { Route as AuthenticatedAdminIncentivesRouteImport } from './routes/_authenticated/admin/incentives'
+import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin/gifts'
 import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authenticated/admin/exports'
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
 import { Route as AuthenticatedAdminDrawResultsRouteImport } from './routes/_authenticated/admin/draw-results'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
+import { Route as AuthenticatedAdminCommissionsRouteImport } from './routes/_authenticated/admin/commissions'
 import { Route as AuthenticatedAdminAuditLogRouteImport } from './routes/_authenticated/admin/audit-log'
 import { Route as AuthenticatedAdminApprovalsRouteImport } from './routes/_authenticated/admin/approvals'
 import { Route as AuthenticatedAdminSplatRouteImport } from './routes/_authenticated/admin/$'
@@ -127,6 +132,12 @@ const AuthenticatedReceiptsReceiptNumberRoute =
     id: '/receipts/$receiptNumber',
     path: '/receipts/$receiptNumber',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPromoterRankRoute =
+  AuthenticatedPromoterRankRouteImport.update({
+    id: '/rank',
+    path: '/rank',
+    getParentRoute: () => AuthenticatedPromoterRouteRoute,
   } as any)
 const AuthenticatedPromoterPortfolioRoute =
   AuthenticatedPromoterPortfolioRouteImport.update({
@@ -265,6 +276,11 @@ const AuthenticatedAdminReceiptsRoute =
     path: '/receipts',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminRanksRoute = AuthenticatedAdminRanksRouteImport.update({
+  id: '/ranks',
+  path: '/ranks',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminPromotersRoute =
   AuthenticatedAdminPromotersRouteImport.update({
     id: '/promoters',
@@ -312,6 +328,17 @@ const AuthenticatedAdminKycEmailsRoute =
     path: '/kyc-emails',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminIncentivesRoute =
+  AuthenticatedAdminIncentivesRouteImport.update({
+    id: '/incentives',
+    path: '/incentives',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
+  id: '/gifts',
+  path: '/gifts',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminExportsRoute =
   AuthenticatedAdminExportsRouteImport.update({
     id: '/exports',
@@ -334,6 +361,12 @@ const AuthenticatedAdminCustomersRoute =
   AuthenticatedAdminCustomersRouteImport.update({
     id: '/customers',
     path: '/customers',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminCommissionsRoute =
+  AuthenticatedAdminCommissionsRouteImport.update({
+    id: '/commissions',
+    path: '/commissions',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminAuditLogRoute =
@@ -402,10 +435,13 @@ export interface FileRoutesByFullPath {
   '/admin/$': typeof AuthenticatedAdminSplatRoute
   '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/admin/audit-log': typeof AuthenticatedAdminAuditLogRoute
+  '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/admin/incentives': typeof AuthenticatedAdminIncentivesRoute
   '/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
@@ -414,6 +450,7 @@ export interface FileRoutesByFullPath {
   '/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/admin/ranks': typeof AuthenticatedAdminRanksRoute
   '/admin/receipts': typeof AuthenticatedAdminReceiptsRoute
   '/admin/reminder-jobs': typeof AuthenticatedAdminReminderJobsRoute
   '/admin/reminder-templates': typeof AuthenticatedAdminReminderTemplatesRoute
@@ -437,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
@@ -458,10 +496,13 @@ export interface FileRoutesByTo {
   '/admin/$': typeof AuthenticatedAdminSplatRoute
   '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/admin/audit-log': typeof AuthenticatedAdminAuditLogRoute
+  '/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/admin/incentives': typeof AuthenticatedAdminIncentivesRoute
   '/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
@@ -470,6 +511,7 @@ export interface FileRoutesByTo {
   '/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/admin/ranks': typeof AuthenticatedAdminRanksRoute
   '/admin/receipts': typeof AuthenticatedAdminReceiptsRoute
   '/admin/reminder-jobs': typeof AuthenticatedAdminReminderJobsRoute
   '/admin/reminder-templates': typeof AuthenticatedAdminReminderTemplatesRoute
@@ -493,6 +535,7 @@ export interface FileRoutesByTo {
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
@@ -517,10 +560,13 @@ export interface FileRoutesById {
   '/_authenticated/admin/$': typeof AuthenticatedAdminSplatRoute
   '/_authenticated/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
   '/_authenticated/admin/audit-log': typeof AuthenticatedAdminAuditLogRoute
+  '/_authenticated/admin/commissions': typeof AuthenticatedAdminCommissionsRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/_authenticated/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/_authenticated/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
+  '/_authenticated/admin/incentives': typeof AuthenticatedAdminIncentivesRoute
   '/_authenticated/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/_authenticated/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
@@ -529,6 +575,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/_authenticated/admin/ranks': typeof AuthenticatedAdminRanksRoute
   '/_authenticated/admin/receipts': typeof AuthenticatedAdminReceiptsRoute
   '/_authenticated/admin/reminder-jobs': typeof AuthenticatedAdminReminderJobsRoute
   '/_authenticated/admin/reminder-templates': typeof AuthenticatedAdminReminderTemplatesRoute
@@ -552,6 +599,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/_authenticated/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/_authenticated/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/_authenticated/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
@@ -576,10 +624,13 @@ export interface FileRouteTypes {
     | '/admin/$'
     | '/admin/approvals'
     | '/admin/audit-log'
+    | '/admin/commissions'
     | '/admin/customers'
     | '/admin/draw-results'
     | '/admin/email-preview'
     | '/admin/exports'
+    | '/admin/gifts'
+    | '/admin/incentives'
     | '/admin/kyc-emails'
     | '/admin/lucky-draw'
     | '/admin/membership-emails'
@@ -588,6 +639,7 @@ export interface FileRouteTypes {
     | '/admin/plan-deletions'
     | '/admin/plans'
     | '/admin/promoters'
+    | '/admin/ranks'
     | '/admin/receipts'
     | '/admin/reminder-jobs'
     | '/admin/reminder-templates'
@@ -611,6 +663,7 @@ export interface FileRouteTypes {
     | '/promoter/customers'
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
+    | '/promoter/rank'
     | '/receipts/$receiptNumber'
     | '/admin/'
     | '/api/public/hooks/enqueue-payment-reminders'
@@ -632,10 +685,13 @@ export interface FileRouteTypes {
     | '/admin/$'
     | '/admin/approvals'
     | '/admin/audit-log'
+    | '/admin/commissions'
     | '/admin/customers'
     | '/admin/draw-results'
     | '/admin/email-preview'
     | '/admin/exports'
+    | '/admin/gifts'
+    | '/admin/incentives'
     | '/admin/kyc-emails'
     | '/admin/lucky-draw'
     | '/admin/membership-emails'
@@ -644,6 +700,7 @@ export interface FileRouteTypes {
     | '/admin/plan-deletions'
     | '/admin/plans'
     | '/admin/promoters'
+    | '/admin/ranks'
     | '/admin/receipts'
     | '/admin/reminder-jobs'
     | '/admin/reminder-templates'
@@ -667,6 +724,7 @@ export interface FileRouteTypes {
     | '/promoter/customers'
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
+    | '/promoter/rank'
     | '/receipts/$receiptNumber'
     | '/admin'
     | '/api/public/hooks/enqueue-payment-reminders'
@@ -690,10 +748,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/$'
     | '/_authenticated/admin/approvals'
     | '/_authenticated/admin/audit-log'
+    | '/_authenticated/admin/commissions'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/draw-results'
     | '/_authenticated/admin/email-preview'
     | '/_authenticated/admin/exports'
+    | '/_authenticated/admin/gifts'
+    | '/_authenticated/admin/incentives'
     | '/_authenticated/admin/kyc-emails'
     | '/_authenticated/admin/lucky-draw'
     | '/_authenticated/admin/membership-emails'
@@ -702,6 +763,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/plan-deletions'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/promoters'
+    | '/_authenticated/admin/ranks'
     | '/_authenticated/admin/receipts'
     | '/_authenticated/admin/reminder-jobs'
     | '/_authenticated/admin/reminder-templates'
@@ -725,6 +787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/customers'
     | '/_authenticated/promoter/lucky-draw'
     | '/_authenticated/promoter/portfolio'
+    | '/_authenticated/promoter/rank'
     | '/_authenticated/receipts/$receiptNumber'
     | '/_authenticated/admin/'
     | '/api/public/hooks/enqueue-payment-reminders'
@@ -833,6 +896,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/receipts/$receiptNumber'
       preLoaderRoute: typeof AuthenticatedReceiptsReceiptNumberRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/promoter/rank': {
+      id: '/_authenticated/promoter/rank'
+      path: '/rank'
+      fullPath: '/promoter/rank'
+      preLoaderRoute: typeof AuthenticatedPromoterRankRouteImport
+      parentRoute: typeof AuthenticatedPromoterRouteRoute
     }
     '/_authenticated/promoter/portfolio': {
       id: '/_authenticated/promoter/portfolio'
@@ -995,6 +1065,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReceiptsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/ranks': {
+      id: '/_authenticated/admin/ranks'
+      path: '/ranks'
+      fullPath: '/admin/ranks'
+      preLoaderRoute: typeof AuthenticatedAdminRanksRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/promoters': {
       id: '/_authenticated/admin/promoters'
       path: '/promoters'
@@ -1051,6 +1128,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminKycEmailsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/incentives': {
+      id: '/_authenticated/admin/incentives'
+      path: '/incentives'
+      fullPath: '/admin/incentives'
+      preLoaderRoute: typeof AuthenticatedAdminIncentivesRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/gifts': {
+      id: '/_authenticated/admin/gifts'
+      path: '/gifts'
+      fullPath: '/admin/gifts'
+      preLoaderRoute: typeof AuthenticatedAdminGiftsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/exports': {
       id: '/_authenticated/admin/exports'
       path: '/exports'
@@ -1077,6 +1168,13 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/admin/customers'
       preLoaderRoute: typeof AuthenticatedAdminCustomersRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/admin/commissions': {
+      id: '/_authenticated/admin/commissions'
+      path: '/commissions'
+      fullPath: '/admin/commissions'
+      preLoaderRoute: typeof AuthenticatedAdminCommissionsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/audit-log': {
@@ -1149,10 +1247,13 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSplatRoute: typeof AuthenticatedAdminSplatRoute
   AuthenticatedAdminApprovalsRoute: typeof AuthenticatedAdminApprovalsRoute
   AuthenticatedAdminAuditLogRoute: typeof AuthenticatedAdminAuditLogRoute
+  AuthenticatedAdminCommissionsRoute: typeof AuthenticatedAdminCommissionsRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminDrawResultsRoute: typeof AuthenticatedAdminDrawResultsRoute
   AuthenticatedAdminEmailPreviewRoute: typeof AuthenticatedAdminEmailPreviewRoute
   AuthenticatedAdminExportsRoute: typeof AuthenticatedAdminExportsRoute
+  AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
+  AuthenticatedAdminIncentivesRoute: typeof AuthenticatedAdminIncentivesRoute
   AuthenticatedAdminKycEmailsRoute: typeof AuthenticatedAdminKycEmailsRoute
   AuthenticatedAdminLuckyDrawRoute: typeof AuthenticatedAdminLuckyDrawRoute
   AuthenticatedAdminMembershipEmailsRoute: typeof AuthenticatedAdminMembershipEmailsRoute
@@ -1161,6 +1262,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminPlanDeletionsRoute: typeof AuthenticatedAdminPlanDeletionsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminPromotersRoute: typeof AuthenticatedAdminPromotersRoute
+  AuthenticatedAdminRanksRoute: typeof AuthenticatedAdminRanksRoute
   AuthenticatedAdminReceiptsRoute: typeof AuthenticatedAdminReceiptsRoute
   AuthenticatedAdminReminderJobsRoute: typeof AuthenticatedAdminReminderJobsRoute
   AuthenticatedAdminReminderTemplatesRoute: typeof AuthenticatedAdminReminderTemplatesRoute
@@ -1178,10 +1280,13 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminSplatRoute: AuthenticatedAdminSplatRoute,
     AuthenticatedAdminApprovalsRoute: AuthenticatedAdminApprovalsRoute,
     AuthenticatedAdminAuditLogRoute: AuthenticatedAdminAuditLogRoute,
+    AuthenticatedAdminCommissionsRoute: AuthenticatedAdminCommissionsRoute,
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
     AuthenticatedAdminDrawResultsRoute: AuthenticatedAdminDrawResultsRoute,
     AuthenticatedAdminEmailPreviewRoute: AuthenticatedAdminEmailPreviewRoute,
     AuthenticatedAdminExportsRoute: AuthenticatedAdminExportsRoute,
+    AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
+    AuthenticatedAdminIncentivesRoute: AuthenticatedAdminIncentivesRoute,
     AuthenticatedAdminKycEmailsRoute: AuthenticatedAdminKycEmailsRoute,
     AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,
     AuthenticatedAdminMembershipEmailsRoute:
@@ -1191,6 +1296,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminPlanDeletionsRoute: AuthenticatedAdminPlanDeletionsRoute,
     AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
     AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
+    AuthenticatedAdminRanksRoute: AuthenticatedAdminRanksRoute,
     AuthenticatedAdminReceiptsRoute: AuthenticatedAdminReceiptsRoute,
     AuthenticatedAdminReminderJobsRoute: AuthenticatedAdminReminderJobsRoute,
     AuthenticatedAdminReminderTemplatesRoute:
@@ -1247,6 +1353,7 @@ interface AuthenticatedPromoterRouteRouteChildren {
   AuthenticatedPromoterCustomersRoute: typeof AuthenticatedPromoterCustomersRoute
   AuthenticatedPromoterLuckyDrawRoute: typeof AuthenticatedPromoterLuckyDrawRoute
   AuthenticatedPromoterPortfolioRoute: typeof AuthenticatedPromoterPortfolioRoute
+  AuthenticatedPromoterRankRoute: typeof AuthenticatedPromoterRankRoute
 }
 
 const AuthenticatedPromoterRouteRouteChildren: AuthenticatedPromoterRouteRouteChildren =
@@ -1258,6 +1365,7 @@ const AuthenticatedPromoterRouteRouteChildren: AuthenticatedPromoterRouteRouteCh
     AuthenticatedPromoterCustomersRoute: AuthenticatedPromoterCustomersRoute,
     AuthenticatedPromoterLuckyDrawRoute: AuthenticatedPromoterLuckyDrawRoute,
     AuthenticatedPromoterPortfolioRoute: AuthenticatedPromoterPortfolioRoute,
+    AuthenticatedPromoterRankRoute: AuthenticatedPromoterRankRoute,
   }
 
 const AuthenticatedPromoterRouteRouteWithChildren =
