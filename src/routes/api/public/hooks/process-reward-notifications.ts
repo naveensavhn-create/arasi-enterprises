@@ -7,6 +7,7 @@ import RewardClaimStatusEmail, {
   type RewardClaimStatus,
 } from "@/lib/email-templates/reward-claim-status";
 import { brand } from "@/lib/email-templates/_shared";
+import { loadBrandOverrides } from "@/lib/email/load-brand.server";
 import type { Database } from "@/integrations/supabase/types";
 
 /**
