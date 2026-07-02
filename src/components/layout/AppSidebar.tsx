@@ -57,6 +57,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
       items: [
         { title: "Customers", url: "/admin/customers", icon: Users },
         { title: "Promoters", url: "/admin/promoters", icon: UserCog },
+        { title: "Referral Tree", url: "/admin/referral-tree", icon: Share2 },
         { title: "Approvals", url: "/admin/approvals", icon: UserCheck },
         { title: "Plans", url: "/admin/plans", icon: Package },
         { title: "Memberships", url: "/admin/memberships", icon: ShieldCheck },
