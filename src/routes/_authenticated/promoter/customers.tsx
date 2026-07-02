@@ -417,27 +417,84 @@ function PromoterCustomersPage() {
                       </TableCell>
                       <TableCell>{kycBadge(r.kyc_status)}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {(r.kyc_status === "unsubmitted" || r.kyc_status === "rejected") && (
-                            <Button
-                              size="sm"
-                              disabled={!r.has_aadhaar_docs || submitMut.isPending}
-                              title={
-                                r.has_aadhaar_docs
-                                  ? "Submit this customer for admin KYC review"
-                                  : "Customer must upload Aadhaar number and front document first"
-                              }
-                              onClick={() =>
-                                submitMut.mutate({ userId: r.id, note: null })
-                              }
-                            >
-                              <Send className="mr-1 h-3.5 w-3.5" /> Submit
-                            </Button>
-                          )}
-                          <Button size="sm" variant="outline" onClick={() => setSelected(r)}>
-                            View
-                          </Button>
-                        </div>
+                        {(() => {
+                          const blockers = submissionBlockers(r);
+                          const rowError = submitErrors[r.id];
+                          const canSubmit =
+                            r.kyc_status === "unsubmitted" || r.kyc_status === "rejected";
+                          return (
+                            <div className="flex flex-col items-end gap-1.5">
+                              <div className="flex justify-end gap-2">
+                                {canSubmit && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span tabIndex={0}>
+                                          <Button
+                                            size="sm"
+                                            disabled={blockers.length > 0 || submitMut.isPending}
+                                            aria-describedby={
+                                              rowError ? `submit-err-${r.id}` : undefined
+                                            }
+                                            onClick={() =>
+                                              submitMut.mutate({ userId: r.id, note: null })
+                                            }
+                                          >
+                                            <Send className="mr-1 h-3.5 w-3.5" /> Submit
+                                          </Button>
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="left" className="max-w-xs">
+                                        {blockers.length === 0 ? (
+                                          "Submit this customer for admin KYC review"
+                                        ) : (
+                                          <div className="space-y-1 text-xs">
+                                            <p className="font-medium">
+                                              Can't submit yet — missing:
+                                            </p>
+                                            <ul className="ml-4 list-disc">
+                                              {blockers.map((b) => (
+                                                <li key={b}>{b}</li>
+                                              ))}
+                                            </ul>
+                                            <p className="pt-1 text-muted-foreground">
+                                              The customer completes these from their KYC page.
+                                            </p>
+                                          </div>
+                                        )}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelected(r)}
+                                >
+                                  View
+                                </Button>
+                              </div>
+                              {rowError && (
+                                <div
+                                  id={`submit-err-${r.id}`}
+                                  role="alert"
+                                  className="flex max-w-xs items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/5 px-2 py-1 text-left text-xs text-destructive"
+                                >
+                                  <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                                  <div className="flex-1 break-words">{rowError}</div>
+                                  <button
+                                    type="button"
+                                    aria-label="Dismiss error"
+                                    onClick={() => clearSubmitError(r.id)}
+                                    className="ml-1 rounded p-0.5 hover:bg-destructive/10"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   ))}
