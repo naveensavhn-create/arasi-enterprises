@@ -338,6 +338,7 @@ function ReviewDrawer({
   onClose,
   onDecide,
   pending,
+  pendingAction,
 }: {
   row: KycProfile | null;
   onClose: () => void;
@@ -347,6 +348,7 @@ function ReviewDrawer({
     assignRole: "promoter" | "customer" | null,
   ) => void;
   pending: boolean;
+  pendingAction: "approve" | "reject" | null;
 }) {
   const [notes, setNotes] = useState("");
   const [assignRole, setAssignRole] = useState<"promoter" | "customer">("customer");
