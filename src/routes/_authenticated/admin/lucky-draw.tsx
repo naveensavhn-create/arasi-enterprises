@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Trophy, Ticket, CalendarClock, Plus, Play, Ban, Trash2, Users } from "lucide-react";
+import { Trophy, Ticket, CalendarClock, Plus, Play, Ban, Trash2, Users, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,9 +159,45 @@ function AdminLuckyDrawPage() {
   });
 
 
+  const [statusFilter, setStatusFilter] = useState<Set<Draw["status"]>>(new Set());
+  const [dateField, setDateField] = useState<"opens_at" | "closes_at" | "draw_at" | "drawn_at">("opens_at");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+
   const openCount = draws.filter((d) => d.status === "open").length;
   const completedCount = draws.filter((d) => d.status === "completed").length;
   const upcoming = draws.find((d) => d.status === "scheduled" || d.status === "open");
+
+  const fromMs = dateFrom ? new Date(dateFrom).getTime() : null;
+  const toMs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null;
+  const filtered = draws.filter((d) => {
+    if (statusFilter.size > 0 && !statusFilter.has(d.status)) return false;
+    if (fromMs !== null || toMs !== null) {
+      const raw = d[dateField];
+      if (!raw) return false;
+      const ms = new Date(raw).getTime();
+      if (fromMs !== null && ms < fromMs) return false;
+      if (toMs !== null && ms > toMs) return false;
+    }
+    return true;
+  });
+
+  const toggleStatus = (s: Draw["status"]) => {
+    setStatusFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
+  };
+  const clearFilters = () => {
+    setStatusFilter(new Set());
+    setDateFrom("");
+    setDateTo("");
+    setDateField("opens_at");
+  };
+  const hasFilters = statusFilter.size > 0 || dateFrom || dateTo;
+  const STATUSES: Draw["status"][] = ["scheduled", "open", "closed", "completed", "cancelled"];
 
   return (
     <div className="space-y-4">
