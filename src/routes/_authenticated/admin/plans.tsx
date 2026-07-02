@@ -1029,7 +1029,69 @@ function AdminPlansPage() {
             );
           })}
         </div>
+        {filteredPlans.length > pageSize && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-sm">
+            <div className="text-sm text-muted-foreground">
+              Showing <span className="font-medium text-foreground">{pageStart + 1}</span>–
+              <span className="font-medium text-foreground">{pageEnd}</span> of{" "}
+              <span className="font-medium text-foreground">{filteredPlans.length}</span> plans
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                Per page
+                <select
+                  className="h-8 rounded-md border bg-background px-2 text-sm"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                >
+                  {[6, 12, 24, 48, 96].map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage(1)}
+                >
+                  « First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Prev
+                </Button>
+                <span className="px-2 text-sm tabular-nums text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage(totalPages)}
+                >
+                  Last »
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
+
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
