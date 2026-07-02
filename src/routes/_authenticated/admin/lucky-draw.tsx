@@ -272,6 +272,23 @@ function AdminLuckyDrawPage() {
                         {d.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={d.mode === "automated"}
+                          disabled={
+                            d.status === "completed" ||
+                            d.status === "cancelled" ||
+                            (modeMut.isPending && modeMut.variables?.id === d.id)
+                          }
+                          onCheckedChange={(v) =>
+                            modeMut.mutate({ id: d.id, mode: v ? "automated" : "manual" })
+                          }
+                          aria-label={`Toggle mode for ${d.name}`}
+                        />
+                        <span className="text-xs capitalize text-muted-foreground">{d.mode}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="flex justify-end gap-2">
                       <Button size="sm" variant="outline" onClick={() => setSelected(d)}>
                         <Users className="mr-1 h-3.5 w-3.5" /> Entries
