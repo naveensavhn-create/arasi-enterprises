@@ -1,6 +1,18 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { getMyRole } from "@/lib/roles.functions";
 import { Forbidden, ForbiddenError } from "@/components/access/Forbidden";
+import { useDrawRealtime } from "@/hooks/use-draw-realtime";
+
+function CustomerLayout() {
+  useDrawRealtime({
+    queryKeys: [
+      ["dashboard", "next-draw"],
+      ["customer", "lucky-draw"],
+      ["customer", "draw-results"],
+    ],
+  });
+  return <Outlet />;
+}
 
 export const Route = createFileRoute("/_authenticated/customer")({
   beforeLoad: async () => {
