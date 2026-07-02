@@ -98,7 +98,7 @@ describe("PromoterReferralLinkCard", () => {
   });
 
   it("surfaces an error toast if the clipboard write fails", async () => {
-    (writeText as any) = vi.fn(async () => { throw new Error("denied"); });
+    writeText.mockRejectedValueOnce(new Error("denied"));
     const user = userEvent.setup();
     renderCard();
     const btn = await screen.findByRole("button", { name: /copy link/i });
