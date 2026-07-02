@@ -352,6 +352,38 @@ async function processJob(
   let providerName: string;
   let skippedInfraCode: "skipped_no_email_infra" | "skipped_no_sms_infra";
 
+  // Pull the admin-editable template for this (channel, kind), if any.
+  const kind = job.reminder_kind === "overdue" ? "overdue" : "upcoming";
+  const { data: tpl } = await supabase.rpc("get_active_reminder_template", {
+    _channel: job.channel,
+    _kind: kind,
+  });
+  const template = (tpl ?? null) as {
+    subject: string | null;
+    heading: string | null;
+    intro: string | null;
+    outro: string | null;
+    sms_greeting: string | null;
+    sms_signature: string | null;
+  } | null;
+
+  const interpolate = (s: string | null | undefined, vars: Record<string, string>) =>
+    !s
+      ? ""
+      : s.replace(/\{\{\s*([a-z0-9_.-]+)\s*\}\}/gi, (m, k) =>
+          Object.prototype.hasOwnProperty.call(vars, String(k))
+            ? vars[String(k)]
+            : m,
+        );
+  const vars: Record<string, string> = {
+    name: profile?.full_name ?? "Member",
+    plan_name: planName ?? "",
+    amount: amountFormatted,
+    due_date: dueFormatted,
+    membership: membership.member_display_id ?? membership.membership_number,
+    support_email: brand?.supportEmail ?? "",
+  };
+
   if (job.channel === "email") {
     const html = await render(
       React.createElement(PaymentReminder, {
@@ -364,22 +396,35 @@ async function processJob(
         amountDue: Number(installment.amount),
         currency: "INR",
         dueDate: installment.due_date,
+        headingOverride: template?.heading
+          ? interpolate(template.heading, vars)
+          : null,
+        introOverride: template?.intro ? interpolate(template.intro, vars) : null,
+        outroOverride: template?.outro ? interpolate(template.outro, vars) : null,
         brand,
       }),
     );
     dispatched = await dispatchEmail({
       to: recipient,
-      subject: reminderTemplate.subject,
+      subject: interpolate(
+        template?.subject ?? reminderTemplate.subject,
+        vars,
+      ),
       html,
       idempotencyKey: `payment-reminder:${job.id}:${job.attempts}`,
     });
     providerName = "lovable-emails";
     skippedInfraCode = "skipped_no_email_infra";
   } else {
+    const greeting = (template?.sms_greeting ?? "Dear").trim() || "Dear";
+    const nameSlot = `${greeting} ${(profile?.full_name ?? "Member")}`.slice(
+      0,
+      60,
+    );
     dispatched = await dispatchSms({
       to: recipient,
       variables: {
-        name: (profile?.full_name ?? "Member").slice(0, 30),
+        name: nameSlot,
         amount: amountFormatted,
         due: dueFormatted,
         membership:
