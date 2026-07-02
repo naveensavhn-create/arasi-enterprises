@@ -775,9 +775,10 @@ function AdminPlansPage() {
       {/* Bulk actions toolbar */}
       {!isLoading && filteredPlans.length > 0 && (
         (() => {
-          const visibleIds = filteredPlans.map((p) => p.id);
+          const visibleIds = pagedPlans.map((p) => p.id);
           const selectedVisible = visibleIds.filter((id) => selected.has(id));
-          const allSelected = selectedVisible.length === visibleIds.length;
+          const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
+
           const someSelected = selectedVisible.length > 0 && !allSelected;
           const count = selected.size;
           return (
