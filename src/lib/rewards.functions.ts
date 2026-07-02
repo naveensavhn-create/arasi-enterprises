@@ -281,6 +281,16 @@ export const adminUpdateRewardStatus = createServerFn({ method: "POST" })
   });
 
 // ============ Timeline ============
+export type RewardEventMetadata = {
+  reward_number?: string | null;
+  tracking_reference?: string | null;
+  unlocked_count?: number;
+  new_status?: string | null;
+  unlocked_at?: string | null;
+  request_note?: string | null;
+  reward_id?: string | null;
+  tracking?: string | null;
+};
 export type RewardTimelineEvent = {
   id: string;
   event_type: string;
@@ -295,7 +305,7 @@ export type RewardTimelineEvent = {
   actor_name: string | null;
   actor_email: string | null;
   note: string | null;
-  metadata: Record<string, unknown>;
+  metadata: RewardEventMetadata;
   created_at: string;
   source: "reward_event" | "audit_log";
 };
