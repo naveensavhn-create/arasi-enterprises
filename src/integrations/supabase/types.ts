@@ -581,6 +581,7 @@ export type Database = {
       payment_reminder_jobs: {
         Row: {
           attempts: number
+          attempts_log: Json
           channel: Database["public"]["Enums"]["reminder_channel"]
           created_at: string
           dead_letter_at: string | null
@@ -607,6 +608,7 @@ export type Database = {
         }
         Insert: {
           attempts?: number
+          attempts_log?: Json
           channel?: Database["public"]["Enums"]["reminder_channel"]
           created_at?: string
           dead_letter_at?: string | null
@@ -633,6 +635,7 @@ export type Database = {
         }
         Update: {
           attempts?: number
+          attempts_log?: Json
           channel?: Database["public"]["Enums"]["reminder_channel"]
           created_at?: string
           dead_letter_at?: string | null
@@ -1230,6 +1233,7 @@ export type Database = {
         Args: { _limit?: number }
         Returns: {
           attempts: number
+          attempts_log: Json
           channel: Database["public"]["Enums"]["reminder_channel"]
           created_at: string
           dead_letter_at: string | null
@@ -1279,6 +1283,7 @@ export type Database = {
         }
         Returns: {
           attempts: number
+          attempts_log: Json
           channel: Database["public"]["Enums"]["reminder_channel"]
           created_at: string
           dead_letter_at: string | null
