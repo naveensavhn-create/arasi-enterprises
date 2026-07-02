@@ -197,6 +197,7 @@ export function useDrawRealtime(opts: {
           if (subStatus === "SUBSCRIBED") {
             attempt = 0;
             droppedToastShownRef.current = false;
+            failedToastShownRef.current = false;
             setError(null);
             setStatus("connected");
             clearPolling();
