@@ -95,6 +95,84 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_rewards: {
+        Row: {
+          admin_note: string | null
+          approved_at: string | null
+          created_at: string
+          delivered_at: string | null
+          dispatched_at: string | null
+          id: string
+          membership_id: string
+          rejected_at: string | null
+          request_note: string | null
+          requested_at: string | null
+          reviewed_by: string | null
+          reward_number: string | null
+          status: Database["public"]["Enums"]["reward_claim_status"]
+          tier_id: string
+          tracking_reference: string | null
+          unlocked_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          approved_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          dispatched_at?: string | null
+          id?: string
+          membership_id: string
+          rejected_at?: string | null
+          request_note?: string | null
+          requested_at?: string | null
+          reviewed_by?: string | null
+          reward_number?: string | null
+          status?: Database["public"]["Enums"]["reward_claim_status"]
+          tier_id: string
+          tracking_reference?: string | null
+          unlocked_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          approved_at?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          dispatched_at?: string | null
+          id?: string
+          membership_id?: string
+          rejected_at?: string | null
+          request_note?: string | null
+          requested_at?: string | null
+          reviewed_by?: string | null
+          reward_number?: string | null
+          status?: Database["public"]["Enums"]["reward_claim_status"]
+          tier_id?: string
+          tracking_reference?: string | null
+          unlocked_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_rewards_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_rewards_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "reward_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       draw_entries: {
         Row: {
           coupon_code: string | null
@@ -1630,6 +1708,62 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_tiers: {
+        Row: {
+          certificate_body: string | null
+          certificate_title: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          plan_id: string | null
+          reward_value: number
+          sort_order: number
+          threshold: number
+          trigger_type: string
+          updated_at: string
+        }
+        Insert: {
+          certificate_body?: string | null
+          certificate_title?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          plan_id?: string | null
+          reward_value?: number
+          sort_order?: number
+          threshold?: number
+          trigger_type: string
+          updated_at?: string
+        }
+        Update: {
+          certificate_body?: string | null
+          certificate_title?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          plan_id?: string | null
+          reward_value?: number
+          sort_order?: number
+          threshold?: number
+          trigger_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_tiers_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "membership_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_email_notifications: {
         Row: {
           audit_id: string | null
@@ -2038,6 +2172,40 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_update_reward_status: {
+        Args: {
+          _admin_note: string
+          _new_status: string
+          _reward_id: string
+          _tracking: string
+        }
+        Returns: {
+          admin_note: string | null
+          approved_at: string | null
+          created_at: string
+          delivered_at: string | null
+          dispatched_at: string | null
+          id: string
+          membership_id: string
+          rejected_at: string | null
+          request_note: string | null
+          requested_at: string | null
+          reviewed_by: string | null
+          reward_number: string | null
+          status: Database["public"]["Enums"]["reward_claim_status"]
+          tier_id: string
+          tracking_reference: string | null
+          unlocked_at: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customer_rewards"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_void_receipt: {
         Args: { _reason: string; _receipt_id: string }
         Returns: {
@@ -2417,9 +2585,42 @@ export type Database = {
         Args: { _note?: string; _user_id: string }
         Returns: Database["public"]["Enums"]["kyc_status"]
       }
+      recompute_customer_rewards: {
+        Args: { _membership_id: string }
+        Returns: number
+      }
       recompute_promoter_rank: {
         Args: { _promoter: string }
         Returns: undefined
+      }
+      request_customer_reward: {
+        Args: { _note: string; _reward_id: string }
+        Returns: {
+          admin_note: string | null
+          approved_at: string | null
+          created_at: string
+          delivered_at: string | null
+          dispatched_at: string | null
+          id: string
+          membership_id: string
+          rejected_at: string | null
+          request_note: string | null
+          requested_at: string | null
+          reviewed_by: string | null
+          reward_number: string | null
+          status: Database["public"]["Enums"]["reward_claim_status"]
+          tier_id: string
+          tracking_reference: string | null
+          unlocked_at: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "customer_rewards"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       requeue_kyc_email_job: {
         Args: { _job_id: string }
@@ -2483,6 +2684,14 @@ export type Database = {
         | "failed"
         | "cancelled"
         | "skipped"
+      reward_claim_status:
+        | "locked"
+        | "eligible"
+        | "requested"
+        | "approved"
+        | "dispatched"
+        | "delivered"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2631,6 +2840,15 @@ export const Constants = {
         "failed",
         "cancelled",
         "skipped",
+      ],
+      reward_claim_status: [
+        "locked",
+        "eligible",
+        "requested",
+        "approved",
+        "dispatched",
+        "delivered",
+        "rejected",
       ],
     },
   },
