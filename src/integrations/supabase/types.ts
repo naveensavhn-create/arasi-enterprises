@@ -1732,6 +1732,75 @@ export type Database = {
           },
         ]
       }
+      reconciliation_findings: {
+        Row: {
+          actual: Json
+          category: string
+          code: string
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_ref: string | null
+          entity_type: string
+          expected: Json
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          metadata: Json
+          occurrence_count: number
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          actual?: Json
+          category: string
+          code: string
+          created_at?: string
+          description: string
+          entity_id?: string | null
+          entity_ref?: string | null
+          entity_type: string
+          expected?: Json
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          metadata?: Json
+          occurrence_count?: number
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          actual?: Json
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string
+          entity_id?: string | null
+          entity_ref?: string | null
+          entity_type?: string
+          expected?: Json
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          metadata?: Json
+          occurrence_count?: number
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       reminder_templates: {
         Row: {
           channel: Database["public"]["Enums"]["reminder_channel"]
@@ -2235,6 +2304,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _recon_upsert_finding: {
+        Args: {
+          p_actual: Json
+          p_category: string
+          p_code: string
+          p_description: string
+          p_entity_id: string
+          p_entity_ref: string
+          p_entity_type: string
+          p_expected: Json
+          p_severity: string
+        }
+        Returns: undefined
+      }
       activate_membership_after_advance: {
         Args: { _payment_id: string }
         Returns: undefined
@@ -3115,6 +3198,38 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      resolve_reconciliation_finding: {
+        Args: { p_finding_id: string; p_note?: string; p_status: string }
+        Returns: {
+          actual: Json
+          category: string
+          code: string
+          created_at: string
+          description: string
+          entity_id: string | null
+          entity_ref: string | null
+          entity_type: string
+          expected: Json
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          metadata: Json
+          occurrence_count: number
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reconciliation_findings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      run_reconciliation: { Args: never; Returns: Json }
       start_impersonation: {
         Args: {
           _ip?: string
