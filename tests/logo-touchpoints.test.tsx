@@ -204,7 +204,10 @@ describe("Email templates all funnel through <BrandHeader />", () => {
     expect(src).not.toMatch(/<Img[^>]*arasi-logo/);
     // Every template should accept a brand override prop so senders can
     // pass Site Settings values through.
-    expect(src).toMatch(/brand\?:\s*BrandOverrides|brand:\s*BrandOverrides/);
+    // Every template should accept a brand override prop so senders can
+    // pass Site Settings values through. The prop is typed either as the
+    // shared `BrandOverrides` or a template-local brand type — accept both.
+    expect(src).toMatch(/brand\??:\s*(BrandOverrides|PaymentReminderBrand)/);
   });
 });
 
