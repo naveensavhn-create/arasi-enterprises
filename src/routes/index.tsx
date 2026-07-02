@@ -64,7 +64,60 @@ export const Route = createFileRoute("/")({
     ],
   }),
   component: Landing,
+  errorComponent: HomeErrorFallback,
 });
+
+function HomeErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  useEffect(() => {
+    console.error("[home] render failure", error);
+    reportLovableError(error, { boundary: "home_route_error_component" });
+  }, [error]);
+
+  return (
+    <div
+      role="alert"
+      className="flex min-h-screen w-full items-center justify-center bg-[#0b1220] p-6 text-slate-100"
+    >
+      <div className="max-w-lg space-y-5 text-center">
+        <Logo className="mx-auto h-12 w-auto" />
+        <h1
+          className="text-3xl font-semibold tracking-tight text-amber-200"
+          style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}
+        >
+          We couldn't load the home page
+        </h1>
+        <p className="text-sm text-slate-300">
+          Something went wrong while rendering this page. Our team has been notified.
+          You can retry, or head to sign in to continue to your portal.
+        </p>
+        {import.meta.env.DEV && error?.message ? (
+          <pre className="max-h-40 overflow-auto rounded-md border border-amber-500/30 bg-black/40 p-3 text-left text-xs text-amber-100/80">
+            {error.message}
+          </pre>
+        ) : null}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              reset();
+              void router.invalidate();
+            }}
+            className="rounded-full bg-amber-400 px-5 py-2 text-sm font-semibold text-slate-900 hover:bg-amber-300"
+          >
+            Try again
+          </button>
+          <Link
+            to="/auth"
+            className="rounded-full border border-amber-400/60 px-5 py-2 text-sm font-semibold text-amber-200 hover:bg-amber-400/10"
+          >
+            Go to sign in
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const serif = { fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" };
 
