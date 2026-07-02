@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useSession } from "@/lib/auth";
-import { listOpenDrawsForCustomer } from "@/lib/draws.functions";
+import { listOpenDrawsForCustomer, getLatestCompletedDrawForCustomer } from "@/lib/draws.functions";
 import { useDrawRealtime } from "@/hooks/use-draw-realtime";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,7 @@ function fmt(iso: string | null | undefined) {
 function CustomerDrawResultsPage() {
   const { session } = useSession();
   const listFn = useServerFn(listOpenDrawsForCustomer);
+  const latestCompletedFn = useServerFn(getLatestCompletedDrawForCustomer);
 
   const q = useQuery({
     queryKey: ["customer-draw-results", session?.user.id],
@@ -42,11 +43,19 @@ function CustomerDrawResultsPage() {
     queryFn: () => listFn(),
   });
 
+  const latestCompletedQ = useQuery({
+    queryKey: ["customer-latest-completed-draw", session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: () => latestCompletedFn(),
+    staleTime: 30_000,
+  });
+
   useDrawRealtime({
     enabled: !!session?.user.id,
     queryKeys: [
       ["customer-draw-results", session?.user.id],
       ["customer-open-draws", session?.user.id],
+      ["customer-latest-completed-draw", session?.user.id],
     ],
   });
 
