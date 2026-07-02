@@ -212,6 +212,10 @@ function PromoterCustomersPage() {
         </Button>
       </div>
 
+      <PromoterReferralLinkCard />
+
+
+
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard icon={<Users className="h-4 w-4" />} value={total} label="Total referred" />
         <StatCard
