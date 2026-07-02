@@ -97,6 +97,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "KYC Email Log", url: "/admin/kyc-emails", icon: Mail },
         { title: "Plan Deletions", url: "/admin/plan-deletions", icon: ShieldCheck },
         { title: "Audit Log", url: "/admin/audit-log", icon: ShieldCheck },
+        { title: "Reconciliation", url: "/admin/reconciliation", icon: Activity },
         { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
       ],
     },
