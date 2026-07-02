@@ -49,13 +49,18 @@ function renderCard() {
   );
 }
 
+const writeText = vi.fn(async () => undefined);
+Object.defineProperty(navigator, "clipboard", {
+  configurable: true,
+  value: { writeText },
+});
+
 beforeEach(() => {
   fnSpy.mockClear();
   successToast.mockClear();
   errorToast.mockClear();
-  Object.assign(navigator, {
-    clipboard: { writeText: vi.fn(async () => undefined) },
-  });
+  writeText.mockReset();
+  writeText.mockResolvedValue(undefined);
 });
 
 afterEach(() => cleanup());
