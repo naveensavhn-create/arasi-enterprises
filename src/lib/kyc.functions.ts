@@ -159,21 +159,51 @@ export const listKycSubmissions = createServerFn({ method: "GET" })
     return (rows ?? []) as KycProfile[];
   });
 
+const ALLOWED_ASSIGN_ROLES = ["promoter", "customer"] as const;
+
+const setKycDecisionSchema = z.object({
+  userId: z.string().uuid("Invalid user id"),
+  approve: z.boolean(),
+  notes: z.string().trim().max(500).optional().nullable(),
+  assignRole: z
+    .union([z.enum(ALLOWED_ASSIGN_ROLES), z.null(), z.literal("")])
+    .optional()
+    .transform((v) => (v === "" || v == null ? null : v))
+    .refine(
+      (v) => v === null || (ALLOWED_ASSIGN_ROLES as readonly string[]).includes(v),
+      { message: `Membership role must be one of: ${ALLOWED_ASSIGN_ROLES.join(", ")}` },
+    ),
+});
+
 export const setKycDecision = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z
-      .object({
-        userId: z.string().uuid(),
-        approve: z.boolean(),
-        notes: z.string().trim().max(500).optional().nullable(),
-        assignRole: z.enum(["promoter", "customer"]).optional().nullable(),
-      })
-      .parse(i),
-  )
+  .inputValidator((i: unknown) => {
+    const parsed = setKycDecisionSchema.safeParse(i);
+    if (!parsed.success) {
+      // Prefer the first field-level message so the UI can surface it verbatim.
+      const first = parsed.error.issues[0];
+      throw new Error(first?.message ?? "Invalid input");
+    }
+    return parsed.data;
+  })
   .handler(async ({ data, context }) => {
     if (data.assignRole && !data.approve) {
-      throw new Error("Role can only be assigned when approving KYC");
+      throw new Error("A membership role can only be assigned when approving KYC.");
+    }
+    // Defense-in-depth: block admin escalation even if a client crafts a payload
+    // that bypassed the enum (the DB also rejects this).
+    if ((data.assignRole as string | null) === "admin") {
+      throw new Error("The 'admin' role cannot be granted through KYC approval.");
+    }
+    // Prevent silently downgrading an existing admin.
+    if (data.assignRole) {
+      const { data: targetIsAdmin } = await context.supabase.rpc("has_role", {
+        _user_id: data.userId,
+        _role: "admin",
+      });
+      if (targetIsAdmin) {
+        throw new Error("This user is an admin — their role cannot be changed via KYC.");
+      }
     }
     const { error } = await context.supabase.rpc("admin_set_kyc_decision" as any, {
       _user_id: data.userId,

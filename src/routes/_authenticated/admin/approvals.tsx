@@ -127,13 +127,34 @@ function AdminApprovalsPage() {
     );
   }, [rows, q, onlyReferred]);
 
+  const ALLOWED_ROLES = ["promoter", "customer"] as const;
   const decideMut = useMutation({
     mutationFn: (v: {
       userId: string;
       approve: boolean;
       notes: string | null;
       assignRole?: "promoter" | "customer" | null;
-    }) => decideFn({ data: v }),
+    }) => {
+      // Client-side guard so the user gets an immediate, clear error
+      // before we ever hit the network. The server enforces the same rule.
+      if (v.approve) {
+        if (!v.assignRole) {
+          throw new Error("Select a membership role (Customer or Promoter) before approving.");
+        }
+        if (!(ALLOWED_ROLES as readonly string[]).includes(v.assignRole)) {
+          throw new Error(
+            `"${v.assignRole}" is not an allowed membership role. Choose Customer or Promoter.`,
+          );
+        }
+        const target = rows.find((r) => r.id === v.userId);
+        if (target?.role === "admin") {
+          throw new Error("This user is an admin — their role cannot be changed via KYC.");
+        }
+      } else if (v.assignRole) {
+        throw new Error("A role can only be assigned when approving KYC.");
+      }
+      return decideFn({ data: v });
+    },
     onSuccess: async (_r, v) => {
       toast.success(
         v.approve
@@ -142,9 +163,6 @@ function AdminApprovalsPage() {
             : "Approved"
           : "Rejected",
       );
-      // Refresh the admin's own session + role so the portal header/nav
-      // reflect any role change that resulted from this approval
-      // (e.g. self-approval or immediate follow-up promotion).
       try {
         await supabase.auth.refreshSession();
       } catch {
@@ -156,7 +174,10 @@ function AdminApprovalsPage() {
       ]);
       setSelected(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) =>
+      toast.error(e.message || "Could not update KYC decision", {
+        description: "Fix the issue above and try again.",
+      }),
   });
 
   return (
