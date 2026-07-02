@@ -19,6 +19,16 @@ const createDrawSchema = z.object({
 
 const idSchema = z.object({ id: z.string().uuid() });
 const pickSchema = z.object({ drawId: z.string().uuid(), seed: z.string().max(200).optional().nullable() });
+const pickManualSchema = z
+  .object({
+    drawId: z.string().uuid(),
+    entryIds: z.array(z.string().uuid()).max(1000).optional().nullable(),
+    count: z.number().int().min(1).max(1000).optional().nullable(),
+    seed: z.string().max(200).optional().nullable(),
+  })
+  .refine((v) => (v.entryIds && v.entryIds.length > 0) || (v.count && v.count > 0), {
+    message: "Provide either entryIds or count",
+  });
 const enterSchema = z.object({ drawId: z.string().uuid(), membershipId: z.string().uuid().optional().nullable() });
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
@@ -224,6 +234,29 @@ export const pickDrawWinners = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { data: rows, error } = await context.supabase.rpc("pick_draw_winners", {
       _draw_id: data.drawId,
+      _seed: data.seed ?? undefined,
+    });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+/**
+ * pickDrawWinnersManual — admin-only manual selection for manual-mode draws.
+ * Provide `entryIds` to award those exact entries (in order), or `count` to
+ * randomly pick that many eligible entries. Reuses the same completion flow
+ * (marks the draw completed and stamps drawn_at + seed) as automated draws,
+ * which triggers the shared realtime "winners announced" notifications on the
+ * customer and promoter portals.
+ */
+export const pickDrawWinnersManual = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => pickManualSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: rows, error } = await context.supabase.rpc("admin_pick_draw_winners_manual", {
+      _draw_id: data.drawId,
+      _entry_ids: data.entryIds && data.entryIds.length > 0 ? data.entryIds : undefined,
+      _count: data.count ?? undefined,
       _seed: data.seed ?? undefined,
     });
     if (error) throw new Error(error.message);

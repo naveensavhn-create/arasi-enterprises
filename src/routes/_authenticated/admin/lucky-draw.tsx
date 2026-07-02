@@ -47,8 +47,10 @@ import {
   listDrawWinners,
   listDraws,
   pickDrawWinners,
+  pickDrawWinnersManual,
   setDrawStatus,
 } from "@/lib/draws.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/admin/lucky-draw")({
   head: () => ({ meta: [{ title: "Lucky Draw — Admin" }] }),
@@ -465,6 +467,7 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
   const entriesFn = useServerFn(listDrawEntries);
   const winnersFn = useServerFn(listDrawWinners);
   const pick = useServerFn(pickDrawWinners);
+  const pickManual = useServerFn(pickDrawWinnersManual);
 
   const entries = useQuery({
     queryKey: ["admin", "draw-detail", draw?.id, "entries"],
@@ -477,28 +480,57 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
     enabled: !!draw,
   });
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [countOverride, setCountOverride] = useState<string>("");
+
+  const invalidateAfterPick = (rows: unknown) => {
+    const count = Array.isArray(rows) ? rows.length : 0;
+    toast.success(`Picked ${count} winner${count === 1 ? "" : "s"}`);
+    qc.invalidateQueries({ queryKey: ["admin", "draws"] });
+    qc.invalidateQueries({ queryKey: ["admin", "draw-detail", draw!.id, "winners"] });
+    setSelectedIds(new Set());
+    setCountOverride("");
+  };
+
   const pickMut = useMutation({
     mutationFn: () => pick({ data: { drawId: draw!.id } }),
-    onSuccess: (rows: unknown) => {
-      const count = Array.isArray(rows) ? rows.length : 0;
-      toast.success(`Picked ${count} winner${count === 1 ? "" : "s"}`);
-      qc.invalidateQueries({ queryKey: ["admin", "draws"] });
-      qc.invalidateQueries({ queryKey: ["admin", "draw-detail", draw!.id, "winners"] });
-    },
+    onSuccess: invalidateAfterPick,
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const pickSelectedMut = useMutation({
+    mutationFn: () =>
+      pickManual({ data: { drawId: draw!.id, entryIds: Array.from(selectedIds) } }),
+    onSuccess: invalidateAfterPick,
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const pickByCountMut = useMutation({
+    mutationFn: () =>
+      pickManual({ data: { drawId: draw!.id, count: Number(countOverride) } }),
+    onSuccess: invalidateAfterPick,
     onError: (e: Error) => toast.error(e.message),
   });
 
   const canPick = !!draw && draw.status !== "completed" && draw.status !== "cancelled";
+  const eligibleEntries = ((entries.data as any[]) ?? []).filter((e) => e.eligible);
+  const toggle = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   return (
     <Dialog open={!!draw} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{draw?.name}</DialogTitle>
         </DialogHeader>
         {draw && (
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="text-sm text-muted-foreground">
                 Prize: <span className="font-medium text-foreground">{draw.prize}</span> · Winners:{" "}
                 {draw.winners_count} · Status:{" "}
@@ -509,19 +541,18 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
               {canPick && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button size="sm" disabled={pickMut.isPending}>
+                    <Button size="sm" variant="secondary" disabled={pickMut.isPending}>
                       <Play className="mr-1 h-3.5 w-3.5" />
-                      {pickMut.isPending ? "Picking…" : "Pick winners"}
+                      {pickMut.isPending ? "Picking…" : `Random pick ${draw.winners_count}`}
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Pick winners for "{draw.name}"?</AlertDialogTitle>
+                      <AlertDialogTitle>Random pick for "{draw.name}"?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will randomly select {draw.winners_count} winner
-                        {draw.winners_count === 1 ? "" : "s"} from eligible entries in a single
-                        transaction and mark the draw as completed. If winners were already
-                        picked, the existing selection will be returned unchanged.
+                        Randomly picks {draw.winners_count} winner
+                        {draw.winners_count === 1 ? "" : "s"} from eligible entries and marks the
+                        draw completed. Customers and promoters are notified in real time.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -534,6 +565,86 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
                 </AlertDialog>
               )}
             </div>
+
+            {canPick && (
+              <Card className="border-dashed">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Manual pick</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Label className="text-xs text-muted-foreground">Random count</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      className="h-8 w-24"
+                      value={countOverride}
+                      onChange={(e) => setCountOverride(e.target.value)}
+                      placeholder={String(draw.winners_count)}
+                    />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={
+                            !countOverride ||
+                            Number(countOverride) < 1 ||
+                            pickByCountMut.isPending
+                          }
+                        >
+                          Pick N randomly
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Pick {countOverride} winners?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Randomly selects {countOverride} eligible entries and marks the draw
+                            completed. Winners are broadcast to customers and promoters.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => pickByCountMut.mutate()}>
+                            Pick
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Or tick specific eligible entries below and click "Award selected".
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        size="sm"
+                        disabled={selectedIds.size === 0 || pickSelectedMut.isPending}
+                      >
+                        <Trophy className="mr-1 h-3.5 w-3.5" />
+                        Award selected ({selectedIds.size})
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Award {selectedIds.size} selected entries?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          The chosen entries become winners in the order shown, and the draw is
+                          marked completed. Customers and promoters are notified in real time.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => pickSelectedMut.mutate()}>
+                          Award winners
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardContent>
+              </Card>
+            )}
 
             <div>
               <div className="mb-2 text-sm font-medium">Winners</div>
@@ -563,15 +674,16 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
 
             <div>
               <div className="mb-2 text-sm font-medium">
-                Entries ({(entries.data ?? []).length})
+                Entries ({(entries.data ?? []).length}) · Eligible: {eligibleEntries.length}
               </div>
               {(entries.data ?? []).length === 0 ? (
                 <div className="text-sm text-muted-foreground">No entries yet.</div>
               ) : (
-                <div className="max-h-64 overflow-auto rounded-md border">
+                <div className="max-h-72 overflow-auto rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        {canPick && <TableHead className="w-10"></TableHead>}
                         <TableHead>#</TableHead>
                         <TableHead>Customer</TableHead>
                         <TableHead>Eligible</TableHead>
@@ -580,6 +692,15 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
                     <TableBody>
                       {(entries.data as any[]).map((e) => (
                         <TableRow key={e.id}>
+                          {canPick && (
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedIds.has(e.id)}
+                                disabled={!e.eligible}
+                                onCheckedChange={() => toggle(e.id)}
+                              />
+                            </TableCell>
+                          )}
                           <TableCell>{e.entry_number}</TableCell>
                           <TableCell className="font-mono text-xs">{e.customer_id}</TableCell>
                           <TableCell>
@@ -602,3 +723,4 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
     </Dialog>
   );
 }
+
