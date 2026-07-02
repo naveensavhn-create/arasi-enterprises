@@ -34,9 +34,16 @@ export const Route = createFileRoute("/_authenticated/admin")({
     if (error instanceof ForbiddenError) {
       return <Forbidden required={error.required} actual={error.actual} />;
     }
+    const raw = error instanceof Error ? error.message : String(error ?? "");
+    const isAuthError = /unauthori[sz]ed|not authenticated|jwt|session|auth|401|403/i.test(raw);
+    const displayError = isAuthError
+      ? new Error(
+          "Your session has expired or is invalid. Please sign in again to access the admin portal.",
+        )
+      : error;
     return (
       <RouteError
-        error={error}
+        error={displayError}
         onRetry={() => {
           router.invalidate();
           reset();
