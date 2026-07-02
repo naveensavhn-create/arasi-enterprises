@@ -1,9 +1,21 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
-import { AlertCircle, BellRing, CalendarClock, Loader2, Search, Send, Users } from "lucide-react";
+import {
+  AlertCircle,
+  BellRing,
+  CalendarClock,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Loader2,
+  Mail,
+  Search,
+  Send,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -40,10 +52,17 @@ import {
   RadioGroupItem,
 } from "@/components/ui/radio-group";
 import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
+import {
   enqueueInstallmentReminders,
   listDueInstallmentsForReminders,
   type DueInstallmentRow,
 } from "@/lib/reminders.functions";
+import { renderPaymentReminderEmailPreview } from "@/lib/payment-reminder-preview.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/reminders")({
   head: () => ({
@@ -96,6 +115,8 @@ function RemindersPage() {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   });
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [dialogTab, setDialogTab] = useState<"recipients" | "preview">("recipients");
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -320,12 +341,22 @@ function RemindersPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl">
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(v) => {
+          setPreviewOpen(v);
+          if (v) {
+            setDialogTab("recipients");
+            setPreviewIndex(0);
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Send reminders</DialogTitle>
             <DialogDescription>
-              Review who will receive an email reminder, then send now or schedule for later.
+              Review recipients, preview the final email each will receive,
+              then send now or schedule for later.
             </DialogDescription>
           </DialogHeader>
 
@@ -344,40 +375,70 @@ function RemindersPage() {
             </div>
           </div>
 
-          <div className="max-h-56 overflow-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Recipient</TableHead>
-                  <TableHead>Installment</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedRows.map((r) => (
-                  <TableRow key={r.installment_id}>
-                    <TableCell>
-                      <div className="text-sm">{r.customer_name ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">{r.customer_email ?? "no email"}</div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      #{r.sequence} · {format(new Date(r.due_date + "T00:00:00"), "dd MMM")}
-                    </TableCell>
-                    <TableCell className="text-right text-sm">{formatINR(r.amount)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <Tabs value={dialogTab} onValueChange={(v) => setDialogTab(v as typeof dialogTab)}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="recipients" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Recipients
+              </TabsTrigger>
+              <TabsTrigger
+                value="preview"
+                className="gap-1.5"
+                disabled={selectedWithEmail.length === 0}
+              >
+                <Eye className="h-3.5 w-3.5" /> Email preview
+              </TabsTrigger>
+            </TabsList>
 
-          {selectedMissingEmail > 0 && (
-            <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800">
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5" />
-              <span>
-                {selectedMissingEmail} selected {selectedMissingEmail === 1 ? "customer has" : "customers have"} no email on file — they will be skipped.
-              </span>
-            </div>
-          )}
+            <TabsContent value="recipients" className="space-y-3 mt-3">
+              <div className="max-h-64 overflow-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Recipient</TableHead>
+                      <TableHead>Installment</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedRows.map((r) => (
+                      <TableRow key={r.installment_id}>
+                        <TableCell>
+                          <div className="text-sm">{r.customer_name ?? "—"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {r.customer_email ?? "no email"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          #{r.sequence} · {format(new Date(r.due_date + "T00:00:00"), "dd MMM")}
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {formatINR(r.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {selectedMissingEmail > 0 && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5" />
+                  <span>
+                    {selectedMissingEmail} selected{" "}
+                    {selectedMissingEmail === 1 ? "customer has" : "customers have"} no
+                    email on file — they will be skipped.
+                  </span>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="preview" className="mt-3">
+              <EmailPreviewPane
+                recipients={selectedWithEmail}
+                index={previewIndex}
+                onIndexChange={setPreviewIndex}
+              />
+            </TabsContent>
+          </Tabs>
 
           <div className="space-y-3">
             <RadioGroup value={sendMode} onValueChange={(v) => setSendMode(v as "now" | "schedule")} className="grid grid-cols-2 gap-3">
@@ -411,6 +472,11 @@ function RemindersPage() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Cancel</Button>
+            {dialogTab === "recipients" && selectedWithEmail.length > 0 ? (
+              <Button variant="outline" onClick={() => setDialogTab("preview")}>
+                <Eye className="mr-2 h-4 w-4" /> Preview email
+              </Button>
+            ) : null}
             <Button onClick={handleSend} disabled={enqueue.isPending || selectedWithEmail.length === 0}>
               {enqueue.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {sendMode === "now" ? "Send now" : "Schedule"}
@@ -418,6 +484,137 @@ function RemindersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Email preview pane — renders the exact HTML each selected customer will
+// receive by calling renderPaymentReminderEmailPreview with their live data
+// (name, plan, membership, sequence, amount, due date). Supports cycling
+// through recipients when more than one is selected.
+// ---------------------------------------------------------------------------
+
+interface EmailPreviewPaneProps {
+  recipients: DueInstallmentRow[];
+  index: number;
+  onIndexChange: (i: number) => void;
+}
+
+function EmailPreviewPane({ recipients, index, onIndexChange }: EmailPreviewPaneProps) {
+  const previewFn = useServerFn(renderPaymentReminderEmailPreview);
+  const safeIndex = Math.min(Math.max(0, index), Math.max(0, recipients.length - 1));
+  const current = recipients[safeIndex];
+
+  useEffect(() => {
+    if (index !== safeIndex) onIndexChange(safeIndex);
+  }, [index, safeIndex, onIndexChange]);
+
+  const query = useQuery({
+    enabled: !!current,
+    queryKey: [
+      "admin",
+      "reminders",
+      "email-preview",
+      current?.installment_id,
+    ],
+    queryFn: () =>
+      previewFn({
+        data: {
+          recipientName: current!.customer_name ?? undefined,
+          membershipNumber: current!.membership_number ?? undefined,
+          memberDisplayId: current!.member_display_id ?? undefined,
+          planName: undefined,
+          installmentSequence: current!.sequence,
+          installmentTotal: undefined,
+          amountDue: current!.amount,
+          currency: "INR",
+          dueDate: current!.due_date,
+        },
+      }),
+    staleTime: 60_000,
+  });
+
+  if (!current) {
+    return (
+      <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+        Select at least one recipient with an email address to preview the message.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2 rounded-md border p-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={safeIndex === 0}
+          onClick={() => onIndexChange(safeIndex - 1)}
+          aria-label="Previous recipient"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1 min-w-0 text-center">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            Recipient {safeIndex + 1} of {recipients.length}
+          </div>
+          <div className="text-sm font-medium truncate">
+            {current.customer_name ?? "—"}
+          </div>
+          <div className="text-xs text-muted-foreground truncate flex items-center justify-center gap-1">
+            <Mail className="h-3 w-3" />
+            {current.customer_email}
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={safeIndex >= recipients.length - 1}
+          onClick={() => onIndexChange(safeIndex + 1)}
+          aria-label="Next recipient"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {query.data?.subject ? (
+        <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs">
+          <span className="text-muted-foreground">Subject:</span>{" "}
+          <span className="font-medium">{query.data.subject}</span>
+        </div>
+      ) : null}
+
+      <div className="rounded-md border overflow-hidden bg-white h-[420px]">
+        {query.isLoading ? (
+          <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Rendering email…
+          </div>
+        ) : query.isError ? (
+          <div className="h-full flex flex-col items-center justify-center gap-2 p-4 text-sm text-destructive">
+            <AlertCircle className="h-5 w-5" />
+            <span>
+              {(query.error as Error | undefined)?.message ??
+                "Failed to render preview."}
+            </span>
+            <Button size="sm" variant="outline" onClick={() => query.refetch()}>
+              Retry
+            </Button>
+          </div>
+        ) : query.data?.html ? (
+          <iframe
+            title={`Email preview for ${current.customer_email}`}
+            srcDoc={query.data.html}
+            className="w-full h-full"
+            sandbox=""
+          />
+        ) : null}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Preview uses live brand settings, this recipient's plan, installment
+        number, amount and due date — matching exactly what will be sent.
+      </p>
     </div>
   );
 }
