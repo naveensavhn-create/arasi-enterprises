@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Trophy, CalendarClock, Ticket, Loader2, Gift, Crown, Frown } from "lucide-react";
+import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { formatDateTime } from "@/lib/format-datetime";
 
 export const Route = createFileRoute("/_authenticated/customer/draw-results")({
   head: () => ({
@@ -25,11 +27,7 @@ export const Route = createFileRoute("/_authenticated/customer/draw-results")({
 });
 
 function fmt(iso: string | null | undefined) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  return formatDateTime(iso);
 }
 
 function CustomerDrawResultsPage() {
