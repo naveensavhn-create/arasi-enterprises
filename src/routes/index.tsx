@@ -13,14 +13,51 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
+const SITE_URL = "https://arasi-enterprises.lovable.app";
+const PAGE_TITLE =
+  "Arasi Enterprises — Advance Booking & Monthly Installment Membership";
+const PAGE_DESCRIPTION =
+  "Reserve your Arasi Enterprises membership with a one-time advance and settle in fixed monthly installments. Transparent schedules, receipted payments, and member entitlements — customer, promoter and administrator portals.";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Arasi Enterprises — Choose your portal" },
+      { title: PAGE_TITLE },
+      { name: "description", content: PAGE_DESCRIPTION },
       {
-        name: "description",
+        name: "keywords",
         content:
-          "Sign in to the Arasi Enterprises membership platform as a customer, promoter or administrator.",
+          "Arasi Enterprises, advance booking membership, monthly installment plan, membership programme, member rewards, customer portal, promoter portal",
+      },
+      { name: "robots", content: "index,follow" },
+      { name: "author", content: "Arasi Enterprises" },
+
+      // Open Graph
+      { property: "og:title", content: PAGE_TITLE },
+      { property: "og:description", content: PAGE_DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: `${SITE_URL}/` },
+      { property: "og:site_name", content: "Arasi Enterprises" },
+      { property: "og:locale", content: "en_IN" },
+
+      // Twitter
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: PAGE_TITLE },
+      { name: "twitter:description", content: PAGE_DESCRIPTION },
+    ],
+    links: [{ rel: "canonical", href: `${SITE_URL}/` }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "Arasi Enterprises",
+          url: SITE_URL,
+          description: PAGE_DESCRIPTION,
+          slogan: "Your Dream, Our Commitment",
+          areaServed: "IN",
+        }),
       },
     ],
   }),
