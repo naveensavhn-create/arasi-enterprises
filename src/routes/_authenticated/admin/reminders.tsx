@@ -487,3 +487,134 @@ function RemindersPage() {
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Email preview pane — renders the exact HTML each selected customer will
+// receive by calling renderPaymentReminderEmailPreview with their live data
+// (name, plan, membership, sequence, amount, due date). Supports cycling
+// through recipients when more than one is selected.
+// ---------------------------------------------------------------------------
+
+interface EmailPreviewPaneProps {
+  recipients: DueInstallmentRow[];
+  index: number;
+  onIndexChange: (i: number) => void;
+}
+
+function EmailPreviewPane({ recipients, index, onIndexChange }: EmailPreviewPaneProps) {
+  const previewFn = useServerFn(renderPaymentReminderEmailPreview);
+  const safeIndex = Math.min(Math.max(0, index), Math.max(0, recipients.length - 1));
+  const current = recipients[safeIndex];
+
+  useEffect(() => {
+    if (index !== safeIndex) onIndexChange(safeIndex);
+  }, [index, safeIndex, onIndexChange]);
+
+  const query = useQuery({
+    enabled: !!current,
+    queryKey: [
+      "admin",
+      "reminders",
+      "email-preview",
+      current?.installment_id,
+    ],
+    queryFn: () =>
+      previewFn({
+        data: {
+          recipientName: current!.customer_name ?? undefined,
+          membershipNumber: current!.membership_number ?? undefined,
+          memberDisplayId: current!.member_display_id ?? undefined,
+          planName: current!.plan_name ?? undefined,
+          installmentSequence: current!.sequence,
+          installmentTotal: current!.total_installments ?? undefined,
+          amountDue: current!.amount,
+          currency: "INR",
+          dueDate: current!.due_date,
+        },
+      }),
+    staleTime: 60_000,
+  });
+
+  if (!current) {
+    return (
+      <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+        Select at least one recipient with an email address to preview the message.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2 rounded-md border p-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={safeIndex === 0}
+          onClick={() => onIndexChange(safeIndex - 1)}
+          aria-label="Previous recipient"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1 min-w-0 text-center">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            Recipient {safeIndex + 1} of {recipients.length}
+          </div>
+          <div className="text-sm font-medium truncate">
+            {current.customer_name ?? "—"}
+          </div>
+          <div className="text-xs text-muted-foreground truncate flex items-center justify-center gap-1">
+            <Mail className="h-3 w-3" />
+            {current.customer_email}
+          </div>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={safeIndex >= recipients.length - 1}
+          onClick={() => onIndexChange(safeIndex + 1)}
+          aria-label="Next recipient"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {query.data?.subject ? (
+        <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs">
+          <span className="text-muted-foreground">Subject:</span>{" "}
+          <span className="font-medium">{query.data.subject}</span>
+        </div>
+      ) : null}
+
+      <div className="rounded-md border overflow-hidden bg-white h-[420px]">
+        {query.isLoading ? (
+          <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" /> Rendering email…
+          </div>
+        ) : query.isError ? (
+          <div className="h-full flex flex-col items-center justify-center gap-2 p-4 text-sm text-destructive">
+            <AlertCircle className="h-5 w-5" />
+            <span>
+              {(query.error as Error | undefined)?.message ??
+                "Failed to render preview."}
+            </span>
+            <Button size="sm" variant="outline" onClick={() => query.refetch()}>
+              Retry
+            </Button>
+          </div>
+        ) : query.data?.html ? (
+          <iframe
+            title={`Email preview for ${current.customer_email}`}
+            srcDoc={query.data.html}
+            className="w-full h-full"
+            sandbox=""
+          />
+        ) : null}
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        Preview uses live brand settings, this recipient's plan, installment
+        number, amount and due date — matching exactly what will be sent.
+      </p>
+    </div>
+  );
+}
