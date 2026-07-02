@@ -51,6 +51,7 @@ function CustomerLuckyDrawPage() {
 
   const listDrawsFn = useServerFn(listOpenDrawsForCustomer);
   const createDrawEntryFn = useServerFn(createDrawEntry);
+  const latestCompletedFn = useServerFn(getLatestCompletedDrawForCustomer);
 
   const drawsQ = useQuery({
     queryKey: ["customer-open-draws", session?.user.id],
@@ -58,11 +59,19 @@ function CustomerLuckyDrawPage() {
     queryFn: () => listDrawsFn(),
   });
 
+  const latestCompletedQ = useQuery({
+    queryKey: ["customer-latest-completed-draw", session?.user.id],
+    enabled: !!session?.user.id,
+    queryFn: () => latestCompletedFn(),
+    staleTime: 30_000,
+  });
+
   useDrawRealtime({
     enabled: !!session?.user.id,
     queryKeys: [
       ["customer-open-draws", session?.user.id],
       ["customer-draw-results", session?.user.id],
+      ["customer-latest-completed-draw", session?.user.id],
     ],
   });
 
