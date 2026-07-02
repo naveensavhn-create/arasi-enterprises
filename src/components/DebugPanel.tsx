@@ -39,10 +39,17 @@ function formatArg(arg: unknown): string {
 }
 
 export function DebugPanel() {
-  const [enabled] = useState(shouldEnable);
+  const [mounted, setMounted] = useState(false);
+  const [enabled, setEnabled] = useState(false);
   const [entries, setEntries] = useState<DebugEntry[]>([]);
   const [open, setOpen] = useState(false);
   const idRef = useRef(0);
+
+  useEffect(() => {
+    setMounted(true);
+    setEnabled(shouldEnable());
+  }, []);
+
 
   useEffect(() => {
     if (!enabled) return;
@@ -107,7 +114,7 @@ export function DebugPanel() {
     };
   }, [enabled]);
 
-  if (!enabled) return null;
+  if (!mounted || !enabled) return null;
 
   const badgeColor =
     entries.length === 0
