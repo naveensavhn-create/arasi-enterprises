@@ -32,5 +32,5 @@ export const Route = createFileRoute("/_authenticated/customer")({
       </div>
     );
   },
-  component: () => <Outlet />,
+  component: CustomerLayout,
 });
