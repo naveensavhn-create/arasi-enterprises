@@ -37,6 +37,7 @@ export interface KycDecisionProps {
   assignedRole?: string;
   /** Optional deep link into the user's KYC page for follow-up. */
   actionUrl?: string;
+  brand?: BrandOverrides;
 }
 
 const KycDecision: React.FC<KycDecisionProps> = ({
