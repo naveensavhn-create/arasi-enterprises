@@ -39,6 +39,7 @@ export interface RewardClaimStatusProps {
   adminNote?: string | null;
   changedAt: string;
   actionUrl?: string;
+  brand?: BrandOverrides;
 }
 
 const HEADLINE: Record<RewardClaimStatus, string> = {
