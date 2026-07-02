@@ -7,6 +7,7 @@ import RewardClaimStatusEmail, {
   type RewardClaimStatus,
 } from "@/lib/email-templates/reward-claim-status";
 import { brand } from "@/lib/email-templates/_shared";
+import { loadBrandOverrides } from "@/lib/email/load-brand.server";
 import type { Database } from "@/integrations/supabase/types";
 
 /**
@@ -292,8 +293,16 @@ async function processJob(
   let providerName: string;
   let skippedInfraCode: "skipped_no_email_infra" | "skipped_no_sms_infra";
 
+  // Load Site Settings once so both channels use the same configured
+  // brand name and logo URL.
+  const brandOverrides = await loadBrandOverrides();
+  const brandName = brandOverrides?.name ?? brand.name;
+
   if (job.channel === "email") {
-    const subject = subjectFor(job.notification_kind, tierName);
+    const subject =
+      job.notification_kind === "unlocked"
+        ? `[${brandName}] You've unlocked ${tierName}`
+        : `[${brandName}] Reward claim update — ${tierName}`;
     let html: string;
     let templateName: string;
 
@@ -311,6 +320,7 @@ async function processJob(
           actionUrl: process.env.APP_URL
             ? `${process.env.APP_URL.replace(/\/$/, "")}/customer/rewards`
             : undefined,
+          brand: brandOverrides,
         }),
       );
       templateName = "reward-unlocked";
@@ -328,6 +338,7 @@ async function processJob(
           actionUrl: process.env.APP_URL
             ? `${process.env.APP_URL.replace(/\/$/, "")}/customer/rewards`
             : undefined,
+          brand: brandOverrides,
         }),
       );
       templateName = "reward-claim-status";
@@ -359,6 +370,11 @@ async function processJob(
         status: (job.to_status ?? "").toString(),
         reward: rewardNumber ?? "",
         tracking: reward?.tracking_reference ?? "",
+        // Brand-aware variables — DLT templates that include ##brand## or
+        // ##logo## placeholders will render the Site Settings values. Extras
+        // are safely ignored by MSG91 for templates that don't reference them.
+        brand: (brandOverrides?.name ?? brand.name).slice(0, 30),
+        logo: (brandOverrides?.logoUrl ?? "").slice(0, 200),
       },
       idempotencyKey: `reward-notification:${job.id}:${job.attempts}`,
     });

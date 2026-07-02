@@ -10,7 +10,15 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { brand, colors, styles, formatTimestamp } from "./_shared";
+import {
+  brand as defaultBrand,
+  colors,
+  styles,
+  formatTimestamp,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
 export interface RewardUnlockedProps {
   recipientName?: string;
@@ -21,6 +29,7 @@ export interface RewardUnlockedProps {
   membershipNumber?: string | null;
   unlockedAt: string;
   actionUrl?: string;
+  brand?: BrandOverrides;
 }
 
 const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
@@ -32,7 +41,9 @@ const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
   membershipNumber,
   unlockedAt,
   actionUrl,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   const value =
     rewardValue && rewardValue > 0
@@ -47,15 +58,12 @@ const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
     <Html lang="en" dir="ltr">
       <Head />
       <Preview>
-        Congratulations — you've unlocked the {tierName} reward on {brand.name}.
+        Congratulations — you've unlocked the {tierName} reward on {b.name}.
       </Preview>
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
 
             <Text
               style={{
@@ -80,9 +88,10 @@ const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
             </Heading>
             <Text style={styles.p}>{greeting}</Text>
             <Text style={styles.p}>
-              Your loyalty with {brand.name} has just paid off. You are now
+              Your loyalty with {b.name} has just paid off. You are now
               eligible to claim the reward below.
             </Text>
+
 
             <Section style={styles.detailBox}>
               <Text style={styles.detailLabel}>Reward tier</Text>
@@ -133,12 +142,12 @@ const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
               Questions about this reward? Reply to this email or reach us at{" "}
-              {brand.supportEmail}.
+              {b.supportEmail}.
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             account notification.
           </Text>
         </Container>
@@ -151,7 +160,7 @@ export default RewardUnlocked;
 
 export const template = {
   component: RewardUnlocked,
-  subject: `[${brand.name}] You've unlocked a reward`,
+  subject: `[${defaultBrand.name}] You've unlocked a reward`,
   displayName: "Reward unlocked",
   previewData: {
     recipientName: "Priya Sharma",

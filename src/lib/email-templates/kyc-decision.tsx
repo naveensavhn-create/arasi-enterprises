@@ -10,7 +10,15 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { brand, colors, styles, formatTimestamp } from "./_shared";
+import {
+  brand as defaultBrand,
+  colors,
+  styles,
+  formatTimestamp,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
 export interface KycDecisionProps {
   /** Name of the customer/promoter whose KYC was reviewed. */
@@ -29,6 +37,7 @@ export interface KycDecisionProps {
   assignedRole?: string;
   /** Optional deep link into the user's KYC page for follow-up. */
   actionUrl?: string;
+  brand?: BrandOverrides;
 }
 
 const KycDecision: React.FC<KycDecisionProps> = ({
@@ -40,7 +49,9 @@ const KycDecision: React.FC<KycDecisionProps> = ({
   reviewNotes,
   assignedRole,
   actionUrl,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const approved = decision === "approved";
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   const accent = approved ? colors.success : colors.danger;
@@ -49,29 +60,27 @@ const KycDecision: React.FC<KycDecisionProps> = ({
     ? "Your KYC has been approved"
     : "Your KYC needs your attention";
   const intro = approved
-    ? `Great news — your identity documents have been verified and your account with ${brand.name} is now fully activated.`
+    ? `Great news — your identity documents have been verified and your account with ${b.name} is now fully activated.`
     : `We reviewed your identity documents and were unable to approve them at this time. Please review the notes below and resubmit your KYC.`;
 
   const reviewer =
     reviewerName && reviewerEmail
       ? `${reviewerName} (${reviewerEmail})`
-      : reviewerName ?? reviewerEmail ?? "Arasi Compliance Team";
+      : reviewerName ?? reviewerEmail ?? `${b.name} Compliance Team`;
 
   return (
     <Html lang="en" dir="ltr">
       <Head />
       <Preview>
         {approved
-          ? `Your ${brand.name} KYC has been approved.`
-          : `Your ${brand.name} KYC was not approved — action required.`}
+          ? `Your ${b.name} KYC has been approved.`
+          : `Your ${b.name} KYC was not approved — action required.`}
       </Preview>
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
+
 
             <Text
               style={{
@@ -139,13 +148,13 @@ const KycDecision: React.FC<KycDecisionProps> = ({
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
               {approved
-                ? `Welcome aboard! If anything looks off, reply to this email or reach us at ${brand.supportEmail}.`
-                : `If you believe this decision is a mistake, reply to this email or contact ${brand.supportEmail} and we'll take another look.`}
+                ? `Welcome aboard! If anything looks off, reply to this email or reach us at ${b.supportEmail}.`
+                : `If you believe this decision is a mistake, reply to this email or contact ${b.supportEmail} and we'll take another look.`}
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             account notification.
           </Text>
         </Container>
@@ -158,7 +167,7 @@ export default KycDecision;
 
 export const template = {
   component: KycDecision,
-  subject: `[${brand.name}] Your KYC decision`,
+  subject: `[${defaultBrand.name}] Your KYC decision`,
   displayName: "KYC decision",
   previewData: {
     recipientName: "Priya Sharma",

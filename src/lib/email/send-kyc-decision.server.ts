@@ -13,6 +13,7 @@ import KycDecision, {
 } from "@/lib/email-templates/kyc-decision";
 import { brand } from "@/lib/email-templates/_shared";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loadBrandOverrides } from "@/lib/email/load-brand.server";
 
 export type KycDecision = "approved" | "rejected";
 
@@ -180,6 +181,7 @@ async function finalizeClaimedJob(jobId: string): Promise<KycEmailAttemptResult>
   };
 
   try {
+    const brandOverrides = await loadBrandOverrides();
     const props: KycDecisionProps = {
       decision: job.decision,
       recipientName:
@@ -192,6 +194,7 @@ async function finalizeClaimedJob(jobId: string): Promise<KycEmailAttemptResult>
       reviewNotes: job.review_notes ?? undefined,
       assignedRole: job.assigned_role ?? undefined,
       actionUrl: (job.metadata?.actionUrl as string | undefined) ?? undefined,
+      brand: brandOverrides,
     };
     const html = await render(React.createElement(KycDecision, props));
     const dispatched = await dispatchIfConfigured({

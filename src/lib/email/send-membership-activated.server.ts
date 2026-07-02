@@ -14,6 +14,7 @@ import MembershipActivated, {
 } from "@/lib/email-templates/membership-activated";
 import { brand } from "@/lib/email-templates/_shared";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loadBrandOverrides } from "@/lib/email/load-brand.server";
 
 export interface SendMembershipActivatedInput {
   membershipId: string;
@@ -135,6 +136,7 @@ export async function sendMembershipActivatedEmail(
   });
 
   try {
+    const brandOverrides = await loadBrandOverrides();
     const props: MembershipActivatedProps = {
       recipientName: profile?.full_name ?? undefined,
       membershipNumber: membership.membership_number,
@@ -150,6 +152,7 @@ export async function sendMembershipActivatedEmail(
       nextDueAmount:
         nextDue?.amount != null ? Number(nextDue.amount) : null,
       currency: "INR",
+      brand: brandOverrides,
     };
 
     const html = await render(React.createElement(MembershipActivated, props));

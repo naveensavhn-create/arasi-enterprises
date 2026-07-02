@@ -1,6 +1,13 @@
 // Shared brand tokens for Arasi Enterprises transactional email templates.
 // Kept as plain constants so React Email inlines them into the final HTML
 // (no external CSS, no <style> tags).
+//
+// Every template must render the header via `<BrandHeader />` after resolving
+// overrides through `resolveBrand()` so the Site Settings logo URL, brand
+// name, and colours are applied consistently across email + PDF surfaces.
+
+import * as React from "react";
+import { Img, Section, Text } from "@react-email/components";
 
 export const brand = {
   name: "Arasi Enterprises",
@@ -147,3 +154,97 @@ export function formatTimestamp(iso: string): string {
     return iso;
   }
 }
+
+// ============================================================================
+// Brand override resolution — shared by every transactional template so the
+// Site Settings logo URL + colours flow through identically.
+// ============================================================================
+
+export interface BrandOverrides {
+  name?: string | null;
+  tagline?: string | null;
+  supportEmail?: string | null;
+  logoUrl?: string | null;
+  primaryColor?: string | null;
+  accentColor?: string | null;
+  headingFont?: string | null;
+  bodyFont?: string | null;
+}
+
+export interface ResolvedBrand {
+  name: string;
+  tagline: string;
+  supportEmail: string;
+  logoUrl: string | null;
+  primary: string;
+  accent: string;
+  headingFont?: string;
+  bodyFont?: string;
+}
+
+const nonEmpty = (v: unknown): string | undefined => {
+  if (typeof v !== "string") return undefined;
+  const t = v.trim();
+  return t.length > 0 ? t : undefined;
+};
+
+const safeHex = (v: unknown, fallback: string): string => {
+  const t = nonEmpty(v);
+  return t && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(t) ? t : fallback;
+};
+
+const safeUrl = (v: unknown): string | null => {
+  const t = nonEmpty(v);
+  if (!t) return null;
+  try {
+    const u = new URL(t);
+    return u.protocol === "http:" || u.protocol === "https:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
+const safeFont = (v: unknown): string | undefined => {
+  const t = nonEmpty(v);
+  // Allow letters, digits, spaces, dashes and single quotes only — keeps
+  // inline CSS injection out and rejects gibberish tokens.
+  return t && /^[A-Za-z0-9 '\-]{1,64}$/.test(t) ? t : undefined;
+};
+
+/**
+ * Merge admin-configured Site Settings values with the built-in defaults,
+ * defensively sanitising every field so a partially-configured
+ * `site_settings` row can never break an outbound email.
+ */
+export function resolveBrand(overrides?: BrandOverrides | null): ResolvedBrand {
+  return {
+    name: nonEmpty(overrides?.name) ?? brand.name,
+    tagline: nonEmpty(overrides?.tagline) ?? brand.tagline,
+    supportEmail: nonEmpty(overrides?.supportEmail) ?? brand.supportEmail,
+    logoUrl: safeUrl(overrides?.logoUrl),
+    primary: safeHex(overrides?.primaryColor, colors.gold),
+    accent: safeHex(overrides?.accentColor, colors.goldSoft),
+    headingFont: safeFont(overrides?.headingFont),
+    bodyFont: safeFont(overrides?.bodyFont),
+  };
+}
+
+/**
+ * Standard email header used by every template. Renders the configured Site
+ * Settings logo (when available) above the brand name + tagline so recipients
+ * see the same identity regardless of which notification they received.
+ */
+export const BrandHeader: React.FC<{ b: ResolvedBrand }> = ({ b }) => (
+  <Section style={styles.header}>
+    {b.logoUrl ? (
+      <Img
+        src={b.logoUrl}
+        alt={b.name}
+        height="36"
+        style={{ display: "block", marginBottom: "8px" }}
+      />
+    ) : null}
+    <Text style={{ ...styles.brandName, color: b.primary }}>{b.name}</Text>
+    <Text style={styles.tagline}>{b.tagline}</Text>
+  </Section>
+);

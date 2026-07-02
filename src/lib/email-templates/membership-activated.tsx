@@ -10,7 +10,14 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { brand, styles, formatTimestamp } from "./_shared";
+import {
+  brand as defaultBrand,
+  styles,
+  formatTimestamp,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
 export interface MembershipActivatedProps {
   recipientName?: string;
@@ -27,6 +34,7 @@ export interface MembershipActivatedProps {
   nextDueAmount?: number | null;
   currency?: string; // default INR
   dashboardUrl?: string;
+  brand?: BrandOverrides;
 }
 
 const fmt = (amount: number, ccy = "INR") =>
@@ -62,21 +70,21 @@ const MembershipActivated: React.FC<MembershipActivatedProps> = ({
   nextDueAmount,
   currency = "INR",
   dashboardUrl,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   return (
     <Html lang="en" dir="ltr">
       <Head />
       <Preview>
-        Your {planName} membership at {brand.name} is now active.
+        Your {planName} membership at {b.name} is now active.
       </Preview>
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
+
 
             <Heading as="h1" style={styles.h1}>
               Welcome — your {planName} membership is active
@@ -150,12 +158,12 @@ const MembershipActivated: React.FC<MembershipActivatedProps> = ({
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
               Questions about your membership or billing? Reply to this email or
-              write to {brand.supportEmail}.
+              write to {b.supportEmail}.
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             confirmation for membership {membershipNumber}.
           </Text>
         </Container>
@@ -168,7 +176,7 @@ export default MembershipActivated;
 
 export const template = {
   component: MembershipActivated,
-  subject: `[${brand.name}] Your membership is active`,
+  subject: `[${defaultBrand.name}] Your membership is active`,
   displayName: "Membership activated",
   previewData: {
     recipientName: "Priya Sharma",
