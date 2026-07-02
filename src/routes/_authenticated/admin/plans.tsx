@@ -158,6 +158,9 @@ function AdminPlansPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState<null | "activate" | "deactivate" | "delete">(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(12);
+
 
   const toggleSelected = (id: string) =>
     setSelected((s) => {
