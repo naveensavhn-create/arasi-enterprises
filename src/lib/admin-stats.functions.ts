@@ -57,6 +57,7 @@ export const getAdminDashboardStats = createServerFn({ method: "GET" })
       kycNotSubmittedQ,
       nextDrawQ,
       latestDrawQ,
+      incentivesQ,
     ] = await Promise.all([
       db.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "promoter"),
       db.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "customer"),
@@ -80,6 +81,8 @@ export const getAdminDashboardStats = createServerFn({ method: "GET" })
         .order("drawn_at", { ascending: false, nullsFirst: false })
         .limit(1)
         .maybeSingle(),
+      // One-time rank incentives: aggregate as awarded totals, not monthly.
+      db.from("promoter_incentives").select("amount,status"),
     ]);
 
     const num = (x: unknown) => (typeof x === "number" ? x : x == null ? 0 : Number(x) || 0);
