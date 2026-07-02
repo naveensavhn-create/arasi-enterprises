@@ -147,6 +147,16 @@ function AdminLuckyDrawPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const modeMut = useMutation({
+    mutationFn: (v: { id: string; mode: "manual" | "automated" }) => setMode({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(`Switched to ${v.mode} mode`);
+      qc.invalidateQueries({ queryKey: ["admin", "draws"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   const openCount = draws.filter((d) => d.status === "open").length;
   const completedCount = draws.filter((d) => d.status === "completed").length;
   const upcoming = draws.find((d) => d.status === "scheduled" || d.status === "open");
