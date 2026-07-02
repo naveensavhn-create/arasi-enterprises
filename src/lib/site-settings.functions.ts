@@ -30,6 +30,8 @@ const COLUMNS =
   "brand_name, tagline, support_email, support_phone, primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, favicon_url, footer_text, reminder_cron_schedule, reminder_cron_timezone, updated_at";
 
 
+// PUBLIC_OK: Returns only public branding (logo, colors, fonts, footer text)
+// used to render the landing page and email templates before sign-in.
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
   async (): Promise<SiteSettings | null> => {
     const supabase = createClient(

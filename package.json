@@ -10,10 +10,11 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "vitest run",
+    "test": "bun run audit:server-fns && vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "check:payment-status-filters": "node scripts/check-payment-status-filters.mjs"
+    "check:payment-status-filters": "node scripts/check-payment-status-filters.mjs",
+    "audit:server-fns": "bun run scripts/audit-server-fns.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
