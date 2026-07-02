@@ -143,18 +143,8 @@ const PaymentReminder: React.FC<PaymentReminderProps> = ({
       <Body style={main}>
         <Container style={base.container}>
           <Section style={base.card}>
-            <Section style={base.header}>
-              {b.logoUrl ? (
-                <Img
-                  src={b.logoUrl}
-                  alt={b.name}
-                  height="36"
-                  style={{ display: "block", marginBottom: "8px" }}
-                />
-              ) : null}
-              <Text style={brandName}>{b.name}</Text>
-              <Text style={base.tagline}>{b.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
+
 
             <Heading as="h1" style={heading}>
               {headingOverride?.trim() || "A gentle reminder about your upcoming payment"}
