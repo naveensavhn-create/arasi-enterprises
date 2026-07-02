@@ -164,16 +164,34 @@ function CustomerLuckyDrawPage() {
             Join open draws and track your entries and wins.
           </p>
         </div>
-        <div
-          className="flex items-center gap-2 rounded-full border bg-background/60 px-2.5 py-1 text-xs text-muted-foreground"
-          role="status"
-          aria-live="polite"
-          title={realtime.error?.message ?? liveLabel}
-        >
-          <span aria-hidden className={`h-2 w-2 rounded-full ${liveDot}`} />
-          <span>{liveLabel}</span>
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 rounded-full border bg-background/60 px-2.5 py-1 text-xs text-muted-foreground"
+            role="status"
+            aria-live="polite"
+            title={realtime.error?.message ?? liveLabel}
+          >
+            <span aria-hidden className={`h-2 w-2 rounded-full ${liveDot}`} />
+            <span>{liveLabel}</span>
+          </div>
+          {(realtime.status === "error" ||
+            realtime.status === "closed" ||
+            realtime.status === "reconnecting") && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                realtime.reconnect();
+                toast("Retrying live connection…");
+              }}
+              disabled={realtime.status === "reconnecting"}
+            >
+              Retry connection
+            </Button>
+          )}
         </div>
       </div>
+
 
 
       {/* Monthly eligibility summary */}
