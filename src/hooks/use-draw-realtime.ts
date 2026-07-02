@@ -44,6 +44,7 @@ export function useDrawRealtime(opts: {
     toastOnComplete = true,
     fallbackPollMs = 20_000,
     maxBackoffMs = 30_000,
+    maxAttempts = 6,
   } = opts;
   const qc = useQueryClient();
 
