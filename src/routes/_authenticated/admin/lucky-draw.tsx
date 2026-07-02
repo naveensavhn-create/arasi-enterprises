@@ -49,6 +49,7 @@ import {
   pickDrawWinners,
   pickDrawWinnersManual,
   setDrawStatus,
+  setDrawMode,
 } from "@/lib/draws.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 
