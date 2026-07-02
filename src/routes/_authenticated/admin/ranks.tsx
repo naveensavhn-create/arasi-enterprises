@@ -220,7 +220,7 @@ function RankDialog({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Commission %</Label><Input type="number" step="0.01" value={editing.commission_percent} onChange={(e) => set({ commission_percent: Number(e.target.value) })} /></div>
-          <div><Label>Monthly incentive (₹)</Label><Input type="number" value={editing.monthly_incentive} onChange={(e) => set({ monthly_incentive: Number(e.target.value) })} /></div>
+          <div><Label>One-time incentive (₹)</Label><Input type="number" value={editing.monthly_incentive} onChange={(e) => set({ monthly_incentive: Number(e.target.value) })} /></div>
         </div>
         <div><Label>Gift name</Label><Input value={editing.gift_name ?? ""} onChange={(e) => set({ gift_name: e.target.value || null })} /></div>
         <div className="flex items-center gap-2">
