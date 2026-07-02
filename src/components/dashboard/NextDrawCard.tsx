@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
 
 type DrawRow = {
   id: string;
@@ -140,7 +141,7 @@ export function NextDrawCard({ ctaTo }: { ctaTo: "/customer/lucky-draw" | "/prom
               <div className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
                 <CalendarClock className="h-3 w-3" /> Draw at
               </div>
-              <p className="mt-1 text-sm font-medium">{fmt(next.draw_at)}</p>
+              <div className="mt-1"><DrawTimeBadge kind="draw" iso={next.draw_at} showLabel={false} /></div>
               {countdown && (
                 <p className="mt-1 flex items-center gap-1 text-xs text-primary">
                   <Clock className="h-3 w-3" /> {countdown}
@@ -152,17 +153,16 @@ export function NextDrawCard({ ctaTo }: { ctaTo: "/customer/lucky-draw" | "/prom
                 <Gift className="h-3 w-3" /> Prize
               </div>
               <p className="mt-1 text-sm font-medium">{next.prize || "Surprise reward"}</p>
-              <p className="text-xs text-muted-foreground">
-                Entries close {fmt(next.closes_at)}
-              </p>
+              <div className="mt-1"><DrawTimeBadge kind="closes" iso={next.closes_at} /></div>
             </div>
           </div>
         ) : (
           <div className="mt-4 rounded-lg border border-border/60 p-3">
             <p className="text-xs text-muted-foreground">Latest winner announced</p>
-            <p className="mt-1 text-sm font-medium">
-              {latest?.prize || "Surprise reward"} · drawn {fmt(latest?.drawn_at ?? null)}
-            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+              <span className="font-medium">{latest?.prize || "Surprise reward"}</span>
+              <DrawTimeBadge kind="drawn" iso={latest?.drawn_at ?? null} />
+            </div>
           </div>
         )}
 

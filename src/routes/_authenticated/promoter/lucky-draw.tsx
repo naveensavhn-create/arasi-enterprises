@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { listDrawsForPromoter } from "@/lib/draws.functions";
 import { useDrawRealtime } from "@/hooks/use-draw-realtime";
+import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { formatDateTime } from "@/lib/format-datetime";
 
 export const Route = createFileRoute("/_authenticated/promoter/lucky-draw")({
   head: () => ({
@@ -37,8 +39,7 @@ type DrawRow = {
 };
 
 function fmt(iso: string | null | undefined) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return formatDateTime(iso);
 }
 
 function statusVariant(status: DrawRow["status"]): "default" | "secondary" | "outline" | "destructive" {
@@ -115,10 +116,10 @@ function PromoterLuckyDrawPage() {
                       {d.requires_active_membership ? " · Active membership required" : ""}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-3">
-                    <div><span className="font-medium text-foreground">Opens:</span> {fmt(d.opens_at)}</div>
-                    <div><span className="font-medium text-foreground">Closes:</span> {fmt(d.closes_at)}</div>
-                    <div><span className="font-medium text-foreground">Draw date:</span> {fmt(d.draw_at)}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <DrawTimeBadge kind="opens" iso={d.opens_at} showRelative />
+                    <DrawTimeBadge kind="closes" iso={d.closes_at} showRelative />
+                    <DrawTimeBadge kind="draw" iso={d.draw_at} showRelative />
                   </div>
                 </CardContent>
               </Card>
@@ -142,7 +143,7 @@ function PromoterLuckyDrawPage() {
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="text-base">{d.name}</CardTitle>
-                    <span className="text-xs text-muted-foreground">Drawn {fmt(d.drawn_at)}</span>
+                    <DrawTimeBadge kind="drawn" iso={d.drawn_at} />
                   </div>
                 </CardHeader>
                 <CardContent>

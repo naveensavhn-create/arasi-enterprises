@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { formatDateTime } from "@/lib/format-datetime";
 import {
   Ticket,
   Trophy,
@@ -32,11 +34,7 @@ export const Route = createFileRoute("/_authenticated/customer/lucky-draw")({
 });
 
 function fmtDate(iso: string | null | undefined) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  return formatDateTime(iso);
 }
 
 function statusVariant(status: string): "default" | "secondary" | "outline" {
@@ -218,10 +216,7 @@ function CustomerLuckyDrawPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <CalendarClock className="h-3.5 w-3.5" />
-                Drawn {fmtDate(latestCompletedQ.data.draw.drawn_at)}
-              </span>
+              <DrawTimeBadge kind="drawn" iso={latestCompletedQ.data.draw.drawn_at} />
               <span>Prize: {latestCompletedQ.data.draw.prize}</span>
             </div>
             {latestCompletedQ.data.myWin && (
@@ -344,20 +339,19 @@ function CustomerLuckyDrawPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-                      <div className="flex items-center gap-1">
-                        <CalendarClock className="h-3.5 w-3.5" /> Opens: {fmtDate(d.opens_at)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <CalendarClock className="h-3.5 w-3.5" /> Closes: {fmtDate(d.closes_at)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Trophy className="h-3.5 w-3.5" /> Draw date: {fmtDate((d as unknown as { draw_at: string | null }).draw_at)}
-                      </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <DrawTimeBadge kind="opens" iso={d.opens_at} showRelative />
+                      <DrawTimeBadge kind="closes" iso={d.closes_at} showRelative />
+                      <DrawTimeBadge
+                        kind="draw"
+                        iso={(d as unknown as { draw_at: string | null }).draw_at}
+                        showRelative
+                      />
                       {d.status === "completed" && (
-                        <div className="flex items-center gap-1">
-                          <Crown className="h-3.5 w-3.5 text-primary" /> Drawn: {fmtDate((d as unknown as { drawn_at: string | null }).drawn_at)}
-                        </div>
+                        <DrawTimeBadge
+                          kind="drawn"
+                          iso={(d as unknown as { drawn_at: string | null }).drawn_at}
+                        />
                       )}
                     </div>
 
