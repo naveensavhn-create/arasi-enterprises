@@ -134,13 +134,12 @@ describe("UserProfileDrawer — complete profile view", () => {
   it("renders IDs, contact, address, referral chain, KYC and role badge", async () => {
     renderDrawer();
 
-    // Loader clears once the query resolves.
-    await waitFor(() =>
-      expect(screen.queryByText(/user profile/i)).toBeTruthy(),
-    );
+    // Wait for the loaded state (form field appears once profile resolves).
+    await screen.findByLabelText(/full name/i);
 
     // Role badge
     expect(screen.getByText(/^customer$/i)).toBeTruthy();
+
 
     // ID chips (only present when the field is non-null)
     expect(screen.getByText("Customer ID")).toBeTruthy();
