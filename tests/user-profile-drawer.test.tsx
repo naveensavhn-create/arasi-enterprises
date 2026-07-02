@@ -174,25 +174,32 @@ describe("UserProfileDrawer — complete profile view", () => {
 
     // KYC tab — switch and assert Aadhaar surface
     fireEvent.click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
-    const kycPanel = await screen.findByRole("tabpanel");
 
-    // KYC status line
-    expect(within(kycPanel).getByText(/kyc status:/i)).toBeTruthy();
-    expect(within(kycPanel).getByText(/approved/i)).toBeTruthy();
-    // Aadhaar inputs are prefilled
-    const aadhaarNo = within(kycPanel).getByLabelText(
+    // Wait for the aadhaar input to appear (proves the new panel mounted).
+    const aadhaarNo = (await screen.findByLabelText(
       /aadhaar number/i,
-    ) as HTMLInputElement;
-    const aadhaarAddr = within(kycPanel).getByLabelText(
+    )) as HTMLInputElement;
+    const aadhaarAddr = screen.getByLabelText(
       /aadhaar address/i,
     ) as HTMLTextAreaElement;
     expect(aadhaarNo.value).toBe("123412341234");
     expect(aadhaarAddr.value).toBe("12 MG Road, Bengaluru");
+
+    // KYC status line (matcher spans multiple elements — use a fn)
+    expect(
+      screen.getByText((_, el) =>
+        !!el && /kyc status:/i.test(el.textContent ?? ""),
+      ),
+    ).toBeTruthy();
+    expect(screen.getAllByText(/approved/i).length).toBeGreaterThan(0);
+
     // Front / back image links
-    const links = within(kycPanel).getAllByRole("link");
-    const hrefs = links.map((l) => l.getAttribute("href"));
-    expect(hrefs).toContain(FULL_PROFILE.aadhaar_front_url);
-    expect(hrefs).toContain(FULL_PROFILE.aadhaar_back_url);
+    const linkHrefs = screen
+      .getAllByRole("link")
+      .map((l) => l.getAttribute("href"));
+    expect(linkHrefs).toContain(FULL_PROFILE.aadhaar_front_url);
+    expect(linkHrefs).toContain(FULL_PROFILE.aadhaar_back_url);
+
   });
 
   it("passes the userId to the getter server fn", async () => {
