@@ -46,6 +46,7 @@ export function useDrawRealtime(opts: {
 
   const [status, setStatus] = useState<RealtimeStatus>("idle");
   const [error, setError] = useState<Error | null>(null);
+  const [reconnectNonce, setReconnectNonce] = useState(0);
 
   // Keep latest keys/flags in refs so we don't tear down on every render.
   const keysRef = useRef(queryKeys);
