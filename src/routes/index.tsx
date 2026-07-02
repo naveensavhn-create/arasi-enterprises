@@ -146,12 +146,36 @@ function Landing() {
         </Link>
       </header>
 
-      <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pb-24 pt-8 sm:pt-16">
+      <main
+        id="main-content"
+        className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pb-24 pt-8 sm:pt-16"
+      >
         {/* Hero */}
         <div className="mb-14 space-y-5 text-center sm:mb-20">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
             Established Trust · Since 2024
           </p>
+          <h1
+            className="text-4xl font-bold leading-[1.1] text-white sm:text-5xl md:text-6xl"
+            style={serif}
+          >
+            Building Dreams,
+            <br className="hidden md:block" /> Creating{" "}
+            <span className="italic text-[#C5A059]">Opportunities</span>
+          </h1>
+          <p className="mx-auto max-w-xl text-base font-light leading-relaxed text-white/80">
+            An exclusive gateway to advance-booking memberships, monthly
+            installments and distinguished member rewards.
+          </p>
+        </div>
+
+        {/* Portal Grid */}
+        <section aria-labelledby="portals-heading" className="w-full">
+          <h2 id="portals-heading" className="sr-only">
+            Choose your portal
+          </h2>
+          <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
+
           <h1
             className="text-4xl font-bold leading-[1.1] text-white sm:text-5xl md:text-6xl"
             style={serif}
