@@ -223,8 +223,8 @@ describe("CustomerDashboardBody — empty state a11y", () => {
     const learn = screen.getByRole("link", { name: /learn how it works/i });
 
     // No positive tabIndex overrides — links participate in natural order.
-    expect(browse.getAttribute("tabindex")).not.toMatch(/^[1-9]/);
-    expect(learn.getAttribute("tabindex")).not.toMatch(/^[1-9]/);
+    expect(browse.getAttribute("tabindex") ?? "").not.toMatch(/^[1-9]/);
+    expect(learn.getAttribute("tabindex") ?? "").not.toMatch(/^[1-9]/);
 
     const user = userEvent.setup();
     // Tab through until we reach the first CTA, capped so a bug can't hang.
