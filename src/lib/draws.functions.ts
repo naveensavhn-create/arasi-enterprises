@@ -255,9 +255,9 @@ export const pickDrawWinnersManual = createServerFn({ method: "POST" })
     await assertAdmin(context);
     const { data: rows, error } = await context.supabase.rpc("admin_pick_draw_winners_manual", {
       _draw_id: data.drawId,
-      _entry_ids: data.entryIds && data.entryIds.length > 0 ? data.entryIds : null,
-      _count: data.count ?? null,
-      _seed: data.seed ?? null,
+      _entry_ids: data.entryIds && data.entryIds.length > 0 ? data.entryIds : undefined,
+      _count: data.count ?? undefined,
+      _seed: data.seed ?? undefined,
     });
     if (error) throw new Error(error.message);
     return rows ?? [];
