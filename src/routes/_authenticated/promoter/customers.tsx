@@ -98,6 +98,17 @@ function kycBadge(s: ReferredCustomer["kyc_status"]) {
   return <Badge variant="outline">Unsubmitted</Badge>;
 }
 
+/**
+ * Returns a list of human-readable reasons the "Submit for review" action
+ * is currently disabled for a given customer. Empty array means "ready".
+ */
+function submissionBlockers(c: ReferredCustomer): string[] {
+  const reasons: string[] = [];
+  if (!c.has_aadhaar_number) reasons.push("Aadhaar number not entered");
+  if (!c.has_aadhaar_front) reasons.push("Aadhaar front image not uploaded");
+  return reasons;
+}
+
 function PromoterCustomersPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listMyReferredCustomers);
