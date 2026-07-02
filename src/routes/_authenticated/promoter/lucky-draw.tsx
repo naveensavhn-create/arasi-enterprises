@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { listDrawsForPromoter } from "@/lib/draws.functions";
 import { useDrawRealtime } from "@/hooks/use-draw-realtime";
+import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { formatDateTime } from "@/lib/format-datetime";
 
 export const Route = createFileRoute("/_authenticated/promoter/lucky-draw")({
   head: () => ({
@@ -37,8 +39,7 @@ type DrawRow = {
 };
 
 function fmt(iso: string | null | undefined) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  return formatDateTime(iso);
 }
 
 function statusVariant(status: DrawRow["status"]): "default" | "secondary" | "outline" | "destructive" {
