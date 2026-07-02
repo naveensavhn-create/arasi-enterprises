@@ -162,13 +162,14 @@ describe("UserProfileDrawer — KYC tab renders Aadhaar image links", () => {
     const front = await screen.findByRole("link", { name: /front image/i });
     const back = screen.getByRole("link", { name: /back image/i });
 
-    expect(front).toHaveAttribute("href", "https://cdn.example.com/kyc/front.jpg");
-    expect(front).toHaveAttribute("target", "_blank");
+    expect(front.getAttribute("href")).toBe("https://cdn.example.com/kyc/front.jpg");
+    expect(front.getAttribute("target")).toBe("_blank");
     expect(front.getAttribute("rel") ?? "").toMatch(/noreferrer/);
 
-    expect(back).toHaveAttribute("href", "https://cdn.example.com/kyc/back.jpg");
-    expect(back).toHaveAttribute("target", "_blank");
+    expect(back.getAttribute("href")).toBe("https://cdn.example.com/kyc/back.jpg");
+    expect(back.getAttribute("target")).toBe("_blank");
     expect(back.getAttribute("rel") ?? "").toMatch(/noreferrer/);
+
   });
 
   it("hides the Back image link when back URL is missing", async () => {
