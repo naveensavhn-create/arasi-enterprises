@@ -42,6 +42,15 @@ function CustomerDrawResultsPage() {
     queryFn: () => listFn(),
   });
 
+  useDrawRealtime({
+    enabled: !!session?.user.id,
+    queryKeys: [
+      ["customer-draw-results", session?.user.id],
+      ["customer-open-draws", session?.user.id],
+    ],
+  });
+
+
   const allDraws = q.data ?? [];
   const results = allDraws
     .filter((d) => d.status === "completed" && (d.myEntry || d.myWin))
