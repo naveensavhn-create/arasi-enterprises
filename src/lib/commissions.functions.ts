@@ -152,9 +152,15 @@ async function enrichCommissions(supabase: any, rows: any[]): Promise<Commission
       ? supabase.from("receipts").select("id, receipt_number").in("id", recIds)
       : Promise.resolve({ data: [] }),
   ]);
-  const pMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
-  const mMap = new Map((mems ?? []).map((m: any) => [m.id, m]));
-  const rMap = new Map((recs ?? []).map((r: any) => [r.id, r]));
+  const pMap = new Map<string, { full_name?: string | null; email?: string | null }>(
+    ((profiles ?? []) as Array<{ id: string; full_name?: string | null; email?: string | null }>).map((p) => [p.id, p]),
+  );
+  const mMap = new Map<string, { membership_number?: string | null }>(
+    ((mems ?? []) as Array<{ id: string; membership_number?: string | null }>).map((m) => [m.id, m]),
+  );
+  const rMap = new Map<string, { receipt_number?: string | null }>(
+    ((recs ?? []) as Array<{ id: string; receipt_number?: string | null }>).map((r) => [r.id, r]),
+  );
   return rows.map((r) => ({
     ...r,
     installment_amount: Number(r.installment_amount),
@@ -165,6 +171,7 @@ async function enrichCommissions(supabase: any, rows: any[]): Promise<Commission
     membership_number: mMap.get(r.membership_id)?.membership_number ?? null,
     receipt_number: r.receipt_id ? rMap.get(r.receipt_id)?.receipt_number ?? null : null,
   })) as CommissionRow[];
+
 }
 
 export const listCommissionsAdmin = createServerFn({ method: "GET" })
