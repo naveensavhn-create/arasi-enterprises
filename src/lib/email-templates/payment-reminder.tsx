@@ -252,7 +252,7 @@ export default PaymentReminder;
 
 export const template = {
   component: PaymentReminder,
-  subject: `[${defaultBrand.name}] Gentle reminder — your monthly installment is coming up`,
+  subject: `[${defaultBrand.name}] {{name}}, your installment of {{amount}} is due {{due_date}}`,
   displayName: "Payment reminder (monthly)",
   previewData: {
     recipientName: "Priya Sharma",
