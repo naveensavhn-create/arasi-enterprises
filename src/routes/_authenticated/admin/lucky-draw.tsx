@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { formatDateTime } from "@/lib/format-datetime";
 import {
   Dialog,
   DialogContent,
@@ -249,22 +251,24 @@ function AdminLuckyDrawPage() {
                     <TableCell className="font-medium">{d.name}</TableCell>
                     <TableCell>{d.prize}</TableCell>
                     <TableCell>{d.winners_count}</TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {d.opens_at ? new Date(d.opens_at).toLocaleString() : "—"}
+                    <TableCell className="whitespace-nowrap">
+                      <DrawTimeBadge kind="opens" iso={d.opens_at} showLabel={false} />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {d.closes_at ? new Date(d.closes_at).toLocaleString() : "—"}
+                    <TableCell className="whitespace-nowrap">
+                      <DrawTimeBadge kind="closes" iso={d.closes_at} showLabel={false} />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                      {(d as unknown as { draw_at: string | null }).draw_at
-                        ? new Date((d as unknown as { draw_at: string }).draw_at).toLocaleString()
-                        : "—"}
+                    <TableCell className="whitespace-nowrap">
+                      <DrawTimeBadge
+                        kind="draw"
+                        iso={(d as unknown as { draw_at: string | null }).draw_at}
+                        showLabel={false}
+                      />
                     </TableCell>
-                    <TableCell className="whitespace-nowrap text-xs">
-                      {d.status === "completed" && d.drawn_at ? (
-                        <span className="font-medium">{new Date(d.drawn_at).toLocaleString()}</span>
+                    <TableCell className="whitespace-nowrap">
+                      {d.status === "completed" ? (
+                        <DrawTimeBadge kind="drawn" iso={d.drawn_at} showLabel={false} />
                       ) : (
-                        <span className="text-muted-foreground">—</span>
+                        <span className="text-xs text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell>
@@ -719,7 +723,7 @@ function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () =>
                       <TableRow key={w.id}>
                         <TableCell>{w.position}</TableCell>
                         <TableCell className="font-mono text-xs">{w.customer_id}</TableCell>
-                        <TableCell>{new Date(w.drawn_at).toLocaleString()}</TableCell>
+                        <TableCell>{formatDateTime(w.drawn_at)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
