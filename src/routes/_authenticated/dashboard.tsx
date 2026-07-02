@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Users, Briefcase, ShieldCheck } from "lucide-react";
 import { useSession, useCurrentRole } from "@/lib/auth";
 import { CustomerDashboardBody } from "@/components/customer/CustomerDashboardBody";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
 import { NextDrawCard } from "@/components/dashboard/NextDrawCard";
+import { AdminDashboardOverview } from "@/components/admin/AdminDashboardOverview";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -69,42 +70,18 @@ function Dashboard() {
         <KycStatusCard />
       </div>
 
+      {role === "admin" && (
+        <div className="mt-8">
+          <AdminDashboardOverview />
+        </div>
+      )}
+
       {role === "promoter" && (
         <div className="mt-8">
           <NextDrawCard ctaTo="/promoter/lucky-draw" />
         </div>
       )}
-
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <PlaceholderCard title="Memberships" body="Coming in the next module." />
-        <PlaceholderCard title="Payments" body="Razorpay integration lands next." />
-        <PlaceholderCard title="Rewards & Lucky Draw" body="Wired after payments." />
-      </div>
-
-
-
-      <div className="mt-8 rounded-xl border border-dashed border-border bg-card p-6">
-        <h2 className="text-sm font-semibold">Sidebar shell is live</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Role-based navigation now renders in the collapsible sidebar. Sidebar items are
-          placeholders until each module ships.
-        </p>
-        <Link
-          to="/"
-          className="mt-4 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-        >
-          Back to landing <ArrowRight className="h-3 w-3" />
-        </Link>
-      </div>
     </div>
   );
 }
 
-function PlaceholderCard({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-      <h3 className="text-sm font-semibold">{title}</h3>
-      <p className="mt-1 text-xs text-muted-foreground">{body}</p>
-    </div>
-  );
-}
