@@ -216,10 +216,7 @@ function CustomerLuckyDrawPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <CalendarClock className="h-3.5 w-3.5" />
-                Drawn {fmtDate(latestCompletedQ.data.draw.drawn_at)}
-              </span>
+              <DrawTimeBadge kind="drawn" iso={latestCompletedQ.data.draw.drawn_at} />
               <span>Prize: {latestCompletedQ.data.draw.prize}</span>
             </div>
             {latestCompletedQ.data.myWin && (
