@@ -81,6 +81,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Membership Emails", url: "/admin/membership-emails", icon: Mail },
         { title: "Payment Reminders", url: "/admin/reminders", icon: Mail },
         { title: "Reminder Jobs", url: "/admin/reminder-jobs", icon: Mail },
+        { title: "Reminder Templates", url: "/admin/reminder-templates", icon: Mail },
         { title: "Plan Deletions", url: "/admin/plan-deletions", icon: ShieldCheck },
         { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
       ],
