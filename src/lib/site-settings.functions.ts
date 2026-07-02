@@ -16,13 +16,19 @@ export type SiteSettings = {
   logo_url: string | null;
   favicon_url: string | null;
   footer_text: string | null;
+  reminder_cron_schedule: string;
+  reminder_cron_timezone: string;
   updated_at: string;
 };
+
+export const DEFAULT_REMINDER_CRON_SCHEDULE = "* * * * *";
+export const DEFAULT_REMINDER_CRON_TIMEZONE = "Asia/Kolkata";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 
 const COLUMNS =
-  "brand_name, tagline, support_email, support_phone, primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, favicon_url, footer_text, updated_at";
+  "brand_name, tagline, support_email, support_phone, primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, favicon_url, footer_text, reminder_cron_schedule, reminder_cron_timezone, updated_at";
+
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
   async (): Promise<SiteSettings | null> => {
@@ -43,6 +49,28 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
 
 const hslTriplet = /^\d{1,3}\s+\d{1,3}%\s+\d{1,3}%$/;
 
+const cronExpression = z
+  .string()
+  .trim()
+  .min(1, "Required")
+  .max(120)
+  .regex(/^[0-9*\-,/\s]+$/, "Only digits, spaces and * , - / are allowed")
+  .refine(
+    (v) => v.trim().split(/\s+/).length === 5,
+    "Must be a 5-field cron expression (min hour dom mon dow)",
+  );
+
+// IANA timezone names: Continent/City, plus a few single-segment ones (UTC, GMT).
+const ianaTimezone = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(
+    /^[A-Za-z][A-Za-z0-9+\-]*(?:\/[A-Za-z0-9_+\-]+){0,2}$/,
+    "Use an IANA timezone name, e.g. Asia/Kolkata",
+  );
+
 const updateSchema = z.object({
   brand_name: z.string().trim().min(1).max(120),
   tagline: z.string().trim().max(200).nullable().optional(),
@@ -56,7 +84,10 @@ const updateSchema = z.object({
   logo_url: z.string().trim().url().max(500).nullable().or(z.literal("")).optional(),
   favicon_url: z.string().trim().url().max(500).nullable().or(z.literal("")).optional(),
   footer_text: z.string().trim().max(500).nullable().optional(),
+  reminder_cron_schedule: cronExpression.default(DEFAULT_REMINDER_CRON_SCHEDULE),
+  reminder_cron_timezone: ianaTimezone.default(DEFAULT_REMINDER_CRON_TIMEZONE),
 });
+
 
 export const updateSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -92,6 +123,40 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
       .select(COLUMNS)
       .single();
     if (error) throw new Error(error.message);
+
+    // If cron schedule or timezone changed, reschedule the pg_cron job.
+    const scheduleChanged =
+      !before ||
+      (before as { reminder_cron_schedule?: string }).reminder_cron_schedule !==
+        payload.reminder_cron_schedule ||
+      (before as { reminder_cron_timezone?: string }).reminder_cron_timezone !==
+        payload.reminder_cron_timezone;
+    if (scheduleChanged) {
+      const { error: cronErr } = await context.supabase.rpc(
+        "apply_reminder_cron_settings",
+        {
+          _schedule: payload.reminder_cron_schedule,
+          _timezone: payload.reminder_cron_timezone,
+        },
+      );
+      if (cronErr) {
+        // Roll back the settings row to the previous values so DB and cron stay
+        // consistent. Surface a clear message to the caller.
+        if (before) {
+          await context.supabase
+            .from("site_settings")
+            .update({
+              reminder_cron_schedule: (before as { reminder_cron_schedule: string })
+                .reminder_cron_schedule,
+              reminder_cron_timezone: (before as { reminder_cron_timezone: string })
+                .reminder_cron_timezone,
+            })
+            .eq("id", SETTINGS_ID);
+        }
+        throw new Error(`Could not apply reminder schedule: ${cronErr.message}`);
+      }
+    }
+
 
     // Compute a compact list of changed fields for the audit trail. Best-effort
     // — a logging failure must NOT roll back a successful settings update.

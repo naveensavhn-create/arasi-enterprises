@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Palette, Save, Type } from "lucide-react";
+import { Clock, Palette, Save, Type } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,13 @@ import {
 } from "@/components/ui/select";
 
 import {
+  DEFAULT_REMINDER_CRON_SCHEDULE,
+  DEFAULT_REMINDER_CRON_TIMEZONE,
   getSiteSettings,
   updateSiteSettings,
   type SiteSettings,
 } from "@/lib/site-settings.functions";
+
 
 export const Route = createFileRoute("/_authenticated/admin/site-settings")({
   head: () => ({ meta: [{ title: "Site Settings — Admin" }] }),
@@ -105,8 +108,11 @@ function SiteSettingsPage() {
           logo_url: v.logo_url ?? null,
           favicon_url: v.favicon_url ?? null,
           footer_text: v.footer_text ?? null,
+          reminder_cron_schedule: v.reminder_cron_schedule,
+          reminder_cron_timezone: v.reminder_cron_timezone,
         },
       }),
+
     onSuccess: (row: SiteSettings) => {
       toast.success("Site settings saved");
       setForm(row);
@@ -259,7 +265,59 @@ function SiteSettingsPage() {
               </Field>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="h-4 w-4" /> Payment reminder schedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Cron schedule">
+                  <Input
+                    value={form.reminder_cron_schedule}
+                    onChange={(e) => set("reminder_cron_schedule", e.target.value)}
+                    placeholder={DEFAULT_REMINDER_CRON_SCHEDULE}
+                    className="font-mono"
+                    spellCheck={false}
+                  />
+                </Field>
+                <Field label="Timezone (IANA)">
+                  <Input
+                    value={form.reminder_cron_timezone}
+                    onChange={(e) => set("reminder_cron_timezone", e.target.value)}
+                    placeholder={DEFAULT_REMINDER_CRON_TIMEZONE}
+                    spellCheck={false}
+                  />
+                </Field>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  Controls how often the background worker sends queued payment
+                  reminders. Use a standard 5-field cron expression (e.g.{" "}
+                  <code>*/5 * * * *</code> every 5 minutes,{" "}
+                  <code>0 9 * * *</code> daily at 09:00). Timezone must be an
+                  IANA name such as <code>Asia/Kolkata</code> or{" "}
+                  <code>UTC</code>.
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => {
+                    set("reminder_cron_schedule", DEFAULT_REMINDER_CRON_SCHEDULE);
+                    set("reminder_cron_timezone", DEFAULT_REMINDER_CRON_TIMEZONE);
+                  }}
+                >
+                  Reset to defaults
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
 
         <div className="space-y-4">
           <Card>

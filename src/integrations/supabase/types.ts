@@ -1058,6 +1058,8 @@ export type Database = {
           id: string
           logo_url: string | null
           primary_color: string
+          reminder_cron_schedule: string
+          reminder_cron_timezone: string
           secondary_color: string
           support_email: string | null
           support_phone: string | null
@@ -1075,6 +1077,8 @@ export type Database = {
           id?: string
           logo_url?: string | null
           primary_color?: string
+          reminder_cron_schedule?: string
+          reminder_cron_timezone?: string
           secondary_color?: string
           support_email?: string | null
           support_phone?: string | null
@@ -1092,6 +1096,8 @@ export type Database = {
           id?: string
           logo_url?: string | null
           primary_color?: string
+          reminder_cron_schedule?: string
+          reminder_cron_timezone?: string
           secondary_color?: string
           support_email?: string | null
           support_phone?: string | null
@@ -1260,6 +1266,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      apply_reminder_cron_settings: {
+        Args: { _schedule: string; _timezone: string }
+        Returns: undefined
+      }
       auto_enroll_customer_in_draw: {
         Args: { _customer_id: string; _draw_id: string }
         Returns: string

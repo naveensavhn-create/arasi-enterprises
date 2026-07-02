@@ -1,7 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { getSiteSettings, type SiteSettings } from "@/lib/site-settings.functions";
+import {
+  DEFAULT_REMINDER_CRON_SCHEDULE,
+  DEFAULT_REMINDER_CRON_TIMEZONE,
+  getSiteSettings,
+  type SiteSettings,
+} from "@/lib/site-settings.functions";
 
 const DEFAULTS: SiteSettings = {
   brand_name: "ARASI Enterprises",
@@ -16,8 +21,11 @@ const DEFAULTS: SiteSettings = {
   logo_url: null,
   favicon_url: null,
   footer_text: "© ARASI Enterprises. All rights reserved.",
+  reminder_cron_schedule: DEFAULT_REMINDER_CRON_SCHEDULE,
+  reminder_cron_timezone: DEFAULT_REMINDER_CRON_TIMEZONE,
   updated_at: new Date(0).toISOString(),
 };
+
 
 const SiteSettingsContext = createContext<SiteSettings>(DEFAULTS);
 
