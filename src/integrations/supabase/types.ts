@@ -56,6 +56,27 @@ export type Database = {
         }
         Relationships: []
       }
+      commission_settings: {
+        Row: {
+          commission_auto_approve: boolean
+          id: boolean
+          incentive_mode: string
+          updated_at: string
+        }
+        Insert: {
+          commission_auto_approve?: boolean
+          id?: boolean
+          incentive_mode?: string
+          updated_at?: string
+        }
+        Update: {
+          commission_auto_approve?: boolean
+          id?: boolean
+          incentive_mode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_ids: {
         Row: {
           assigned_at: string
@@ -1051,6 +1072,179 @@ export type Database = {
         }
         Relationships: []
       }
+      promoter_commissions: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          commission_amount: number
+          commission_percent: number
+          created_at: string
+          customer_id: string
+          id: string
+          installment_amount: number
+          installment_id: string | null
+          ledger_number: string
+          membership_id: string
+          paid_at: string | null
+          paid_reference: string | null
+          payment_date: string
+          payment_id: string
+          promoter_id: string
+          rank_id: string | null
+          receipt_id: string | null
+          remarks: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          commission_amount: number
+          commission_percent: number
+          created_at?: string
+          customer_id: string
+          id?: string
+          installment_amount: number
+          installment_id?: string | null
+          ledger_number: string
+          membership_id: string
+          paid_at?: string | null
+          paid_reference?: string | null
+          payment_date: string
+          payment_id: string
+          promoter_id: string
+          rank_id?: string | null
+          receipt_id?: string | null
+          remarks?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          commission_amount?: number
+          commission_percent?: number
+          created_at?: string
+          customer_id?: string
+          id?: string
+          installment_amount?: number
+          installment_id?: string | null
+          ledger_number?: string
+          membership_id?: string
+          paid_at?: string | null
+          paid_reference?: string | null
+          payment_date?: string
+          payment_id?: string
+          promoter_id?: string
+          rank_id?: string | null
+          receipt_id?: string | null
+          remarks?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoter_commissions_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promoter_commissions_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promoter_commissions_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promoter_commissions_rank_id_fkey"
+            columns: ["rank_id"]
+            isOneToOne: false
+            referencedRelation: "promoter_ranks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promoter_commissions_receipt_id_fkey"
+            columns: ["receipt_id"]
+            isOneToOne: false
+            referencedRelation: "receipts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promoter_gifts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          courier_name: string | null
+          created_at: string
+          delivered_at: string | null
+          delivery_proof_url: string | null
+          dispatched_at: string | null
+          gift_name: string
+          id: string
+          promoter_id: string
+          rank_id: string
+          remarks: string | null
+          serial_number: string | null
+          status: string
+          tracking_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          courier_name?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          delivery_proof_url?: string | null
+          dispatched_at?: string | null
+          gift_name: string
+          id?: string
+          promoter_id: string
+          rank_id: string
+          remarks?: string | null
+          serial_number?: string | null
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          courier_name?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          delivery_proof_url?: string | null
+          dispatched_at?: string | null
+          gift_name?: string
+          id?: string
+          promoter_id?: string
+          rank_id?: string
+          remarks?: string | null
+          serial_number?: string | null
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoter_gifts_rank_id_fkey"
+            columns: ["rank_id"]
+            isOneToOne: false
+            referencedRelation: "promoter_ranks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promoter_ids: {
         Row: {
           assigned_at: string
@@ -1069,6 +1263,187 @@ export type Database = {
           display_id?: string
           referral_code?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      promoter_incentives: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          paid_at: string | null
+          paid_reference: string | null
+          period_month: number
+          period_year: number
+          promoter_id: string
+          rank_id: string
+          remarks: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          paid_reference?: string | null
+          period_month: number
+          period_year: number
+          promoter_id: string
+          rank_id: string
+          remarks?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          paid_reference?: string | null
+          period_month?: number
+          period_year?: number
+          promoter_id?: string
+          rank_id?: string
+          remarks?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoter_incentives_rank_id_fkey"
+            columns: ["rank_id"]
+            isOneToOne: false
+            referencedRelation: "promoter_ranks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promoter_rank_history: {
+        Row: {
+          active_customer_count: number
+          created_at: string
+          from_rank_id: string | null
+          id: string
+          promoter_id: string
+          reason: string
+          to_rank_id: string | null
+        }
+        Insert: {
+          active_customer_count: number
+          created_at?: string
+          from_rank_id?: string | null
+          id?: string
+          promoter_id: string
+          reason: string
+          to_rank_id?: string | null
+        }
+        Update: {
+          active_customer_count?: number
+          created_at?: string
+          from_rank_id?: string | null
+          id?: string
+          promoter_id?: string
+          reason?: string
+          to_rank_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoter_rank_history_from_rank_id_fkey"
+            columns: ["from_rank_id"]
+            isOneToOne: false
+            referencedRelation: "promoter_ranks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promoter_rank_history_to_rank_id_fkey"
+            columns: ["to_rank_id"]
+            isOneToOne: false
+            referencedRelation: "promoter_ranks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promoter_rank_state: {
+        Row: {
+          active_customer_count: number
+          current_rank_id: string | null
+          frozen: boolean
+          promoter_id: string
+          rank_since: string | null
+          updated_at: string
+        }
+        Insert: {
+          active_customer_count?: number
+          current_rank_id?: string | null
+          frozen?: boolean
+          promoter_id: string
+          rank_since?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active_customer_count?: number
+          current_rank_id?: string | null
+          frozen?: boolean
+          promoter_id?: string
+          rank_since?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promoter_rank_state_current_rank_id_fkey"
+            columns: ["current_rank_id"]
+            isOneToOne: false
+            referencedRelation: "promoter_ranks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promoter_ranks: {
+        Row: {
+          code: string
+          commission_percent: number
+          created_at: string
+          gift_name: string | null
+          id: string
+          is_active: boolean
+          min_active_customers: number
+          monthly_incentive: number
+          name: string
+          tier_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          commission_percent: number
+          created_at?: string
+          gift_name?: string | null
+          id?: string
+          is_active?: boolean
+          min_active_customers: number
+          monthly_incentive?: number
+          name: string
+          tier_order: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          commission_percent?: number
+          created_at?: string
+          gift_name?: string | null
+          id?: string
+          is_active?: boolean
+          min_active_customers?: number
+          monthly_incentive?: number
+          name?: string
+          tier_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1422,6 +1797,10 @@ export type Database = {
         Args: { _payment_id: string }
         Returns: undefined
       }
+      admin_generate_monthly_incentives: {
+        Args: { _month: number; _year: number }
+        Returns: number
+      }
       admin_list_kyc: {
         Args: { _status?: string }
         Returns: {
@@ -1537,6 +1916,108 @@ export type Database = {
             }
             Returns: undefined
           }
+      admin_update_commission_status: {
+        Args: {
+          _id: string
+          _reference?: string
+          _remarks?: string
+          _status: string
+        }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          commission_amount: number
+          commission_percent: number
+          created_at: string
+          customer_id: string
+          id: string
+          installment_amount: number
+          installment_id: string | null
+          ledger_number: string
+          membership_id: string
+          paid_at: string | null
+          paid_reference: string | null
+          payment_date: string
+          payment_id: string
+          promoter_id: string
+          rank_id: string | null
+          receipt_id: string | null
+          remarks: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "promoter_commissions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_update_gift: {
+        Args: {
+          _courier?: string
+          _id: string
+          _proof_url?: string
+          _remarks?: string
+          _serial?: string
+          _status: string
+          _tracking?: string
+        }
+        Returns: {
+          approved_at: string | null
+          approved_by: string | null
+          courier_name: string | null
+          created_at: string
+          delivered_at: string | null
+          delivery_proof_url: string | null
+          dispatched_at: string | null
+          gift_name: string
+          id: string
+          promoter_id: string
+          rank_id: string
+          remarks: string | null
+          serial_number: string | null
+          status: string
+          tracking_number: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "promoter_gifts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_update_incentive_status: {
+        Args: {
+          _id: string
+          _reference?: string
+          _remarks?: string
+          _status: string
+        }
+        Returns: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          paid_at: string | null
+          paid_reference: string | null
+          period_month: number
+          period_year: number
+          promoter_id: string
+          rank_id: string
+          remarks: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "promoter_incentives"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_update_profile: {
         Args: {
           _aadhaar_address?: string
@@ -1935,6 +2416,10 @@ export type Database = {
       promoter_submit_referral_for_review: {
         Args: { _note?: string; _user_id: string }
         Returns: Database["public"]["Enums"]["kyc_status"]
+      }
+      recompute_promoter_rank: {
+        Args: { _promoter: string }
+        Returns: undefined
       }
       requeue_kyc_email_job: {
         Args: { _job_id: string }
