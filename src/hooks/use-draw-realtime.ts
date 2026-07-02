@@ -230,7 +230,13 @@ export function useDrawRealtime(opts: {
       setStatus("idle");
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, qc, fallbackPollMs, maxBackoffMs]);
+  }, [enabled, qc, fallbackPollMs, maxBackoffMs, reconnectNonce]);
 
-  return { status, error, isConnected: status === "connected" };
+  const reconnect = () => {
+    setError(null);
+    setStatus("connecting");
+    setReconnectNonce((n) => n + 1);
+  };
+
+  return { status, error, isConnected: status === "connected", reconnect };
 }
