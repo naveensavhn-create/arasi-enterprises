@@ -311,7 +311,7 @@ function SignUpForm({ role }: { role: AppRole }) {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: emailR.data,
         password: pwR.data,
         options: {
@@ -324,6 +324,20 @@ function SignUpForm({ role }: { role: AppRole }) {
         },
       });
       if (error) throw error;
+
+      // If a promoter referral code was captured (via ?ref=CODE), apply it now.
+      const refCode = typeof window !== "undefined"
+        ? window.sessionStorage.getItem("arasi.ref")
+        : null;
+      if (refCode && signUpData.session) {
+        try {
+          const { applyReferralCode } = await import("@/lib/user-profile.functions");
+          await applyReferralCode({ data: { code: refCode } });
+          window.sessionStorage.removeItem("arasi.ref");
+        } catch {
+          // Non-blocking: retried on next visit while ref is still in sessionStorage.
+        }
+      }
       toast.success("Account created — signing you in");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign up failed");
@@ -331,6 +345,7 @@ function SignUpForm({ role }: { role: AppRole }) {
       setSubmitting(false);
     }
   }
+
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
