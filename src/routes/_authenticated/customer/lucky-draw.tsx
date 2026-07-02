@@ -266,7 +266,7 @@ function CustomerLuckyDrawPage() {
                         <span className="font-medium">You won position #{win.position}</span>
                       </div>
                     ) : entry ? (
-                      <div className="space-y-1 text-sm">
+                      <div className="space-y-2 text-sm">
                         <div className="flex items-center gap-2">
                           {entry.eligible ? (
                             <>
@@ -280,6 +280,40 @@ function CustomerLuckyDrawPage() {
                             </>
                           )}
                         </div>
+                        {(entry.entry_code || entry.coupon_code) && (
+                          <div className="grid gap-1 rounded-md border bg-muted/30 p-2 text-xs">
+                            {entry.entry_code && (
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-muted-foreground">Entry ID</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard?.writeText(entry.entry_code!);
+                                    toast.success("Entry ID copied");
+                                  }}
+                                  className="font-mono font-medium tracking-tight hover:text-primary"
+                                >
+                                  {entry.entry_code}
+                                </button>
+                              </div>
+                            )}
+                            {entry.coupon_code && (
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="text-muted-foreground">Coupon</span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard?.writeText(entry.coupon_code!);
+                                    toast.success("Coupon code copied");
+                                  }}
+                                  className="font-mono font-semibold tracking-wider text-primary hover:underline"
+                                >
+                                  {entry.coupon_code}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
                         {!entry.eligible && entry.disqualified_reason && (
                           <p className="text-xs text-muted-foreground">
                             Reason: {entry.disqualified_reason}
@@ -291,6 +325,7 @@ function CustomerLuckyDrawPage() {
                           </p>
                         )}
                       </div>
+
                     ) : (
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs text-muted-foreground">
