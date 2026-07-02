@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Search,
   ShieldCheck,
@@ -133,7 +134,7 @@ function AdminApprovalsPage() {
       notes: string | null;
       assignRole?: "promoter" | "customer" | null;
     }) => decideFn({ data: v }),
-    onSuccess: (_r, v) => {
+    onSuccess: async (_r, v) => {
       toast.success(
         v.approve
           ? v.assignRole
@@ -141,7 +142,18 @@ function AdminApprovalsPage() {
             : "Approved"
           : "Rejected",
       );
-      qc.invalidateQueries({ queryKey: ["kyc"] });
+      // Refresh the admin's own session + role so the portal header/nav
+      // reflect any role change that resulted from this approval
+      // (e.g. self-approval or immediate follow-up promotion).
+      try {
+        await supabase.auth.refreshSession();
+      } catch {
+        // Non-fatal — cached role invalidation below will re-fetch anyway.
+      }
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["kyc"] }),
+        qc.invalidateQueries({ queryKey: ["current-role"] }),
+      ]);
       setSelected(null);
     },
     onError: (e: Error) => toast.error(e.message),
