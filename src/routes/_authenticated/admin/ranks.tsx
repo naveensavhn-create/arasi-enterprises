@@ -150,10 +150,13 @@ function RanksPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {(ranks ?? []).map((r) => (
           <Card key={r.id}>
-            <CardHeader className="flex-row items-start justify-between space-y-0">
-              <div>
-                <CardTitle>{r.name}</CardTitle>
-                <p className="text-xs text-muted-foreground">Tier {r.tier_order} · {r.code}</p>
+            <CardHeader className="flex-row items-start justify-between space-y-0 gap-3">
+              <div className="flex items-start gap-3 min-w-0">
+                <RankBadge rank={r} size="md" showLabel={false} />
+                <div className="min-w-0">
+                  <CardTitle className="truncate">{r.name}</CardTitle>
+                  <p className="text-xs text-muted-foreground">Tier {r.tier_order} · {r.code}</p>
+                </div>
               </div>
               <div className="flex gap-1">
                 <Button size="icon" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}>
