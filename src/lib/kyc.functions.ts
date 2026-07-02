@@ -188,7 +188,7 @@ export const setKycDecision = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     if (data.assignRole && !data.approve) {
-      throw new Error("Role can only be assigned when rejecting is disabled — approve first.");
+      throw new Error("A membership role can only be assigned when approving KYC.");
     }
     // Defense-in-depth: block admin escalation even if a client crafts a payload
     // that bypassed the enum (the DB also rejects this).
