@@ -158,12 +158,12 @@ const MembershipActivated: React.FC<MembershipActivatedProps> = ({
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
               Questions about your membership or billing? Reply to this email or
-              write to {brand.supportEmail}.
+              write to {b.supportEmail}.
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             confirmation for membership {membershipNumber}.
           </Text>
         </Container>
@@ -176,7 +176,7 @@ export default MembershipActivated;
 
 export const template = {
   component: MembershipActivated,
-  subject: `[${brand.name}] Your membership is active`,
+  subject: `[${defaultBrand.name}] Your membership is active`,
   displayName: "Membership activated",
   previewData: {
     recipientName: "Priya Sharma",
