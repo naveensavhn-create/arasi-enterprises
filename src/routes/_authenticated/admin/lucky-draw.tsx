@@ -49,6 +49,7 @@ import {
   pickDrawWinners,
   pickDrawWinnersManual,
   setDrawStatus,
+  setDrawMode,
 } from "@/lib/draws.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -70,6 +71,7 @@ type Draw = {
   winners_count: number;
   requires_active_membership: boolean;
   description: string | null;
+  mode: "manual" | "automated";
 };
 
 const statusVariant: Record<Draw["status"], "default" | "secondary" | "destructive" | "outline"> = {
@@ -87,6 +89,8 @@ function AdminLuckyDrawPage() {
   const setStatus = useServerFn(setDrawStatus);
   const remove = useServerFn(deleteDraw);
   const pick = useServerFn(pickDrawWinners);
+  const setMode = useServerFn(setDrawMode);
+
 
   const { data: draws = [], isLoading } = useQuery({
     queryKey: ["admin", "draws"],
@@ -142,6 +146,16 @@ function AdminLuckyDrawPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const modeMut = useMutation({
+    mutationFn: (v: { id: string; mode: "manual" | "automated" }) => setMode({ data: v }),
+    onSuccess: (_r, v) => {
+      toast.success(`Switched to ${v.mode} mode`);
+      qc.invalidateQueries({ queryKey: ["admin", "draws"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   const openCount = draws.filter((d) => d.status === "open").length;
   const completedCount = draws.filter((d) => d.status === "completed").length;
@@ -225,6 +239,7 @@ function AdminLuckyDrawPage() {
                   <TableHead>Draw at</TableHead>
                   <TableHead>Drawn at</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Mode</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -256,6 +271,23 @@ function AdminLuckyDrawPage() {
                       <Badge variant={statusVariant[d.status]} className="capitalize">
                         {d.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={d.mode === "automated"}
+                          disabled={
+                            d.status === "completed" ||
+                            d.status === "cancelled" ||
+                            (modeMut.isPending && modeMut.variables?.id === d.id)
+                          }
+                          onCheckedChange={(v) =>
+                            modeMut.mutate({ id: d.id, mode: v ? "automated" : "manual" })
+                          }
+                          aria-label={`Toggle mode for ${d.name}`}
+                        />
+                        <span className="text-xs capitalize text-muted-foreground">{d.mode}</span>
+                      </div>
                     </TableCell>
                     <TableCell className="flex justify-end gap-2">
                       <Button size="sm" variant="outline" onClick={() => setSelected(d)}>
