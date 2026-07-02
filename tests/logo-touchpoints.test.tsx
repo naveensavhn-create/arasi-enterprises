@@ -20,12 +20,14 @@
  * BrandHeader component) and that all imports resolve — the file itself
  * failing to compile is the primary "missing asset" signal we care about.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import path from "node:path";
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, cleanup } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
+
+afterEach(() => cleanup());
 
 import { Logo, ARASI_LOGO_URL } from "@/components/brand/Logo";
 import logoAsset from "@/assets/arasi-logo.png.asset.json";
