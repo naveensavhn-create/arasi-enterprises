@@ -156,6 +156,17 @@ function AdminPlansPage() {
   const [advanceOnly, setAdvanceOnly] = useState(false);
   const [sortBy, setSortBy] = useState<"display_order" | "name" | "total_value" | "duration_months">("display_order");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkConfirm, setBulkConfirm] = useState<null | "activate" | "deactivate" | "delete">(null);
+
+  const toggleSelected = (id: string) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const clearSelection = () => setSelected(new Set());
 
   const validation = useMemo(() => planFormSchema.safeParse(form), [form]);
   const errors = useMemo(() => {
