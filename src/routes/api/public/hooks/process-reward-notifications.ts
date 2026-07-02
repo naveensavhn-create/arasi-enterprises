@@ -293,9 +293,12 @@ async function processJob(
   let providerName: string;
   let skippedInfraCode: "skipped_no_email_infra" | "skipped_no_sms_infra";
 
+  // Load Site Settings once so both channels use the same configured
+  // brand name and logo URL.
+  const brandOverrides = await loadBrandOverrides();
+  const brandName = brandOverrides?.name ?? brand.name;
+
   if (job.channel === "email") {
-    const brandOverrides = await loadBrandOverrides();
-    const brandName = brandOverrides?.name ?? brand.name;
     const subject =
       job.notification_kind === "unlocked"
         ? `[${brandName}] You've unlocked ${tierName}`
