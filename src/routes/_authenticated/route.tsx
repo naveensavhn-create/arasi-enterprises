@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { lastVisitedKey } from "@/lib/last-visited";
 import { useApplyUiPrefs, getUiPrefs, useSyncUiPrefsWithServer } from "@/lib/ui-prefs";
 import { HeaderKycStatus } from "@/components/kyc/KycStatusBadge";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 
 export const Route = createFileRoute("/_authenticated")({
@@ -109,6 +110,7 @@ function AuthenticatedShell() {
               <GlobalSearch role={role} />
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <NotificationBell />
               <HeaderKycStatus />
               <div className="hidden max-w-[200px] text-right sm:block">
                 <div className="truncate text-sm font-medium leading-tight">
