@@ -50,8 +50,9 @@ function renderCard() {
 }
 
 const writeText = vi.fn(async () => undefined);
-Object.defineProperty(navigator, "clipboard", {
+Object.defineProperty(globalThis.navigator, "clipboard", {
   configurable: true,
+  writable: true,
   value: { writeText },
 });
 
