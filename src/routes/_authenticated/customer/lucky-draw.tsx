@@ -135,14 +135,47 @@ function CustomerLuckyDrawPage() {
   const wins = draws.filter((d) => d.myWin);
   const entries = draws.filter((d) => d.myEntry);
 
+  const liveDot =
+    realtime.status === "connected"
+      ? "bg-green-500"
+      : realtime.status === "connecting" || realtime.status === "reconnecting"
+        ? "bg-amber-500 animate-pulse"
+        : realtime.status === "error" || realtime.status === "closed"
+          ? "bg-destructive"
+          : "bg-muted-foreground/40";
+  const liveLabel =
+    realtime.status === "connected"
+      ? "Live"
+      : realtime.status === "connecting"
+        ? "Connecting…"
+        : realtime.status === "reconnecting"
+          ? "Reconnecting…"
+          : realtime.status === "error"
+            ? "Offline — auto-refreshing"
+            : realtime.status === "closed"
+              ? "Disconnected"
+              : "Idle";
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Lucky Draw</h1>
-        <p className="text-sm text-muted-foreground">
-          Join open draws and track your entries and wins.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Lucky Draw</h1>
+          <p className="text-sm text-muted-foreground">
+            Join open draws and track your entries and wins.
+          </p>
+        </div>
+        <div
+          className="flex items-center gap-2 rounded-full border bg-background/60 px-2.5 py-1 text-xs text-muted-foreground"
+          role="status"
+          aria-live="polite"
+          title={realtime.error?.message ?? liveLabel}
+        >
+          <span aria-hidden className={`h-2 w-2 rounded-full ${liveDot}`} />
+          <span>{liveLabel}</span>
+        </div>
       </div>
+
 
       {/* Monthly eligibility summary */}
       <Card className="glass">
