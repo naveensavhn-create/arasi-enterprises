@@ -8,17 +8,20 @@ export function Logo({
   tagline = false,
   size = 40,
   showWordmark = true,
+  src,
 }: {
   className?: string;
   tagline?: boolean;
   size?: number;
   showWordmark?: boolean;
+  src?: string | null;
 }) {
+  const imgSrc = src && src.trim().length > 0 ? src : logoAsset.url;
   return (
     <div className={cn("flex flex-col items-start", className)}>
       <div className="flex items-center gap-3">
         <img
-          src={logoAsset.url}
+          src={imgSrc}
           alt="ARASI Enterprises"
           width={size}
           height={size}
