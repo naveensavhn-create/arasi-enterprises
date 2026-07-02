@@ -6,23 +6,24 @@ import {
   Heading,
   Hr,
   Html,
-  Img,
   Preview,
   Section,
   Text,
 } from "@react-email/components";
-import { brand as defaultBrand, colors as defaultColors, styles as base } from "./_shared";
+import {
+  brand as defaultBrand,
+  colors as defaultColors,
+  styles as base,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
-export interface PaymentReminderBrand {
-  name?: string;
-  tagline?: string;
-  supportEmail?: string;
-  logoUrl?: string | null;
-  primaryColor?: string; // hex, e.g. "#d4af37"
-  accentColor?: string;
-  headingFont?: string;
-  bodyFont?: string;
-}
+// Kept as a named export for backwards compatibility with call sites that
+// import the reminder-specific alias. All fields now flow through the shared
+// `resolveBrand()` helper so every template renders the Site Settings logo
+// URL identically.
+export type PaymentReminderBrand = BrandOverrides;
 
 export interface PaymentReminderProps {
   recipientName?: string;
