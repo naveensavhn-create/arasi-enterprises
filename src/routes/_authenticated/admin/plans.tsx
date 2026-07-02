@@ -1125,6 +1125,80 @@ function AdminPlansPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Bulk actions confirm */}
+      <AlertDialog
+        open={!!bulkConfirm}
+        onOpenChange={(o) => !o && !bulkSetActive.isPending && !bulkDelete.isPending && setBulkConfirm(null)}
+      >
+        <AlertDialogContent>
+          {(() => {
+            const ids = Array.from(selected);
+            const count = ids.length;
+            const busy = bulkSetActive.isPending || bulkDelete.isPending;
+            const inUseCount = bulkConfirm === "delete" ? ids.filter((id) => usageForPlan(id) > 0).length : 0;
+            const title =
+              bulkConfirm === "activate"
+                ? `Activate ${count} plan${count === 1 ? "" : "s"}?`
+                : bulkConfirm === "deactivate"
+                  ? `Deactivate ${count} plan${count === 1 ? "" : "s"}?`
+                  : `Delete ${count} plan${count === 1 ? "" : "s"}?`;
+            return (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{title}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {bulkConfirm === "activate" &&
+                      "Selected plans will become available for new enrollments. Existing memberships are unchanged."}
+                    {bulkConfirm === "deactivate" &&
+                      "Selected plans will be hidden from new enrollments. Existing memberships and installments are not affected."}
+                    {bulkConfirm === "delete" && (
+                      <>
+                        This permanently deletes the selected plans. Plans with active enrollments
+                        cannot be deleted and will be skipped.
+                        {inUseCount > 0 && (
+                          <span className="mt-2 block font-medium text-destructive">
+                            {inUseCount} of {count} selected plan{inUseCount === 1 ? "" : "s"} {inUseCount === 1 ? "is" : "are"} in use and will be blocked.
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={busy}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (bulkConfirm === "activate") bulkSetActive.mutate({ ids, active: true });
+                      else if (bulkConfirm === "deactivate") bulkSetActive.mutate({ ids, active: false });
+                      else if (bulkConfirm === "delete") bulkDelete.mutate(ids);
+                    }}
+                    className={
+                      bulkConfirm === "delete" || bulkConfirm === "deactivate"
+                        ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        : ""
+                    }
+                  >
+                    {busy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : bulkConfirm === "activate" ? (
+                      "Activate"
+                    ) : bulkConfirm === "deactivate" ? (
+                      "Deactivate"
+                    ) : (
+                      "Delete"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </>
+            );
+          })()}
+        </AlertDialogContent>
+      </AlertDialog>
+
+
+
 
       <PlanAuditDrawer
         planId={historyPlan?.id ?? null}
