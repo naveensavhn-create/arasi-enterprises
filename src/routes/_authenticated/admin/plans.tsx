@@ -934,6 +934,49 @@ function AdminPlansPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={!!confirmToggle} onOpenChange={(o) => !o && !toggleActive.isPending && setConfirmToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmToggle?.is_active ? "Deactivate this plan?" : "Activate this plan?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmToggle?.is_active ? (
+                <>
+                  <span className="font-semibold">{confirmToggle?.name}</span> will be hidden from new
+                  enrollments. Existing memberships and installments are not affected.
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">{confirmToggle?.name}</span> will become available
+                  again for new enrollments.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={toggleActive.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={toggleActive.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmToggle) toggleActive.mutate(confirmToggle);
+              }}
+              className={confirmToggle?.is_active ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            >
+              {toggleActive.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : confirmToggle?.is_active ? (
+                "Deactivate"
+              ) : (
+                "Activate"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
       <PlanAuditDrawer
         planId={historyPlan?.id ?? null}
         planName={historyPlan?.name}
