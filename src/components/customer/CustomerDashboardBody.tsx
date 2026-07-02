@@ -402,9 +402,13 @@ export function CustomerDashboardBody() {
               <div>
                 <p className="text-sm font-medium">Couldn't load installments</p>
                 <p className="text-xs text-muted-foreground">
-                  {installmentsQ.error instanceof Error
-                    ? installmentsQ.error.message
-                    : "Please try again."}
+                  {(() => {
+                    const e = installmentsQ.error as unknown;
+                    if (typeof e === "object" && e && "message" in e && typeof (e as { message: unknown }).message === "string") {
+                      return (e as { message: string }).message;
+                    }
+                    return "Please try again.";
+                  })()}
                 </p>
               </div>
             </div>
