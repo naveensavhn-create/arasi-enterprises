@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
 import { createDrawEntry, listOpenDrawsForCustomer } from "@/lib/draws.functions";
+import { useDrawRealtime } from "@/hooks/use-draw-realtime";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,6 +57,15 @@ function CustomerLuckyDrawPage() {
     enabled: !!session?.user.id,
     queryFn: () => listDrawsFn(),
   });
+
+  useDrawRealtime({
+    enabled: !!session?.user.id,
+    queryKeys: [
+      ["customer-open-draws", session?.user.id],
+      ["customer-draw-results", session?.user.id],
+    ],
+  });
+
 
   // Monthly on-time payment eligibility (kept from prior version)
   const eligQ = useQuery({

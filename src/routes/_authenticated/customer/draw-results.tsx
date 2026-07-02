@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useSession } from "@/lib/auth";
 import { listOpenDrawsForCustomer } from "@/lib/draws.functions";
+import { useDrawRealtime } from "@/hooks/use-draw-realtime";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,15 @@ function CustomerDrawResultsPage() {
     enabled: !!session?.user.id,
     queryFn: () => listFn(),
   });
+
+  useDrawRealtime({
+    enabled: !!session?.user.id,
+    queryKeys: [
+      ["customer-draw-results", session?.user.id],
+      ["customer-open-draws", session?.user.id],
+    ],
+  });
+
 
   const allDraws = q.data ?? [];
   const results = allDraws
