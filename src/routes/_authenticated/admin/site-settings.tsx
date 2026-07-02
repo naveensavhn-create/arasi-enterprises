@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Clock, Palette, Save, Type } from "lucide-react";
+import { Clock, ImageIcon, Loader2, Palette, Save, Trash2, Upload, Type } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -174,18 +175,18 @@ function SiteSettingsPage() {
                     onChange={(e) => set("support_phone", e.target.value)}
                   />
                 </Field>
-                <Field label="Logo URL">
-                  <Input
+                <Field label="Logo">
+                  <BrandAssetUploader
+                    kind="logo"
                     value={form.logo_url ?? ""}
-                    onChange={(e) => set("logo_url", e.target.value)}
-                    placeholder="https://…"
+                    onChange={(v) => set("logo_url", v)}
                   />
                 </Field>
-                <Field label="Favicon URL">
-                  <Input
+                <Field label="Favicon">
+                  <BrandAssetUploader
+                    kind="favicon"
                     value={form.favicon_url ?? ""}
-                    onChange={(e) => set("favicon_url", e.target.value)}
-                    placeholder="https://…"
+                    onChange={(v) => set("favicon_url", v)}
                   />
                 </Field>
               </div>
@@ -330,6 +331,13 @@ function SiteSettingsPage() {
                   className="space-y-3 rounded-lg border p-4"
                   style={{ fontFamily: `"${preview.body_font}", sans-serif` }}
                 >
+                  {preview.logo_url && (
+                    <img
+                      src={preview.logo_url}
+                      alt="Brand logo preview"
+                      className="max-h-16 w-auto rounded-sm bg-white/60 p-1 dark:bg-white/10"
+                    />
+                  )}
                   <div
                     className="text-2xl font-bold"
                     style={{
@@ -411,6 +419,119 @@ function ColorField({
         />
         <Input value={value} onChange={(e) => onChange(e.target.value)} className="font-mono text-xs" />
       </div>
+    </div>
+  );
+}
+
+const BRAND_BUCKET = "brand-assets";
+const SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 365 * 10; // ~10 years
+const ACCEPTED = {
+  logo: "image/png,image/jpeg,image/webp,image/svg+xml",
+  favicon: "image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml",
+} as const;
+const MAX_BYTES = { logo: 2 * 1024 * 1024, favicon: 512 * 1024 } as const;
+
+function BrandAssetUploader({
+  kind,
+  value,
+  onChange,
+}: {
+  kind: "logo" | "favicon";
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleFile(file: File) {
+    if (file.size > MAX_BYTES[kind]) {
+      toast.error(`File too large (max ${(MAX_BYTES[kind] / 1024).toFixed(0)} KB).`);
+      return;
+    }
+    setBusy(true);
+    try {
+      const ext = (file.name.split(".").pop() ?? "png").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${kind}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || "png"}`;
+      const { error: upErr } = await supabase.storage
+        .from(BRAND_BUCKET)
+        .upload(path, file, { cacheControl: "31536000", upsert: false, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: signed, error: signErr } = await supabase.storage
+        .from(BRAND_BUCKET)
+        .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+      if (signErr || !signed?.signedUrl) throw signErr ?? new Error("Failed to create signed URL");
+      onChange(signed.signedUrl);
+      toast.success(`${kind === "logo" ? "Logo" : "Favicon"} uploaded — remember to save.`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Upload failed";
+      toast.error(msg);
+    } finally {
+      setBusy(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-3">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted/40">
+          {value ? (
+            <img src={value} alt={`${kind} preview`} className="max-h-full max-w-full object-contain" />
+          ) : (
+            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => inputRef.current?.click()}
+              disabled={busy}
+            >
+              {busy ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
+              )}
+              {value ? "Replace" : "Upload"}
+            </Button>
+            {value && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => onChange("")}
+                disabled={busy}
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Remove
+              </Button>
+            )}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {kind === "logo"
+              ? "PNG/JPEG/WebP/SVG · up to 2 MB · used across app & emails"
+              : "PNG/ICO/SVG · up to 512 KB"}
+          </p>
+        </div>
+      </div>
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="https://…"
+        className="font-mono text-xs"
+      />
+      <input
+        ref={inputRef}
+        type="file"
+        className="hidden"
+        accept={ACCEPTED[kind]}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void handleFile(f);
+        }}
+      />
     </div>
   );
 }
