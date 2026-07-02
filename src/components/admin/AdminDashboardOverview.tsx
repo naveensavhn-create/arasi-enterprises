@@ -169,7 +169,7 @@ export function AdminDashboardOverview() {
           hint="Installments due but not paid"
           icon={Clock}
           tone="warning"
-          to="/admin/installments"
+          to="/admin/payments"
         />
         <StatCard
           title="Missed / overdue"
@@ -177,7 +177,7 @@ export function AdminDashboardOverview() {
           hint="Installments past their due date"
           icon={AlertTriangle}
           tone="danger"
-          to="/admin/installments"
+          to="/admin/payments"
         />
         <StatCard
           title="KYC pending review"
