@@ -15,6 +15,7 @@ import {
   Phone,
   Mail,
   IdCard,
+  Loader2,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -128,6 +129,7 @@ function AdminApprovalsPage() {
   }, [rows, q, onlyReferred]);
 
   const ALLOWED_ROLES = ["promoter", "customer"] as const;
+  const TOAST_ID = "kyc-decision";
   const decideMut = useMutation({
     mutationFn: (v: {
       userId: string;
@@ -135,8 +137,6 @@ function AdminApprovalsPage() {
       notes: string | null;
       assignRole?: "promoter" | "customer" | null;
     }) => {
-      // Client-side guard so the user gets an immediate, clear error
-      // before we ever hit the network. The server enforces the same rule.
       if (v.approve) {
         if (!v.assignRole) {
           throw new Error("Select a membership role (Customer or Promoter) before approving.");
@@ -153,16 +153,21 @@ function AdminApprovalsPage() {
       } else if (v.assignRole) {
         throw new Error("A role can only be assigned when approving KYC.");
       }
+      toast.loading(v.approve ? "Approving KYC…" : "Rejecting KYC…", { id: TOAST_ID });
       return decideFn({ data: v });
     },
     onSuccess: async (_r, v) => {
-      toast.success(
-        v.approve
-          ? v.assignRole
-            ? `Approved as ${v.assignRole}`
-            : "Approved"
-          : "Rejected",
-      );
+      const label = v.approve
+        ? v.assignRole
+          ? `Approved as ${v.assignRole}`
+          : "KYC approved"
+        : "KYC rejected";
+      toast.success(label, {
+        id: TOAST_ID,
+        description: v.notes
+          ? `Saved review notes: “${v.notes.length > 140 ? v.notes.slice(0, 140) + "…" : v.notes}”`
+          : "No review notes were saved.",
+      });
       try {
         await supabase.auth.refreshSession();
       } catch {
@@ -172,13 +177,16 @@ function AdminApprovalsPage() {
         qc.invalidateQueries({ queryKey: ["kyc"] }),
         qc.invalidateQueries({ queryKey: ["current-role"] }),
       ]);
-      setSelected(null);
+      // Keep drawer open so the refetched row shows the updated status
+      // and the saved review note in the "Previous review note" section.
     },
     onError: (e: Error) =>
       toast.error(e.message || "Could not update KYC decision", {
+        id: TOAST_ID,
         description: "Fix the issue above and try again.",
       }),
   });
+
 
   return (
     <div className="space-y-4">
@@ -306,13 +314,20 @@ function AdminApprovalsPage() {
       </Card>
 
       <ReviewDrawer
-        row={selected}
+        row={selected ? rows.find((r) => r.id === selected.id) ?? selected : null}
         onClose={() => setSelected(null)}
         onDecide={(approve, notes, assignRole) =>
           selected &&
           decideMut.mutate({ userId: selected.id, approve, notes, assignRole })
         }
         pending={decideMut.isPending}
+        pendingAction={
+          decideMut.isPending
+            ? decideMut.variables?.approve
+              ? "approve"
+              : "reject"
+            : null
+        }
       />
     </div>
   );
@@ -323,6 +338,7 @@ function ReviewDrawer({
   onClose,
   onDecide,
   pending,
+  pendingAction,
 }: {
   row: KycProfile | null;
   onClose: () => void;
@@ -332,6 +348,7 @@ function ReviewDrawer({
     assignRole: "promoter" | "customer" | null,
   ) => void;
   pending: boolean;
+  pendingAction: "approve" | "reject" | null;
 }) {
   const [notes, setNotes] = useState("");
   const [assignRole, setAssignRole] = useState<"promoter" | "customer">("customer");
@@ -423,6 +440,8 @@ function ReviewDrawer({
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="e.g. Aadhaar image is blurry, please re-upload"
+                      disabled={pending}
+                      aria-busy={pending}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -430,8 +449,9 @@ function ReviewDrawer({
                     <Select
                       value={assignRole}
                       onValueChange={(v) => setAssignRole(v as "promoter" | "customer")}
+                      disabled={pending}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger aria-busy={pending}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -451,31 +471,54 @@ function ReviewDrawer({
 
               {(row.kyc_status === "approved" || row.kyc_status === "rejected") &&
                 row.kyc_review_notes && (
-                  <Section title="Previous review note">
-                    <div className="text-sm text-muted-foreground">{row.kyc_review_notes}</div>
+                  <Section title="Saved review note">
+                    <div className="whitespace-pre-wrap rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                      {row.kyc_review_notes}
+                    </div>
+                    {row.kyc_reviewed_at && (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Saved {new Date(row.kyc_reviewed_at).toLocaleString()}
+                      </div>
+                    )}
                   </Section>
                 )}
             </div>
 
             <SheetFooter className="mt-6 gap-2">
-              <Button variant="ghost" onClick={onClose}>
+              <Button variant="ghost" onClick={onClose} disabled={pending}>
                 Close
               </Button>
               {row.kyc_status !== "rejected" && (
                 <Button
                   variant="destructive"
                   disabled={pending}
+                  aria-busy={pendingAction === "reject"}
                   onClick={() => onDecide(false, notes.trim() || null, null)}
                 >
-                  Reject
+                  {pendingAction === "reject" ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Rejecting…
+                    </>
+                  ) : (
+                    "Reject"
+                  )}
                 </Button>
               )}
               {row.kyc_status !== "approved" && (
                 <Button
                   disabled={pending}
+                  aria-busy={pendingAction === "approve"}
                   onClick={() => onDecide(true, notes.trim() || null, assignRole)}
                 >
-                  Approve as {assignRole}
+                  {pendingAction === "approve" ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Approving as {assignRole}…
+                    </>
+                  ) : (
+                    <>Approve as {assignRole}</>
+                  )}
                 </Button>
               )}
             </SheetFooter>
