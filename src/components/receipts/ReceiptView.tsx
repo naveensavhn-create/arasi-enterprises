@@ -11,6 +11,7 @@ const fmt = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
 export function ReceiptView({ receipt }: { receipt: ReceiptRow }) {
+  const settings = useSiteSettings();
   const [qr, setQr] = useState<string>("");
 
   useEffect(() => {
