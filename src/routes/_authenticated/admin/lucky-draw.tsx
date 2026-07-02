@@ -71,6 +71,7 @@ type Draw = {
   winners_count: number;
   requires_active_membership: boolean;
   description: string | null;
+  mode: "manual" | "automated";
 };
 
 const statusVariant: Record<Draw["status"], "default" | "secondary" | "destructive" | "outline"> = {
