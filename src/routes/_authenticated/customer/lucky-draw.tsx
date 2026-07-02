@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { DrawTimeline } from "@/components/draws/DrawTimeline";
 import { formatDateTime } from "@/lib/format-datetime";
 import {
   Ticket,
@@ -339,21 +340,16 @@ function CustomerLuckyDrawPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-1.5">
-                      <DrawTimeBadge kind="opens" iso={d.opens_at} showRelative />
-                      <DrawTimeBadge kind="closes" iso={d.closes_at} showRelative />
-                      <DrawTimeBadge
-                        kind="draw"
-                        iso={(d as unknown as { draw_at: string | null }).draw_at}
-                        showRelative
-                      />
-                      {d.status === "completed" && (
-                        <DrawTimeBadge
-                          kind="drawn"
-                          iso={(d as unknown as { drawn_at: string | null }).drawn_at}
-                        />
-                      )}
-                    </div>
+                    <DrawTimeline
+                      opensAt={d.opens_at}
+                      closesAt={d.closes_at}
+                      drawAt={(d as unknown as { draw_at: string | null }).draw_at}
+                      drawnAt={
+                        d.status === "completed"
+                          ? (d as unknown as { drawn_at: string | null }).drawn_at
+                          : null
+                      }
+                    />
 
 
                     <Separator />

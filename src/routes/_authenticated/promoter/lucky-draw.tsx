@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { listDrawsForPromoter } from "@/lib/draws.functions";
 import { useDrawRealtime } from "@/hooks/use-draw-realtime";
 import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { DrawTimeline } from "@/components/draws/DrawTimeline";
 import { formatDateTime } from "@/lib/format-datetime";
 
 export const Route = createFileRoute("/_authenticated/promoter/lucky-draw")({
@@ -116,11 +117,11 @@ function PromoterLuckyDrawPage() {
                       {d.requires_active_membership ? " · Active membership required" : ""}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <DrawTimeBadge kind="opens" iso={d.opens_at} showRelative />
-                    <DrawTimeBadge kind="closes" iso={d.closes_at} showRelative />
-                    <DrawTimeBadge kind="draw" iso={d.draw_at} showRelative />
-                  </div>
+                  <DrawTimeline
+                    opensAt={d.opens_at}
+                    closesAt={d.closes_at}
+                    drawAt={d.draw_at}
+                  />
                 </CardContent>
               </Card>
             ))}
@@ -143,7 +144,12 @@ function PromoterLuckyDrawPage() {
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="text-base">{d.name}</CardTitle>
-                    <DrawTimeBadge kind="drawn" iso={d.drawn_at} />
+                    <DrawTimeline
+                      opensAt={d.opens_at}
+                      closesAt={d.closes_at}
+                      drawAt={d.draw_at}
+                      drawnAt={d.drawn_at}
+                    />
                   </div>
                 </CardHeader>
                 <CardContent>

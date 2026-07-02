@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Trophy, CalendarClock, Ticket, Loader2, Gift, Crown, Frown } from "lucide-react";
 import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { DrawTimeline } from "@/components/draws/DrawTimeline";
 import { formatDateTime } from "@/lib/format-datetime";
 
 export const Route = createFileRoute("/_authenticated/customer/draw-results")({
@@ -216,6 +217,12 @@ function CustomerDrawResultsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
+                <DrawTimeline
+                  opensAt={(d as unknown as { opens_at: string | null }).opens_at}
+                  closesAt={(d as unknown as { closes_at: string | null }).closes_at}
+                  drawAt={(d as unknown as { draw_at: string | null }).draw_at}
+                  drawnAt={d.drawn_at ?? d.myWin?.drawn_at ?? null}
+                />
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                   <div>
                     <div className="text-xs uppercase tracking-wide text-muted-foreground">Prize</div>

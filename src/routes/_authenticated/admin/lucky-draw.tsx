@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { DrawTimeline } from "@/components/draws/DrawTimeline";
 import { formatDateTime } from "@/lib/format-datetime";
 import {
   Dialog,
@@ -733,6 +734,15 @@ function DrawDetailDialog({ draw, onClose, focusManual = false }: { draw: Draw |
                   {draw.status}
                 </Badge>
               </div>
+            </div>
+            <DrawTimeline
+              opensAt={draw.opens_at}
+              closesAt={draw.closes_at}
+              drawAt={draw.draw_at}
+              drawnAt={draw.drawn_at}
+              showLabels
+            />
+            <div className="flex justify-end">
               {canPick && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
