@@ -52,10 +52,17 @@ import {
   RadioGroupItem,
 } from "@/components/ui/radio-group";
 import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
+import {
   enqueueInstallmentReminders,
   listDueInstallmentsForReminders,
   type DueInstallmentRow,
 } from "@/lib/reminders.functions";
+import { renderPaymentReminderEmailPreview } from "@/lib/payment-reminder-preview.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/reminders")({
   head: () => ({
