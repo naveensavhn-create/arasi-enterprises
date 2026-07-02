@@ -55,6 +55,12 @@ function PromoterLuckyDrawPage() {
     queryFn: () => listFn() as Promise<DrawRow[]>,
   });
 
+  useDrawRealtime({
+    queryKeys: [["promoter", "draws"]],
+  });
+
+
+
   const draws = q.data ?? [];
   const upcoming = draws.filter((d) => d.status === "scheduled" || d.status === "open");
   const completed = draws.filter((d) => d.status === "completed");
