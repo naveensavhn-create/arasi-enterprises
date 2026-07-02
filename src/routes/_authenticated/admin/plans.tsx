@@ -147,6 +147,7 @@ function AdminPlansPage() {
   const [editing, setEditing] = useState<Plan | null>(null);
   const [form, setForm] = useState<FormState>(empty);
   const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null);
+  const [confirmToggle, setConfirmToggle] = useState<Plan | null>(null);
   const [historyPlan, setHistoryPlan] = useState<Plan | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [search, setSearch] = useState("");
@@ -245,13 +246,24 @@ function AdminPlansPage() {
 
   const toggleActive = useMutation({
     mutationFn: async (p: Plan) => {
+      const next = !p.is_active;
       const { error } = await supabase
         .from("membership_plans")
-        .update({ is_active: !p.is_active })
+        .update({ is_active: next })
         .eq("id", p.id);
       if (error) throw error;
+      return { next, name: p.name };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-plans"] }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      toast.success(res.next ? `${res.name} activated` : `${res.name} deactivated`, {
+        description: res.next
+          ? "New enrollments can now select this plan."
+          : "Existing memberships are unchanged; new enrollments are blocked.",
+      });
+      setConfirmToggle(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update plan status"),
   });
 
   // Explicit, idempotent "deactivate" — used from the delete dialog so a
@@ -765,10 +777,11 @@ function AdminPlansPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => toggleActive.mutate(p)}
+                        onClick={() => setConfirmToggle(p)}
                         title={p.is_active ? "Deactivate" : "Activate"}
+                        aria-label={p.is_active ? `Deactivate ${p.name}` : `Activate ${p.name}`}
                       >
-                        <Switch checked={p.is_active} />
+                        <Switch checked={p.is_active} tabIndex={-1} className="pointer-events-none" />
                       </Button>
                       <Button
                         size="icon"
@@ -920,6 +933,49 @@ function AdminPlansPage() {
           })()}
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!confirmToggle} onOpenChange={(o) => !o && !toggleActive.isPending && setConfirmToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmToggle?.is_active ? "Deactivate this plan?" : "Activate this plan?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmToggle?.is_active ? (
+                <>
+                  <span className="font-semibold">{confirmToggle?.name}</span> will be hidden from new
+                  enrollments. Existing memberships and installments are not affected.
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold">{confirmToggle?.name}</span> will become available
+                  again for new enrollments.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={toggleActive.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={toggleActive.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmToggle) toggleActive.mutate(confirmToggle);
+              }}
+              className={confirmToggle?.is_active ? "bg-destructive text-destructive-foreground hover:bg-destructive/90" : ""}
+            >
+              {toggleActive.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : confirmToggle?.is_active ? (
+                "Deactivate"
+              ) : (
+                "Activate"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       <PlanAuditDrawer
         planId={historyPlan?.id ?? null}
