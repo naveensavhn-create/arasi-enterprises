@@ -255,8 +255,78 @@ function AdminLuckyDrawPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>All draws</CardTitle>
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>All draws</CardTitle>
+            <div className="text-xs text-muted-foreground">
+              {filtered.length} of {draws.length}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Status</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {STATUSES.map((s) => {
+                  const active = statusFilter.has(s);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggleStatus(s)}
+                      aria-pressed={active}
+                      className="focus:outline-none focus:ring-2 focus:ring-ring rounded-full"
+                    >
+                      <Badge
+                        variant={active ? statusVariant[s] : "outline"}
+                        className="cursor-pointer capitalize"
+                      >
+                        {s}
+                      </Badge>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground" htmlFor="f-field">Date field</Label>
+              <select
+                id="f-field"
+                value={dateField}
+                onChange={(e) => setDateField(e.target.value as typeof dateField)}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="opens_at">Opens at</option>
+                <option value="closes_at">Closes at</option>
+                <option value="draw_at">Draw at</option>
+                <option value="drawn_at">Drawn at</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground" htmlFor="f-from">From</Label>
+              <Input
+                id="f-from"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 w-[10.5rem]"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground" htmlFor="f-to">To</Label>
+              <Input
+                id="f-to"
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 w-[10.5rem]"
+              />
+            </div>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
+                <X className="mr-1 h-3.5 w-3.5" /> Clear
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -264,6 +334,10 @@ function AdminLuckyDrawPage() {
           ) : draws.length === 0 ? (
             <div className="text-sm text-muted-foreground">
               No draws yet. Click "New draw" to create one.
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-sm text-muted-foreground">
+              No draws match the current filters.
             </div>
           ) : (
             <Table>
@@ -282,7 +356,7 @@ function AdminLuckyDrawPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {draws.map((d) => (
+                {filtered.map((d) => (
                   <TableRow key={d.id}>
                     <TableCell className="font-medium">{d.name}</TableCell>
                     <TableCell>{d.prize}</TableCell>
