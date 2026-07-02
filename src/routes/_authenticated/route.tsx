@@ -12,6 +12,7 @@ import { useApplyUiPrefs, getUiPrefs, useSyncUiPrefsWithServer } from "@/lib/ui-
 import { HeaderKycStatus } from "@/components/kyc/KycStatusBadge";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ImpersonationBanner } from "@/components/impersonation/ImpersonationBanner";
+import { ImpersonationExitFab } from "@/components/impersonation/ImpersonationExitFab";
 
 
 export const Route = createFileRoute("/_authenticated")({
