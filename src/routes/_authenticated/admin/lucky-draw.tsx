@@ -65,6 +65,7 @@ type Draw = {
   status: "scheduled" | "open" | "closed" | "completed" | "cancelled";
   opens_at: string | null;
   closes_at: string | null;
+  draw_at: string | null;
   drawn_at: string | null;
   winners_count: number;
   requires_active_membership: boolean;
