@@ -467,6 +467,21 @@ function AdminPlansPage() {
     setAdvanceOnly(false);
   };
 
+  // Reset to page 1 whenever filters, sort, or page size change
+  useEffect(() => {
+    setPage(1);
+  }, [search, activeOnly, advanceOnly, sortBy, sortDir, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlans.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pageEnd = Math.min(pageStart + pageSize, filteredPlans.length);
+  const pagedPlans = useMemo(
+    () => filteredPlans.slice(pageStart, pageEnd),
+    [filteredPlans, pageStart, pageEnd],
+  );
+
+
   return (
     <div className="space-y-6">
       {/* Hero header */}
