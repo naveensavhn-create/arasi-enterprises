@@ -2765,6 +2765,14 @@ export type Database = {
       }
       cleanup_rate_limit_buckets: { Args: never; Returns: number }
       count_active_admins: { Args: never; Returns: number }
+      current_impersonation: {
+        Args: never
+        Returns: {
+          mode: string
+          session_id: string
+          target_user_id: string
+        }[]
+      }
       current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
