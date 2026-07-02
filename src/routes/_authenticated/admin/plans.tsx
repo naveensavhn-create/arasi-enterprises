@@ -459,8 +459,12 @@ function AdminPlansPage() {
                           min={0}
                           placeholder="0"
                           value={form.advance_amount}
+                          aria-invalid={!!showErr("advance_amount")}
                           onChange={(e) => setForm({ ...form, advance_amount: e.target.value })}
                         />
+                        {showErr("advance_amount") && (
+                          <p className="text-xs text-destructive">{showErr("advance_amount")}</p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -475,8 +479,12 @@ function AdminPlansPage() {
                         min={0}
                         placeholder="0"
                         value={form.monthly_installment}
+                        aria-invalid={!!showErr("monthly_installment")}
                         onChange={(e) => setForm({ ...form, monthly_installment: e.target.value })}
                       />
+                      {showErr("monthly_installment") && (
+                        <p className="text-xs text-destructive">{showErr("monthly_installment")}</p>
+                      )}
                     </div>
                     <div className="grid gap-1.5">
                       <Label className="text-xs flex items-center gap-1.5">
@@ -486,8 +494,12 @@ function AdminPlansPage() {
                         type="number"
                         min={0}
                         value={form.duration_months}
+                        aria-invalid={!!showErr("duration_months")}
                         onChange={(e) => setForm({ ...form, duration_months: e.target.value })}
                       />
+                      {showErr("duration_months") && (
+                        <p className="text-xs text-destructive">{showErr("duration_months")}</p>
+                      )}
                     </div>
                   </div>
 
