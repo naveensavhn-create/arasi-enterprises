@@ -180,7 +180,7 @@ function RanksPage() {
             <CardContent className="text-sm space-y-1">
               <div>Min active customers: <b>{r.min_active_customers}</b></div>
               <div>Commission: <b>{Number(r.commission_percent).toFixed(2)}%</b></div>
-              <div>Monthly incentive: <b>₹{Number(r.monthly_incentive).toLocaleString("en-IN")}</b></div>
+              <div>One-time incentive: <b>₹{Number(r.monthly_incentive).toLocaleString("en-IN")}</b></div>
               <div>Gift: <b>{r.gift_name ?? "—"}</b></div>
               <div>Status: <b>{r.is_active ? "Active" : "Inactive"}</b></div>
             </CardContent>
