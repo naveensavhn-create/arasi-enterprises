@@ -106,25 +106,33 @@ export const listImpersonationHistory = createServerFn({ method: "GET" })
     }>;
   });
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [k: string]: JsonValue }
+  | JsonValue[];
+
 export type AdminUserSnapshot = {
-  profile: Record<string, unknown> | null;
+  profile: JsonValue | null;
   role: string | null;
   customer_display_id: number | null;
   promoter_display_id: string | null;
   promoter_referral_code: string | null;
-  memberships: Array<Record<string, unknown>>;
-  installments: Array<Record<string, unknown>>;
-  payments: Array<Record<string, unknown>>;
-  receipts: Array<Record<string, unknown>>;
-  rewards: Array<Record<string, unknown>>;
-  draw_entries: Array<Record<string, unknown>>;
-  draw_wins: Array<Record<string, unknown>>;
-  notifications: Array<Record<string, unknown>>;
-  referred_by: Record<string, unknown> | null;
-  referrals: Array<Record<string, unknown>>;
-  commissions: Array<Record<string, unknown>>;
-  rank_state: Record<string, unknown> | null;
-  auth: Record<string, unknown> | null;
+  memberships: JsonValue[];
+  installments: JsonValue[];
+  payments: JsonValue[];
+  receipts: JsonValue[];
+  rewards: JsonValue[];
+  draw_entries: JsonValue[];
+  draw_wins: JsonValue[];
+  notifications: JsonValue[];
+  referred_by: JsonValue | null;
+  referrals: JsonValue[];
+  commissions: JsonValue[];
+  rank_state: JsonValue | null;
+  auth: JsonValue | null;
 };
 
 export const getAdminUserSnapshot = createServerFn({ method: "GET" })
