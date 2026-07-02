@@ -124,6 +124,40 @@ export const updateSiteSettings = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
 
+    // If cron schedule or timezone changed, reschedule the pg_cron job.
+    const scheduleChanged =
+      !before ||
+      (before as { reminder_cron_schedule?: string }).reminder_cron_schedule !==
+        payload.reminder_cron_schedule ||
+      (before as { reminder_cron_timezone?: string }).reminder_cron_timezone !==
+        payload.reminder_cron_timezone;
+    if (scheduleChanged) {
+      const { error: cronErr } = await context.supabase.rpc(
+        "apply_reminder_cron_settings",
+        {
+          _schedule: payload.reminder_cron_schedule,
+          _timezone: payload.reminder_cron_timezone,
+        },
+      );
+      if (cronErr) {
+        // Roll back the settings row to the previous values so DB and cron stay
+        // consistent. Surface a clear message to the caller.
+        if (before) {
+          await context.supabase
+            .from("site_settings")
+            .update({
+              reminder_cron_schedule: (before as { reminder_cron_schedule: string })
+                .reminder_cron_schedule,
+              reminder_cron_timezone: (before as { reminder_cron_timezone: string })
+                .reminder_cron_timezone,
+            })
+            .eq("id", SETTINGS_ID);
+        }
+        throw new Error(`Could not apply reminder schedule: ${cronErr.message}`);
+      }
+    }
+
+
     // Compute a compact list of changed fields for the audit trail. Best-effort
     // — a logging failure must NOT roll back a successful settings update.
     try {
