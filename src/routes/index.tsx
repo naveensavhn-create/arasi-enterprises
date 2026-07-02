@@ -1,4 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { reportLovableError } from "@/lib/lovable-error-reporting";
 import {
   ArrowRight,
   Users,
