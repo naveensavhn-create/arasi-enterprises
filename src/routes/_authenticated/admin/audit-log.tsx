@@ -94,7 +94,9 @@ function AuditLogPage() {
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   const reset = () => {
-    setQ(""); setActor(""); setAction("all"); setReviewedField("all"); setFrom(""); setTo(""); setPage(1);
+    setQ(""); setActor(""); setAction("all"); setReviewedField("all");
+    setPaymentId(""); setCustomerId(""); setPromoterId("");
+    setFrom(""); setTo(""); setPage(1);
   };
 
   const handleExport = async () => {
@@ -106,6 +108,9 @@ function AuditLogPage() {
           actor,
           actions: action === "all" ? [] : [action],
           reviewedField: reviewedField === "all" ? "" : reviewedField,
+          paymentId,
+          customerId,
+          promoterId,
           from,
           to,
         },
