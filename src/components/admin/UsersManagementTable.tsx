@@ -313,6 +313,21 @@ export function UsersManagementTable({
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            {u.role && u.role !== "admin" && (
+                              <Button
+                                asChild
+                                size="icon"
+                                variant="ghost"
+                                title={u.role === "promoter" ? "View promoter portal" : "View customer portal"}
+                              >
+                                <Link
+                                  to="/admin/view-as/$userId"
+                                  params={{ userId: u.id }}
+                                >
+                                  <UserCog className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="icon" variant="ghost">
