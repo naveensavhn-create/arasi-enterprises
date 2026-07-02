@@ -338,6 +338,14 @@ export function UsersManagementTable({
                                 <DropdownMenuItem onClick={() => setViewUserId(u.id)}>
                                   <Eye className="mr-2 h-4 w-4" /> View / edit profile
                                 </DropdownMenuItem>
+                                {u.role && u.role !== "admin" && (
+                                  <DropdownMenuItem asChild>
+                                    <Link to="/admin/view-as/$userId" params={{ userId: u.id }}>
+                                      <UserCog className="mr-2 h-4 w-4" />
+                                      {u.role === "promoter" ? "View promoter portal" : "View customer portal"}
+                                    </Link>
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 {u.role !== "admin" && canApprove && (
                                   <DropdownMenuItem onClick={() => setAction({ kind: "approve", user: u })}>
