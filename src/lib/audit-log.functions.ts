@@ -2,6 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/**
+ * Strip PostgREST filter meta-characters so user input can't inject
+ * additional clauses when spliced into `.or()` expressions.
+ * Mirrors the helper in payments.functions.ts.
+ */
+function sanitizePostgrestLike(input: string): string {
+  return input.replace(/[\\%,_()*:]/g, "").trim();
+}
+
 type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
 
 const filtersSchema = z.object({
