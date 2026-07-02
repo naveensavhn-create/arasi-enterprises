@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { DrawTimeline } from "@/components/draws/DrawTimeline";
 import { formatDateTime } from "@/lib/format-datetime";
 import {
   Dialog,
