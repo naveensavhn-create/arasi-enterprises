@@ -39,8 +39,9 @@ import { Route } from "@/routes/_authenticated/customer/referrals";
 const CustomerReferralsPage = (Route as unknown as { component: () => JSX.Element }).component;
 
 const writeText = vi.fn(async () => undefined);
-Object.defineProperty(navigator, "clipboard", {
+Object.defineProperty(globalThis.navigator, "clipboard", {
   configurable: true,
+  writable: true,
   value: { writeText },
 });
 
