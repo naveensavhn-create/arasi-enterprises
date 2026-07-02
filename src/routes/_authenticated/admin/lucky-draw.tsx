@@ -219,6 +219,10 @@ function AdminLuckyDrawPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Prize</TableHead>
                   <TableHead>Winners</TableHead>
+                  <TableHead>Opens</TableHead>
+                  <TableHead>Closes</TableHead>
+                  <TableHead>Draw at</TableHead>
+                  <TableHead>Drawn at</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -229,6 +233,24 @@ function AdminLuckyDrawPage() {
                     <TableCell className="font-medium">{d.name}</TableCell>
                     <TableCell>{d.prize}</TableCell>
                     <TableCell>{d.winners_count}</TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {d.opens_at ? new Date(d.opens_at).toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {d.closes_at ? new Date(d.closes_at).toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                      {(d as unknown as { draw_at: string | null }).draw_at
+                        ? new Date((d as unknown as { draw_at: string }).draw_at).toLocaleString()
+                        : "—"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-xs">
+                      {d.status === "completed" && d.drawn_at ? (
+                        <span className="font-medium">{new Date(d.drawn_at).toLocaleString()}</span>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={statusVariant[d.status]} className="capitalize">
                         {d.status}
