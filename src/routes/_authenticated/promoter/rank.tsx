@@ -99,15 +99,19 @@ function Page() {
           </CardContent>
         </Card>
         <Card>
-          <CardHeader><CardTitle>Monthly Incentives</CardTitle></CardHeader>
+          <CardHeader><CardTitle>One-time Rank Incentives</CardTitle></CardHeader>
           <CardContent>
             {(myInc ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No incentives yet.</p>
+              <p className="text-sm text-muted-foreground">
+                No incentives yet — each rank you reach unlocks a one-time incentive automatically.
+              </p>
             ) : (
               <ul className="space-y-2 text-sm">
-                {(myInc as Array<{ id: string; period_year: number; period_month: number; amount: number; status: string }>).map((i) => (
+                {(myInc as Array<{ id: string; created_at: string; amount: number; status: string }>).map((i) => (
                   <li key={i.id} className="flex justify-between items-center border-b pb-1 last:border-0">
-                    <span>{i.period_year}-{String(i.period_month).padStart(2, "0")}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Awarded {new Date(i.created_at).toLocaleDateString()}
+                    </span>
                     <span className="flex items-center gap-2">
                       <span>{inr(Number(i.amount))}</span>
                       <Badge variant="outline">{i.status}</Badge>
