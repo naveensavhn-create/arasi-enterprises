@@ -19,6 +19,16 @@ const createDrawSchema = z.object({
 
 const idSchema = z.object({ id: z.string().uuid() });
 const pickSchema = z.object({ drawId: z.string().uuid(), seed: z.string().max(200).optional().nullable() });
+const pickManualSchema = z
+  .object({
+    drawId: z.string().uuid(),
+    entryIds: z.array(z.string().uuid()).max(1000).optional().nullable(),
+    count: z.number().int().min(1).max(1000).optional().nullable(),
+    seed: z.string().max(200).optional().nullable(),
+  })
+  .refine((v) => (v.entryIds && v.entryIds.length > 0) || (v.count && v.count > 0), {
+    message: "Provide either entryIds or count",
+  });
 const enterSchema = z.object({ drawId: z.string().uuid(), membershipId: z.string().uuid().optional().nullable() });
 
 async function assertAdmin(ctx: { supabase: any; userId: string }) {
