@@ -136,6 +136,7 @@ export async function sendMembershipActivatedEmail(
   });
 
   try {
+    const brandOverrides = await loadBrandOverrides();
     const props: MembershipActivatedProps = {
       recipientName: profile?.full_name ?? undefined,
       membershipNumber: membership.membership_number,
@@ -151,6 +152,7 @@ export async function sendMembershipActivatedEmail(
       nextDueAmount:
         nextDue?.amount != null ? Number(nextDue.amount) : null,
       currency: "INR",
+      brand: brandOverrides,
     };
 
     const html = await render(React.createElement(MembershipActivated, props));
