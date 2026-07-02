@@ -174,7 +174,7 @@ describe("UserProfileDrawer — complete profile view", () => {
     expect(postal.value).toBe("560001");
 
     // KYC tab — switch and assert Aadhaar surface
-    fireEvent.click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
+    await userEvent.setup().click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
 
     // Wait for the aadhaar input to appear (proves the new panel mounted).
     const aadhaarNo = (await screen.findByLabelText(
@@ -310,7 +310,7 @@ describe("UserProfileDrawer — validation blocks the save mutation", () => {
     await screen.findByLabelText(/full name/i);
 
     // Switch to Aadhaar tab and wait for its inputs to mount
-    fireEvent.click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
+    await userEvent.setup().click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
     const aadhaarInput = await screen.findByLabelText(/aadhaar number/i);
 
     // Break the Aadhaar number then submit via the tab's Save button
