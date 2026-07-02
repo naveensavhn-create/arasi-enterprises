@@ -136,6 +136,42 @@ export function CustomerDashboardBody() {
     return <DashboardSkeleton />;
   }
 
+  if (membershipsQ.isError) {
+    const message =
+      membershipsQ.error instanceof Error
+        ? membershipsQ.error.message
+        : "We couldn't load your dashboard.";
+    return (
+      <div
+        role="alert"
+        aria-live="assertive"
+        className="mx-auto max-w-3xl px-6 py-10"
+        data-testid="dashboard-error"
+      >
+        <Card className="border-destructive/40">
+          <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+            <div className="rounded-full bg-destructive/10 p-3 text-destructive">
+              <AlertTriangle className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <h2 className="text-lg font-semibold">We couldn't load your dashboard</h2>
+            <p className="max-w-md text-sm text-muted-foreground">{message}</p>
+            <Button
+              onClick={() => {
+                void membershipsQ.refetch();
+              }}
+              disabled={membershipsQ.isFetching}
+            >
+              {membershipsQ.isFetching && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              )}
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!membership) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 px-6 py-10">
