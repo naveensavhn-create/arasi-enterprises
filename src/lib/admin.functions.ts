@@ -388,11 +388,13 @@ export const listAdminAuditLog = createServerFn({ method: "GET" })
 
     const { data, error } = await context.supabase
       .from("admin_audit_log")
-      .select("*")
+      .select(
+        "id, created_at, action, actor_id, actor_email, target_user_id, target_email, role_before, role_after, reason, metadata",
+      )
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
-    return data;
+    return data ?? [];
   });
 
 const testEmailSchema = z.object({
