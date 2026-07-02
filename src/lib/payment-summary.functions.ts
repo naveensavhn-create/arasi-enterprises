@@ -92,7 +92,7 @@ export const listMyPaymentSummaries = createServerFn({ method: "GET" })
     const { data: payments, error: paymentsErr } = await supabase
       .from("payments")
       .select(
-        "id, membership_id, installment_id, amount, currency, payment_method, provider_payment_id, paid_at, created_at, status",
+        "id, membership_id, installment_id, amount, currency, method, provider_payment_id, paid_at, created_at, status",
       )
       .eq("customer_id", userId)
       .eq("status", "paid")
