@@ -367,17 +367,28 @@ function CustomerLuckyDrawPage() {
           <CardContent className="space-y-2">
             {entries.map((d) => (
               <div key={d.id} className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
-                <div>
-                  <div className="font-medium">{d.name}</div>
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{d.name}</div>
                   <div className="text-xs text-muted-foreground">
                     Entry <span className="font-mono">#{d.myEntry!.entry_number}</span> · {fmtDate(d.myEntry!.created_at)}
                   </div>
+                  {(d.myEntry!.entry_code || d.myEntry!.coupon_code) && (
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                      {d.myEntry!.entry_code && (
+                        <span>ID: <span className="font-mono text-foreground">{d.myEntry!.entry_code}</span></span>
+                      )}
+                      {d.myEntry!.coupon_code && (
+                        <span>Coupon: <span className="font-mono font-semibold text-primary">{d.myEntry!.coupon_code}</span></span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <Badge variant={d.myEntry!.eligible ? "secondary" : "destructive"}>
                   {d.myEntry!.eligible ? "Eligible" : "Disqualified"}
                 </Badge>
               </div>
             ))}
+
           </CardContent>
         </Card>
       )}
