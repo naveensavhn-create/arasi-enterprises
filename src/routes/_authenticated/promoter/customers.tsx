@@ -758,11 +758,15 @@ function CustomerDetailSheet({
   onClose,
   onSubmit,
   submitting,
+  submitError,
+  onDismissError,
 }: {
   customer: ReferredCustomer | null;
   onClose: () => void;
   onSubmit: (note: string) => void;
   submitting: boolean;
+  submitError: string | null;
+  onDismissError: () => void;
 }) {
   const [note, setNote] = useState("");
   return (
