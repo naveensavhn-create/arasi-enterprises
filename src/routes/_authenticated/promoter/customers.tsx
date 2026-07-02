@@ -516,10 +516,13 @@ function PromoterCustomersPage() {
         customer={selected}
         onClose={() => setSelected(null)}
         submitting={submitMut.isPending}
+        submitError={selected ? submitErrors[selected.id] ?? null : null}
+        onDismissError={() => selected && clearSubmitError(selected.id)}
         onSubmit={(note) =>
           selected && submitMut.mutate({ userId: selected.id, note: note || null })
         }
       />
+
 
       <Dialog open={!!issuedCreds} onOpenChange={(o) => !o && setIssuedCreds(null)}>
         <DialogContent>
