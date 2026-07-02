@@ -27,6 +27,7 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { RankBadge } from "@/components/ranks/RankBadge";
 
 export const Route = createFileRoute("/_authenticated/admin/ranks")({
   head: () => ({ meta: [{ title: "Promoter Ranks — Admin" }] }),
