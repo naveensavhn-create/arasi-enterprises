@@ -339,20 +339,19 @@ function CustomerLuckyDrawPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-                      <div className="flex items-center gap-1">
-                        <CalendarClock className="h-3.5 w-3.5" /> Opens: {fmtDate(d.opens_at)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <CalendarClock className="h-3.5 w-3.5" /> Closes: {fmtDate(d.closes_at)}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Trophy className="h-3.5 w-3.5" /> Draw date: {fmtDate((d as unknown as { draw_at: string | null }).draw_at)}
-                      </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <DrawTimeBadge kind="opens" iso={d.opens_at} showRelative />
+                      <DrawTimeBadge kind="closes" iso={d.closes_at} showRelative />
+                      <DrawTimeBadge
+                        kind="draw"
+                        iso={(d as unknown as { draw_at: string | null }).draw_at}
+                        showRelative
+                      />
                       {d.status === "completed" && (
-                        <div className="flex items-center gap-1">
-                          <Crown className="h-3.5 w-3.5 text-primary" /> Drawn: {fmtDate((d as unknown as { drawn_at: string | null }).drawn_at)}
-                        </div>
+                        <DrawTimeBadge
+                          kind="drawn"
+                          iso={(d as unknown as { drawn_at: string | null }).drawn_at}
+                        />
                       )}
                     </div>
 
