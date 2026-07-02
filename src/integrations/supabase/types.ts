@@ -1080,6 +1080,94 @@ export type Database = {
           },
         ]
       }
+      receipts: {
+        Row: {
+          amount: number
+          collected_by: string | null
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          installment_id: string | null
+          issued_at: string
+          membership_id: string
+          metadata: Json
+          payment_id: string
+          payment_method: string | null
+          promoter_id: string | null
+          receipt_number: string
+          transaction_id: string | null
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        Insert: {
+          amount: number
+          collected_by?: string | null
+          created_at?: string
+          currency?: string
+          customer_id: string
+          id?: string
+          installment_id?: string | null
+          issued_at?: string
+          membership_id: string
+          metadata?: Json
+          payment_id: string
+          payment_method?: string | null
+          promoter_id?: string | null
+          receipt_number: string
+          transaction_id?: string | null
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Update: {
+          amount?: number
+          collected_by?: string | null
+          created_at?: string
+          currency?: string
+          customer_id?: string
+          id?: string
+          installment_id?: string | null
+          issued_at?: string
+          membership_id?: string
+          metadata?: Json
+          payment_id?: string
+          payment_method?: string | null
+          promoter_id?: string | null
+          receipt_number?: string
+          transaction_id?: string | null
+          updated_at?: string
+          void_reason?: string | null
+          voided_at?: string | null
+          voided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receipts_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipts_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reminder_templates: {
         Row: {
           channel: Database["public"]["Enums"]["reminder_channel"]
@@ -1433,6 +1521,36 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_void_receipt: {
+        Args: { _reason: string; _receipt_id: string }
+        Returns: {
+          amount: number
+          collected_by: string | null
+          created_at: string
+          currency: string
+          customer_id: string
+          id: string
+          installment_id: string | null
+          issued_at: string
+          membership_id: string
+          metadata: Json
+          payment_id: string
+          payment_method: string | null
+          promoter_id: string | null
+          receipt_number: string
+          transaction_id: string | null
+          updated_at: string
+          void_reason: string | null
+          voided_at: string | null
+          voided_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "receipts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       allocate_promoter_credentials: {
         Args: { _user_id: string }
         Returns: {
@@ -1654,6 +1772,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      generate_receipt_number: { Args: never; Returns: string }
       get_active_reminder_template: {
         Args: {
           _channel: Database["public"]["Enums"]["reminder_channel"]
