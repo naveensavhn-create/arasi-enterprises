@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/auth";
-import { createDrawEntry, listOpenDrawsForCustomer } from "@/lib/draws.functions";
+import { createDrawEntry, listOpenDrawsForCustomer, getLatestCompletedDrawForCustomer } from "@/lib/draws.functions";
 import { useDrawRealtime } from "@/hooks/use-draw-realtime";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
