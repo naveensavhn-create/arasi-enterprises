@@ -1133,6 +1133,9 @@ export type Database = {
           coupon_number: string | null
           created_at: string
           email: string | null
+          email_verification_provider: string | null
+          email_verification_ref: string | null
+          email_verified_at: string | null
           full_name: string | null
           id: string
           kyc_review_notes: string | null
@@ -1141,6 +1144,9 @@ export type Database = {
           kyc_status: Database["public"]["Enums"]["kyc_status"]
           kyc_submitted_at: string | null
           membership_id: string | null
+          mobile_verification_provider: string | null
+          mobile_verification_ref: string | null
+          mobile_verified_at: string | null
           phone: string | null
           postal_code: string | null
           referred_by_promoter_id: string | null
@@ -1163,6 +1169,9 @@ export type Database = {
           coupon_number?: string | null
           created_at?: string
           email?: string | null
+          email_verification_provider?: string | null
+          email_verification_ref?: string | null
+          email_verified_at?: string | null
           full_name?: string | null
           id: string
           kyc_review_notes?: string | null
@@ -1171,6 +1180,9 @@ export type Database = {
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           kyc_submitted_at?: string | null
           membership_id?: string | null
+          mobile_verification_provider?: string | null
+          mobile_verification_ref?: string | null
+          mobile_verified_at?: string | null
           phone?: string | null
           postal_code?: string | null
           referred_by_promoter_id?: string | null
@@ -1193,6 +1205,9 @@ export type Database = {
           coupon_number?: string | null
           created_at?: string
           email?: string | null
+          email_verification_provider?: string | null
+          email_verification_ref?: string | null
+          email_verified_at?: string | null
           full_name?: string | null
           id?: string
           kyc_review_notes?: string | null
@@ -1201,6 +1216,9 @@ export type Database = {
           kyc_status?: Database["public"]["Enums"]["kyc_status"]
           kyc_submitted_at?: string | null
           membership_id?: string | null
+          mobile_verification_provider?: string | null
+          mobile_verification_ref?: string | null
+          mobile_verified_at?: string | null
           phone?: string | null
           postal_code?: string | null
           referred_by_promoter_id?: string | null
@@ -2296,6 +2314,99 @@ export type Database = {
           prefs?: Json
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      verification_flow_steps: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          is_system: boolean
+          label: string
+          position: number
+          step_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          is_system?: boolean
+          label: string
+          position: number
+          step_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          is_system?: boolean
+          label?: string
+          position?: number
+          step_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      verification_settings: {
+        Row: {
+          config: Json
+          created_at: string
+          credentials: string | null
+          enabled: boolean
+          id: string
+          last_success_at: string | null
+          last_test_at: string | null
+          last_test_latency_ms: number | null
+          last_test_message: string | null
+          last_test_status: string | null
+          provider: string
+          requirement: string
+          sandbox_mode: boolean
+          updated_at: string
+          updated_by: string | null
+          verification_type: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          credentials?: string | null
+          enabled?: boolean
+          id?: string
+          last_success_at?: string | null
+          last_test_at?: string | null
+          last_test_latency_ms?: number | null
+          last_test_message?: string | null
+          last_test_status?: string | null
+          provider: string
+          requirement?: string
+          sandbox_mode?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          verification_type: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          credentials?: string | null
+          enabled?: boolean
+          id?: string
+          last_success_at?: string | null
+          last_test_at?: string | null
+          last_test_latency_ms?: number | null
+          last_test_message?: string | null
+          last_test_status?: string | null
+          provider?: string
+          requirement?: string
+          sandbox_mode?: boolean
+          updated_at?: string
+          updated_by?: string | null
+          verification_type?: string
         }
         Relationships: []
       }
