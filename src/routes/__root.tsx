@@ -14,6 +14,8 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteSettingsProvider } from "@/components/providers/SiteSettingsProvider";
+import { GlobalErrorBoundary } from "@/components/GlobalErrorBoundary";
+import { DebugPanel } from "@/components/DebugPanel";
 
 function NotFoundComponent() {
   return (
@@ -136,11 +138,14 @@ function RootComponent() {
   }, [router, queryClient]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <SiteSettingsProvider>
-        <Outlet />
-        <Toaster richColors position="top-right" />
-      </SiteSettingsProvider>
-    </QueryClientProvider>
+    <GlobalErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <SiteSettingsProvider>
+          <Outlet />
+          <Toaster richColors position="top-right" />
+          <DebugPanel />
+        </SiteSettingsProvider>
+      </QueryClientProvider>
+    </GlobalErrorBoundary>
   );
 }
