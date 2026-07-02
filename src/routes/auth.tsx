@@ -286,7 +286,7 @@ function EmailPasswordForm({ role }: { role: AppRole }) {
           Forgot password?
         </Link>
       </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
+      <Button type="submit" variant="success" className="w-full" disabled={submitting}>
         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Sign in
       </Button>
@@ -375,7 +375,7 @@ function SignUpForm({ role }: { role: AppRole }) {
         />
         <p className="mt-1 text-[10px] text-muted-foreground">At least 8 characters.</p>
       </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
+      <Button type="submit" variant="success" className="w-full" disabled={submitting}>
         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Create account
       </Button>
@@ -439,7 +439,7 @@ function PhoneOtpForm() {
             Include country code. We will send a 6-digit code by SMS.
           </p>
         </div>
-        <Button type="submit" className="w-full" disabled={submitting}>
+        <Button type="submit" variant="success" className="w-full" disabled={submitting}>
           {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Send code
         </Button>
@@ -465,7 +465,7 @@ function PhoneOtpForm() {
           </InputOTPGroup>
         </InputOTP>
       </div>
-      <Button type="submit" className="w-full" disabled={submitting}>
+      <Button type="submit" variant="success" className="w-full" disabled={submitting}>
         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         Verify &amp; sign in
       </Button>
@@ -531,7 +531,7 @@ function ForgotPassword({ role }: { role: AppRole }) {
               required
             />
           </div>
-          <Button type="submit" className="w-full" disabled={submitting}>
+          <Button type="submit" variant="success" className="w-full" disabled={submitting}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Send reset link
           </Button>
