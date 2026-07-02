@@ -650,6 +650,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          metadata: Json
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          metadata?: Json
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_reconciliations: {
         Row: {
           checked_by: string | null
@@ -1808,6 +1844,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_all_notifications_read: { Args: never; Returns: undefined }
       mark_installment_paid: {
         Args: {
           _installment_id: string
@@ -1816,6 +1853,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      mark_notification_read: { Args: { _id: string }; Returns: undefined }
       mark_overdue_installments: { Args: never; Returns: number }
       pick_draw_winners: {
         Args: { _draw_id: string; _seed?: string }
