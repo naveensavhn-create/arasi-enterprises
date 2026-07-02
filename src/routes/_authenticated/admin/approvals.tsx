@@ -440,6 +440,8 @@ function ReviewDrawer({
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="e.g. Aadhaar image is blurry, please re-upload"
+                      disabled={pending}
+                      aria-busy={pending}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -447,8 +449,9 @@ function ReviewDrawer({
                     <Select
                       value={assignRole}
                       onValueChange={(v) => setAssignRole(v as "promoter" | "customer")}
+                      disabled={pending}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger aria-busy={pending}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -468,31 +471,54 @@ function ReviewDrawer({
 
               {(row.kyc_status === "approved" || row.kyc_status === "rejected") &&
                 row.kyc_review_notes && (
-                  <Section title="Previous review note">
-                    <div className="text-sm text-muted-foreground">{row.kyc_review_notes}</div>
+                  <Section title="Saved review note">
+                    <div className="whitespace-pre-wrap rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+                      {row.kyc_review_notes}
+                    </div>
+                    {row.kyc_reviewed_at && (
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Saved {new Date(row.kyc_reviewed_at).toLocaleString()}
+                      </div>
+                    )}
                   </Section>
                 )}
             </div>
 
             <SheetFooter className="mt-6 gap-2">
-              <Button variant="ghost" onClick={onClose}>
+              <Button variant="ghost" onClick={onClose} disabled={pending}>
                 Close
               </Button>
               {row.kyc_status !== "rejected" && (
                 <Button
                   variant="destructive"
                   disabled={pending}
+                  aria-busy={pendingAction === "reject"}
                   onClick={() => onDecide(false, notes.trim() || null, null)}
                 >
-                  Reject
+                  {pendingAction === "reject" ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Rejecting…
+                    </>
+                  ) : (
+                    "Reject"
+                  )}
                 </Button>
               )}
               {row.kyc_status !== "approved" && (
                 <Button
                   disabled={pending}
+                  aria-busy={pendingAction === "approve"}
                   onClick={() => onDecide(true, notes.trim() || null, assignRole)}
                 >
-                  Approve as {assignRole}
+                  {pendingAction === "approve" ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Approving as {assignRole}…
+                    </>
+                  ) : (
+                    <>Approve as {assignRole}</>
+                  )}
                 </Button>
               )}
             </SheetFooter>
