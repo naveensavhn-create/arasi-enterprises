@@ -64,7 +64,7 @@ function Landing() {
         }}
       />
 
-      <header className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-8">
+      <header className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-8 text-white [&_.text-muted-foreground]:text-[#C5A059]/70">
         <Logo />
         <Link
           to="/auth"
