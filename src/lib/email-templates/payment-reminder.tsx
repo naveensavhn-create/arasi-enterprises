@@ -166,14 +166,13 @@ const PaymentReminder: React.FC<PaymentReminderProps> = ({
             </Section>
 
             <Heading as="h1" style={heading}>
-              A gentle reminder about your upcoming payment
+              {headingOverride?.trim() || "A gentle reminder about your upcoming payment"}
             </Heading>
             <Text style={base.p}>{greeting}</Text>
             <Text style={base.p}>
-              This is a friendly reminder that your {planName ? `${planName} ` : ""}
-              membership installment is coming up. No action is needed if you've
-              already paid — otherwise, you can settle it in a couple of taps
-              from your dashboard.
+              {introOverride?.trim()
+                ? introOverride
+                : `This is a friendly reminder that your ${planName ? `${planName} ` : ""}membership installment is coming up. No action is needed if you've already paid — otherwise, you can settle it in a couple of taps from your dashboard.`}
             </Text>
 
             <Section style={base.detailBox}>
