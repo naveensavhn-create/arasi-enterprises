@@ -100,6 +100,8 @@ async function currentRole(
 /**
  * Public status endpoint — no auth required.
  */
+// PUBLIC_OK: Bootstrap probe returning only a boolean "hasAdmin"; used by the
+// first-run onboarding UI before any account exists. No PII, no secrets.
 export const getAdminBootstrapStatus = createServerFn({ method: "GET" }).handler(
   async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
