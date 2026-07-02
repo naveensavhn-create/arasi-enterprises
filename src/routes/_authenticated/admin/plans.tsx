@@ -29,7 +29,7 @@ import {
 import { Loader2, Package, Plus, Pencil, Trash2, History, Sparkles, Calendar, Wallet, TrendingUp, CheckCircle2, Users, Search, X, ArrowDownAZ, ArrowUpAZ, Power, PowerOff, CheckSquare } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 import { deletePlanAudited } from "@/lib/plans.functions";
