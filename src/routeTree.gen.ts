@@ -44,6 +44,7 @@ import { Route as AuthenticatedAdminRemindersRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminReminderTemplatesRouteImport } from './routes/_authenticated/admin/reminder-templates'
 import { Route as AuthenticatedAdminReminderJobsRouteImport } from './routes/_authenticated/admin/reminder-jobs'
 import { Route as AuthenticatedAdminReceiptsRouteImport } from './routes/_authenticated/admin/receipts'
+import { Route as AuthenticatedAdminRanksRouteImport } from './routes/_authenticated/admin/ranks'
 import { Route as AuthenticatedAdminPromotersRouteImport } from './routes/_authenticated/admin/promoters'
 import { Route as AuthenticatedAdminPlansRouteImport } from './routes/_authenticated/admin/plans'
 import { Route as AuthenticatedAdminPlanDeletionsRouteImport } from './routes/_authenticated/admin/plan-deletions'
@@ -265,6 +266,11 @@ const AuthenticatedAdminReceiptsRoute =
     path: '/receipts',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminRanksRoute = AuthenticatedAdminRanksRouteImport.update({
+  id: '/ranks',
+  path: '/ranks',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminPromotersRoute =
   AuthenticatedAdminPromotersRouteImport.update({
     id: '/promoters',
@@ -414,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/admin/ranks': typeof AuthenticatedAdminRanksRoute
   '/admin/receipts': typeof AuthenticatedAdminReceiptsRoute
   '/admin/reminder-jobs': typeof AuthenticatedAdminReminderJobsRoute
   '/admin/reminder-templates': typeof AuthenticatedAdminReminderTemplatesRoute
@@ -470,6 +477,7 @@ export interface FileRoutesByTo {
   '/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/admin/ranks': typeof AuthenticatedAdminRanksRoute
   '/admin/receipts': typeof AuthenticatedAdminReceiptsRoute
   '/admin/reminder-jobs': typeof AuthenticatedAdminReminderJobsRoute
   '/admin/reminder-templates': typeof AuthenticatedAdminReminderTemplatesRoute
@@ -529,6 +537,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/plan-deletions': typeof AuthenticatedAdminPlanDeletionsRoute
   '/_authenticated/admin/plans': typeof AuthenticatedAdminPlansRoute
   '/_authenticated/admin/promoters': typeof AuthenticatedAdminPromotersRoute
+  '/_authenticated/admin/ranks': typeof AuthenticatedAdminRanksRoute
   '/_authenticated/admin/receipts': typeof AuthenticatedAdminReceiptsRoute
   '/_authenticated/admin/reminder-jobs': typeof AuthenticatedAdminReminderJobsRoute
   '/_authenticated/admin/reminder-templates': typeof AuthenticatedAdminReminderTemplatesRoute
@@ -588,6 +597,7 @@ export interface FileRouteTypes {
     | '/admin/plan-deletions'
     | '/admin/plans'
     | '/admin/promoters'
+    | '/admin/ranks'
     | '/admin/receipts'
     | '/admin/reminder-jobs'
     | '/admin/reminder-templates'
@@ -644,6 +654,7 @@ export interface FileRouteTypes {
     | '/admin/plan-deletions'
     | '/admin/plans'
     | '/admin/promoters'
+    | '/admin/ranks'
     | '/admin/receipts'
     | '/admin/reminder-jobs'
     | '/admin/reminder-templates'
@@ -702,6 +713,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/plan-deletions'
     | '/_authenticated/admin/plans'
     | '/_authenticated/admin/promoters'
+    | '/_authenticated/admin/ranks'
     | '/_authenticated/admin/receipts'
     | '/_authenticated/admin/reminder-jobs'
     | '/_authenticated/admin/reminder-templates'
@@ -995,6 +1007,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminReceiptsRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/ranks': {
+      id: '/_authenticated/admin/ranks'
+      path: '/ranks'
+      fullPath: '/admin/ranks'
+      preLoaderRoute: typeof AuthenticatedAdminRanksRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/promoters': {
       id: '/_authenticated/admin/promoters'
       path: '/promoters'
@@ -1161,6 +1180,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminPlanDeletionsRoute: typeof AuthenticatedAdminPlanDeletionsRoute
   AuthenticatedAdminPlansRoute: typeof AuthenticatedAdminPlansRoute
   AuthenticatedAdminPromotersRoute: typeof AuthenticatedAdminPromotersRoute
+  AuthenticatedAdminRanksRoute: typeof AuthenticatedAdminRanksRoute
   AuthenticatedAdminReceiptsRoute: typeof AuthenticatedAdminReceiptsRoute
   AuthenticatedAdminReminderJobsRoute: typeof AuthenticatedAdminReminderJobsRoute
   AuthenticatedAdminReminderTemplatesRoute: typeof AuthenticatedAdminReminderTemplatesRoute
@@ -1191,6 +1211,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminPlanDeletionsRoute: AuthenticatedAdminPlanDeletionsRoute,
     AuthenticatedAdminPlansRoute: AuthenticatedAdminPlansRoute,
     AuthenticatedAdminPromotersRoute: AuthenticatedAdminPromotersRoute,
+    AuthenticatedAdminRanksRoute: AuthenticatedAdminRanksRoute,
     AuthenticatedAdminReceiptsRoute: AuthenticatedAdminReceiptsRoute,
     AuthenticatedAdminReminderJobsRoute: AuthenticatedAdminReminderJobsRoute,
     AuthenticatedAdminReminderTemplatesRoute:
