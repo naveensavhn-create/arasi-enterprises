@@ -603,6 +603,71 @@ function AdminPlansPage() {
         </div>
       </div>
 
+      {/* Filters toolbar */}
+      {!isLoading && data && data.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative min-w-0 flex-1 sm:min-w-[220px]">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search plans by name, description, benefit…"
+              className="pl-8 pr-8"
+              aria-label="Search plans"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                aria-label="Clear search"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <Switch checked={activeOnly} onCheckedChange={setActiveOnly} aria-label="Active only" />
+              <span>Active only</span>
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Switch checked={advanceOnly} onCheckedChange={setAdvanceOnly} aria-label="Requires advance only" />
+              <span>Requires advance</span>
+            </label>
+          </div>
+
+          <div className="flex items-center gap-2 sm:ml-auto">
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+              <SelectTrigger className="w-[170px]" aria-label="Sort by">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="display_order">Display order</SelectItem>
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="total_value">Total value</SelectItem>
+                <SelectItem value="duration_months">Duration</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+              title={sortDir === "asc" ? "Ascending" : "Descending"}
+              aria-label={`Toggle sort direction (currently ${sortDir === "asc" ? "ascending" : "descending"})`}
+            >
+              {sortDir === "asc" ? <ArrowDownAZ className="h-4 w-4" /> : <ArrowUpAZ className="h-4 w-4" />}
+            </Button>
+            {filtersActive && (
+              <Button variant="ghost" size="sm" onClick={clearFilters}>
+                <X className="mr-1 h-3.5 w-3.5" /> Clear
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Cards grid */}
       {isLoading ? (
         <Card>
@@ -627,9 +692,26 @@ function AdminPlansPage() {
             </Button>
           </CardContent>
         </Card>
+      ) : filteredPlans.length === 0 ? (
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+            <div className="rounded-full bg-muted p-3 text-muted-foreground">
+              <Search className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-medium">No plans match your filters</div>
+              <p className="text-sm text-muted-foreground">
+                Try clearing the search or toggling filters off.
+              </p>
+            </div>
+            <Button variant="outline" onClick={clearFilters}>
+              <X className="mr-1 h-4 w-4" /> Clear filters
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {data.map((p) => {
+          {filteredPlans.map((p) => {
             const enrolled = usageForPlan(p.id);
             const noAdvance = Number(p.advance_amount) <= 0;
             return (
