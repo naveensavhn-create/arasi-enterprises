@@ -91,6 +91,59 @@ function CustomerDrawResultsPage() {
         </Button>
       </div>
 
+      {latestCompletedQ.data && (
+        <Card className="border-primary/40 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Trophy className="h-4 w-4 text-primary" /> Winners announced!
+              <Badge variant="outline" className="ml-1 font-normal">
+                {latestCompletedQ.data.draw.name}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <CalendarClock className="h-3.5 w-3.5" />
+                Drawn {fmt(latestCompletedQ.data.draw.drawn_at)}
+              </span>
+              <span>Prize: {latestCompletedQ.data.draw.prize}</span>
+            </div>
+            {latestCompletedQ.data.myWin && (
+              <div className="flex items-center gap-2 rounded-md border border-primary/40 bg-primary/10 p-2 text-sm">
+                <Crown className="h-4 w-4 text-primary" />
+                <span className="font-medium">
+                  Congratulations! You won position #{latestCompletedQ.data.myWin.position}
+                </span>
+              </div>
+            )}
+            {latestCompletedQ.data.winners.length === 0 ? (
+              <p className="text-xs text-muted-foreground">No winners recorded for this draw.</p>
+            ) : (
+              <ol className="space-y-1.5">
+                {latestCompletedQ.data.winners.map((w) => (
+                  <li
+                    key={`${w.position}-${w.name}`}
+                    className={
+                      "flex items-center justify-between gap-2 rounded-md border p-2 text-sm " +
+                      (w.isMe ? "border-primary/40 bg-primary/5" : "bg-muted/20")
+                    }
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Badge variant={w.isMe ? "default" : "secondary"} className="shrink-0">
+                        #{w.position}
+                      </Badge>
+                      <span className="truncate font-medium">{w.isMe ? "You" : w.name}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground truncate">{w.prize}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
