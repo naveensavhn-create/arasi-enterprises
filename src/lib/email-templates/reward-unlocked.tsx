@@ -142,12 +142,12 @@ const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
               Questions about this reward? Reply to this email or reach us at{" "}
-              {brand.supportEmail}.
+              {b.supportEmail}.
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             account notification.
           </Text>
         </Container>
@@ -160,7 +160,7 @@ export default RewardUnlocked;
 
 export const template = {
   component: RewardUnlocked,
-  subject: `[${brand.name}] You've unlocked a reward`,
+  subject: `[${defaultBrand.name}] You've unlocked a reward`,
   displayName: "Reward unlocked",
   previewData: {
     recipientName: "Priya Sharma",
