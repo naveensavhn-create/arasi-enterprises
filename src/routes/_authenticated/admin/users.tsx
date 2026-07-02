@@ -13,6 +13,8 @@ import {
   Trash2,
   Copy,
   Check,
+  Eye,
+  Link2,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -53,6 +56,7 @@ import {
   setUserBan,
   type AdminUserRow,
 } from "@/lib/user-admin.functions";
+import { UserProfileDrawer } from "@/components/admin/UserProfileDrawer";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   head: () => ({ meta: [{ title: "Users — Admin" }] }),
@@ -60,6 +64,14 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
 });
 
 type ActionKind = "reset" | "generate" | "revoke" | "restore" | "delete";
+type TabKey = "all" | "promoter" | "customer" | "admin";
+
+const TABS: Array<{ key: TabKey; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "customer", label: "Customers" },
+  { key: "promoter", label: "Promoters" },
+  { key: "admin", label: "Admins" },
+];
 
 function AdminUsersPage() {
   const qc = useQueryClient();
@@ -69,37 +81,45 @@ function AdminUsersPage() {
   const banFn = useServerFn(setUserBan);
   const deleteFn = useServerFn(deleteUser);
 
-  const { data: users = [], isLoading } = useQuery({
+  const { data: users = [], isLoading, error } = useQuery({
     queryKey: ["admin", "users"],
     queryFn: () => listFn() as Promise<AdminUserRow[]>,
   });
 
+  const [tab, setTab] = useState<TabKey>("all");
   const [q, setQ] = useState("");
   const [action, setAction] = useState<{ kind: ActionKind; user: AdminUserRow } | null>(null);
-  const [generated, setGenerated] = useState<{ password: string; email: string | null } | null>(
-    null,
-  );
+  const [generated, setGenerated] = useState<{ password: string; email: string | null } | null>(null);
+  const [viewUserId, setViewUserId] = useState<string | null>(null);
+
+  const counts = useMemo(() => {
+    const c: Record<TabKey, number> = { all: users.length, customer: 0, promoter: 0, admin: 0 };
+    for (const u of users) if (u.role) c[u.role as TabKey]++;
+    return c;
+  }, [users]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    if (!term) return users;
-    return users.filter(
-      (u) =>
+    return users.filter((u) => {
+      if (tab !== "all" && u.role !== tab) return false;
+      if (!term) return true;
+      return (
         (u.email ?? "").toLowerCase().includes(term) ||
         (u.full_name ?? "").toLowerCase().includes(term) ||
         (u.phone ?? "").toLowerCase().includes(term) ||
-        (u.membership_number ?? "").toLowerCase().includes(term),
-    );
-  }, [users, q]);
+        (u.membership_number ?? "").toLowerCase().includes(term) ||
+        String(u.customer_display_id ?? "").includes(term) ||
+        (u.promoter_display_id ?? "").includes(term) ||
+        (u.promoter_referral_code ?? "").toLowerCase().includes(term)
+      );
+    });
+  }, [users, q, tab]);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["admin", "users"] });
 
   const resetMut = useMutation({
     mutationFn: (v: { userId: string; reason: string }) => resetFn({ data: v }),
-    onSuccess: (r: any) => {
-      toast.success(`Reset email sent to ${r.sentTo}`);
-      setAction(null);
-    },
+    onSuccess: (r: any) => { toast.success(`Reset email sent to ${r.sentTo}`); setAction(null); },
     onError: (e: Error) => toast.error(e.message),
   });
   const generateMut = useMutation({
@@ -113,143 +133,189 @@ function AdminUsersPage() {
   });
   const banMut = useMutation({
     mutationFn: (v: { userId: string; banned: boolean; reason: string }) => banFn({ data: v }),
-    onSuccess: () => {
-      toast.success("Access updated");
-      setAction(null);
-      invalidate();
-    },
+    onSuccess: () => { toast.success("Access updated"); setAction(null); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });
   const deleteMut = useMutation({
     mutationFn: (v: { userId: string; reason: string }) => deleteFn({ data: v }),
-    onSuccess: () => {
-      toast.success("User removed");
-      setAction(null);
-      invalidate();
-    },
+    onSuccess: () => { toast.success("User removed"); setAction(null); invalidate(); },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const copyReferralLink = async (code: string) => {
+    const url = `${window.location.origin}/auth?portal=customer&mode=signup&ref=${code}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Referral link copied");
+    } catch { toast.error("Copy failed"); }
+  };
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
         <p className="text-sm text-muted-foreground">
-          Manage user accounts — reset or generate passwords, revoke, restore, or remove users.
+          View, edit, and manage every user. Customers auto-receive IDs from 1001; promoters get a 5-digit ID + referral code.
         </p>
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-          <CardTitle>All users ({users.length})</CardTitle>
-          <div className="relative w-full max-w-sm">
-            <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              className="pl-8"
-              placeholder="Search email, name, phone, membership…"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <CardTitle>Users ({users.length})</CardTitle>
+            <div className="relative w-full max-w-sm">
+              <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-8"
+                placeholder="Search name, email, phone, ID, code…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+            </div>
           </div>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)}>
+            <TabsList>
+              {TABS.map((t) => (
+                <TabsTrigger key={t.key} value={t.key}>
+                  {t.label} <span className="ml-1.5 text-xs text-muted-foreground">({counts[t.key]})</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="text-sm text-muted-foreground">Loading…</div>
+          ) : error ? (
+            <div className="text-sm text-destructive">Failed to load users: {(error as Error).message}</div>
           ) : filtered.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No users match.</div>
+            <div className="py-10 text-center text-sm text-muted-foreground">No users match.</div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last sign-in</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((u) => {
-                  const banned =
-                    !!u.banned_until && new Date(u.banned_until).getTime() > Date.now();
-                  return (
-                    <TableRow key={u.id}>
-                      <TableCell className="font-medium">
-                        {u.full_name || <span className="text-muted-foreground">—</span>}
-                        {u.membership_number && (
-                          <div className="text-xs text-muted-foreground">
-                            {u.membership_number}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{u.email}</TableCell>
-                      <TableCell>
-                        {u.role ? (
-                          <Badge variant={u.role === "admin" ? "default" : "secondary"}>
-                            {u.role}
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {banned ? (
-                          <Badge variant="destructive">Revoked</Badge>
-                        ) : (
-                          <Badge variant="outline">Active</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {u.last_sign_in_at
-                          ? new Date(u.last_sign_in_at).toLocaleString()
-                          : "Never"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => setAction({ kind: "reset", user: u })}>
-                              <Mail className="mr-2 h-4 w-4" /> Send reset email
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => setAction({ kind: "generate", user: u })}
-                            >
-                              <KeyRound className="mr-2 h-4 w-4" /> Generate password
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {banned ? (
-                              <DropdownMenuItem
-                                onClick={() => setAction({ kind: "restore", user: u })}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Member ID</TableHead>
+                    <TableHead>Registered</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((u) => {
+                    const banned = !!u.banned_until && new Date(u.banned_until).getTime() > Date.now();
+                    const displayId =
+                      u.role === "promoter"
+                        ? (u.promoter_display_id ?? "—")
+                        : u.role === "customer"
+                          ? (u.customer_display_id != null ? String(u.customer_display_id) : "—")
+                          : "—";
+                    return (
+                      <TableRow key={u.id}>
+                        <TableCell className="font-mono text-xs">{displayId}</TableCell>
+                        <TableCell className="font-medium">
+                          {u.full_name || <span className="text-muted-foreground">—</span>}
+                          {u.phone && (
+                            <div className="text-xs text-muted-foreground">{u.phone}</div>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{u.email}</TableCell>
+                        <TableCell>
+                          {u.role ? (
+                            <Badge variant={u.role === "admin" ? "default" : "secondary"} className="capitalize">
+                              {u.role}
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {u.membership_number || "—"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(u.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          {banned ? (
+                            <Badge variant="destructive">Revoked</Badge>
+                          ) : u.kyc_status === "approved" ? (
+                            <Badge variant="outline" className="border-emerald-500/40 text-emerald-700 dark:text-emerald-400">
+                              KYC approved
+                            </Badge>
+                          ) : u.kyc_status === "pending" ? (
+                            <Badge variant="outline">KYC pending</Badge>
+                          ) : (
+                            <Badge variant="outline">Active</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {u.role === "promoter" && u.promoter_referral_code && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                title="Copy referral link"
+                                onClick={() => copyReferralLink(u.promoter_referral_code!)}
                               >
-                                <ShieldCheck className="mr-2 h-4 w-4" /> Restore access
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() => setAction({ kind: "revoke", user: u })}
-                              >
-                                <ShieldBan className="mr-2 h-4 w-4" /> Revoke access
-                              </DropdownMenuItem>
+                                <Link2 className="h-4 w-4" />
+                              </Button>
                             )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => setAction({ kind: "delete", user: u })}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              title="View / edit profile"
+                              onClick={() => setViewUserId(u.id)}
                             >
-                              <Trash2 className="mr-2 h-4 w-4" /> Remove user
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="icon" variant="ghost">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setViewUserId(u.id)}>
+                                  <Eye className="mr-2 h-4 w-4" /> View / edit profile
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => setAction({ kind: "reset", user: u })}>
+                                  <Mail className="mr-2 h-4 w-4" /> Send reset email
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setAction({ kind: "generate", user: u })}>
+                                  <KeyRound className="mr-2 h-4 w-4" /> Generate password
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {banned ? (
+                                  <DropdownMenuItem onClick={() => setAction({ kind: "restore", user: u })}>
+                                    <ShieldCheck className="mr-2 h-4 w-4" /> Restore access
+                                  </DropdownMenuItem>
+                                ) : (
+                                  <DropdownMenuItem onClick={() => setAction({ kind: "revoke", user: u })}>
+                                    <ShieldBan className="mr-2 h-4 w-4" /> Revoke access
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setAction({ kind: "delete", user: u })}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Remove user
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -262,61 +328,31 @@ function AdminUsersPage() {
           const payload = { userId: action.user.id, reason };
           if (action.kind === "reset") resetMut.mutate(payload);
           else if (action.kind === "generate") generateMut.mutate(payload);
-          else if (action.kind === "revoke")
-            banMut.mutate({ ...payload, banned: true });
-          else if (action.kind === "restore")
-            banMut.mutate({ ...payload, banned: false });
+          else if (action.kind === "revoke") banMut.mutate({ ...payload, banned: true });
+          else if (action.kind === "restore") banMut.mutate({ ...payload, banned: false });
           else if (action.kind === "delete") deleteMut.mutate(payload);
         }}
         pending={
-          resetMut.isPending ||
-          generateMut.isPending ||
-          banMut.isPending ||
-          deleteMut.isPending
+          resetMut.isPending || generateMut.isPending || banMut.isPending || deleteMut.isPending
         }
       />
 
       <GeneratedPasswordDialog data={generated} onClose={() => setGenerated(null)} />
+      <UserProfileDrawer userId={viewUserId} onClose={() => setViewUserId(null)} />
     </div>
   );
 }
 
-const ACTION_LABELS: Record<ActionKind, { title: string; desc: string; cta: string; danger?: boolean }> =
-  {
-    reset: {
-      title: "Send password reset email",
-      desc: "The user receives an email with a link to set a new password.",
-      cta: "Send email",
-    },
-    generate: {
-      title: "Generate a temporary password",
-      desc: "A strong random password is created and shown once. The user should change it after signing in.",
-      cta: "Generate password",
-    },
-    revoke: {
-      title: "Revoke access",
-      desc: "The user is signed out of all sessions and blocked from signing in until restored.",
-      cta: "Revoke access",
-      danger: true,
-    },
-    restore: {
-      title: "Restore access",
-      desc: "The user will be able to sign in again immediately.",
-      cta: "Restore access",
-    },
-    delete: {
-      title: "Remove user permanently",
-      desc: "This deletes the user account, profile, and role assignments. This cannot be undone.",
-      cta: "Delete user",
-      danger: true,
-    },
-  };
+const ACTION_LABELS: Record<ActionKind, { title: string; desc: string; cta: string; danger?: boolean }> = {
+  reset: { title: "Send password reset email", desc: "The user receives an email with a link to set a new password.", cta: "Send email" },
+  generate: { title: "Generate a temporary password", desc: "A strong random password is created and shown once.", cta: "Generate password" },
+  revoke: { title: "Revoke access", desc: "The user is signed out of all sessions and blocked from signing in until restored.", cta: "Revoke access", danger: true },
+  restore: { title: "Restore access", desc: "The user will be able to sign in again immediately.", cta: "Restore access" },
+  delete: { title: "Remove user permanently", desc: "Deletes the user account, profile, and role assignments. Cannot be undone.", cta: "Delete user", danger: true },
+};
 
 function ActionDialog({
-  action,
-  onClose,
-  onConfirm,
-  pending,
+  action, onClose, onConfirm, pending,
 }: {
   action: { kind: ActionKind; user: AdminUserRow } | null;
   onClose: () => void;
@@ -327,15 +363,7 @@ function ActionDialog({
   const meta = action ? ACTION_LABELS[action.kind] : null;
 
   return (
-    <Dialog
-      open={!!action}
-      onOpenChange={(o) => {
-        if (!o) {
-          setReason("");
-          onClose();
-        }
-      }}
-    >
+    <Dialog open={!!action} onOpenChange={(o) => { if (!o) { setReason(""); onClose(); } }}>
       <DialogContent>
         {meta && action && (
           <>
@@ -343,29 +371,19 @@ function ActionDialog({
               <DialogTitle>{meta.title}</DialogTitle>
               <DialogDescription>
                 For <span className="font-mono">{action.user.email}</span>
-                <br />
-                {meta.desc}
+                <br />{meta.desc}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-1.5">
               <Label htmlFor="reason">Reason</Label>
-              <Textarea
-                id="reason"
-                rows={3}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Why are you doing this? (min 5 characters, saved in audit log)"
-              />
+              <Textarea id="reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)}
+                placeholder="Why are you doing this? (min 5 characters, saved in audit log)" />
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={onClose}>
-                Cancel
-              </Button>
-              <Button
-                variant={meta.danger ? "destructive" : "default"}
+              <Button variant="ghost" onClick={onClose}>Cancel</Button>
+              <Button variant={meta.danger ? "destructive" : "default"}
                 disabled={pending || reason.trim().length < 5}
-                onClick={() => onConfirm(reason.trim())}
-              >
+                onClick={() => onConfirm(reason.trim())}>
                 {pending ? "Working…" : meta.cta}
               </Button>
             </DialogFooter>
@@ -377,29 +395,16 @@ function ActionDialog({
 }
 
 function GeneratedPasswordDialog({
-  data,
-  onClose,
-}: {
-  data: { password: string; email: string | null } | null;
-  onClose: () => void;
-}) {
+  data, onClose,
+}: { data: { password: string; email: string | null } | null; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   return (
-    <Dialog
-      open={!!data}
-      onOpenChange={(o) => {
-        if (!o) {
-          setCopied(false);
-          onClose();
-        }
-      }}
-    >
+    <Dialog open={!!data} onOpenChange={(o) => { if (!o) { setCopied(false); onClose(); } }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Temporary password</DialogTitle>
           <DialogDescription>
-            Share this with the user through a secure channel. This is shown once — it won't be
-            visible again.
+            Share this with the user through a secure channel. Shown only once.
           </DialogDescription>
         </DialogHeader>
         {data && (
@@ -411,19 +416,10 @@ function GeneratedPasswordDialog({
             )}
             <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
               <code className="flex-1 select-all break-all font-mono text-sm">{data.password}</code>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(data.password);
-                    setCopied(true);
-                    toast.success("Copied to clipboard");
-                  } catch {
-                    toast.error("Copy failed");
-                  }
-                }}
-              >
+              <Button size="sm" variant="outline" onClick={async () => {
+                try { await navigator.clipboard.writeText(data.password); setCopied(true); toast.success("Copied to clipboard"); }
+                catch { toast.error("Copy failed"); }
+              }}>
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
