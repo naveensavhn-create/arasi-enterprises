@@ -92,55 +92,16 @@ const PaymentReminder: React.FC<PaymentReminderProps> = ({
   outroOverride,
   brand,
 }) => {
-  // Resolve brand tokens from site settings with defensive fallbacks. Empty
-  // strings, whitespace, invalid hex colors, non-http logo URLs, and unsafe
-  // font names all fall back to the shared defaults so the email always
-  // renders on-brand — even when `site_settings` is partially configured.
-  const nonEmpty = (v: unknown): string | undefined => {
-    if (typeof v !== "string") return undefined;
-    const t = v.trim();
-    return t.length > 0 ? t : undefined;
-  };
-  const safeHex = (v: unknown, fallback: string): string => {
-    const t = nonEmpty(v);
-    return t && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(t) ? t : fallback;
-  };
-  const safeUrl = (v: unknown): string | null => {
-    const t = nonEmpty(v);
-    if (!t) return null;
-    try {
-      const u = new URL(t);
-      return u.protocol === "http:" || u.protocol === "https:" ? u.toString() : null;
-    } catch {
-      return null;
-    }
-  };
-  const safeFont = (v: unknown): string | undefined => {
-    const t = nonEmpty(v);
-    // Allow letters, digits, spaces, dashes and single quotes only — keeps
-    // inline CSS injection out and rejects gibberish tokens.
-    return t && /^[A-Za-z0-9 '\-]{1,64}$/.test(t) ? t : undefined;
-  };
+  // Resolve brand tokens once via the shared helper so every template applies
+  // the Site Settings logo URL / colours identically.
+  const b = resolveBrand(brand);
 
-  const b = {
-    name: nonEmpty(brand?.name) ?? defaultBrand.name,
-    tagline: nonEmpty(brand?.tagline) ?? defaultBrand.tagline,
-    supportEmail: nonEmpty(brand?.supportEmail) ?? defaultBrand.supportEmail,
-    logoUrl: safeUrl(brand?.logoUrl),
-    primary: safeHex(brand?.primaryColor, defaultColors.gold),
-    accent: safeHex(brand?.accentColor, defaultColors.goldSoft),
-    headingFont: safeFont(brand?.headingFont),
-    bodyFont: safeFont(brand?.bodyFont),
-  };
-
-  // Compose styles that override brand-sensitive tokens per-recipient.
   const main = {
     ...base.main,
     fontFamily: b.bodyFont
       ? `${b.bodyFont}, ${base.main.fontFamily}`
       : base.main.fontFamily,
   };
-  const brandName = { ...base.brandName, color: b.primary };
   const heading = {
     ...base.h1,
     fontFamily: b.headingFont
