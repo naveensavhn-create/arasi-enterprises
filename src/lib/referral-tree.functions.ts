@@ -40,7 +40,7 @@ export type ReferralTreeSummary = {
   total_pending: number;
 };
 
-async function assertAdmin(context: { supabase: ReturnType<typeof requireSupabaseAuth> extends never ? never : any; userId: string }) {
+async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
