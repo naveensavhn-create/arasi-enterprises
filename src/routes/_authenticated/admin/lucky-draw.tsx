@@ -239,6 +239,7 @@ function AdminLuckyDrawPage() {
                   <TableHead>Draw at</TableHead>
                   <TableHead>Drawn at</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Mode</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
