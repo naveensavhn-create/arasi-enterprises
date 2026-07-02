@@ -41,7 +41,9 @@ const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
   membershipNumber,
   unlockedAt,
   actionUrl,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   const value =
     rewardValue && rewardValue > 0
@@ -56,15 +58,12 @@ const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
     <Html lang="en" dir="ltr">
       <Head />
       <Preview>
-        Congratulations — you've unlocked the {tierName} reward on {brand.name}.
+        Congratulations — you've unlocked the {tierName} reward on {b.name}.
       </Preview>
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
 
             <Text
               style={{
@@ -89,9 +88,10 @@ const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
             </Heading>
             <Text style={styles.p}>{greeting}</Text>
             <Text style={styles.p}>
-              Your loyalty with {brand.name} has just paid off. You are now
+              Your loyalty with {b.name} has just paid off. You are now
               eligible to claim the reward below.
             </Text>
+
 
             <Section style={styles.detailBox}>
               <Text style={styles.detailLabel}>Reward tier</Text>
