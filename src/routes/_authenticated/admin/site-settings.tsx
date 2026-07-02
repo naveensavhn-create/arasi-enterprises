@@ -108,8 +108,11 @@ function SiteSettingsPage() {
           logo_url: v.logo_url ?? null,
           favicon_url: v.favicon_url ?? null,
           footer_text: v.footer_text ?? null,
+          reminder_cron_schedule: v.reminder_cron_schedule,
+          reminder_cron_timezone: v.reminder_cron_timezone,
         },
       }),
+
     onSuccess: (row: SiteSettings) => {
       toast.success("Site settings saved");
       setForm(row);
