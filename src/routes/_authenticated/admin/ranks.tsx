@@ -41,7 +41,7 @@ const EMPTY: Rank = {
   tier_order: 1,
   min_active_customers: 0,
   commission_percent: 0,
-  monthly_incentive: 0,
+  one_time_incentive: 0,
   gift_name: null,
   is_active: true,
 };
@@ -70,7 +70,7 @@ function RanksPage() {
           tier_order: r.tier_order,
           min_active_customers: r.min_active_customers,
           commission_percent: r.commission_percent,
-          monthly_incentive: r.monthly_incentive,
+          one_time_incentive: r.one_time_incentive,
           gift_name: r.gift_name,
           is_active: r.is_active,
         },
@@ -184,7 +184,7 @@ function RanksPage() {
             <CardContent className="text-sm space-y-1">
               <div>Min active customers: <b>{r.min_active_customers}</b></div>
               <div>Commission: <b>{Number(r.commission_percent).toFixed(2)}%</b></div>
-              <div>One-time incentive: <b>₹{Number(r.monthly_incentive).toLocaleString("en-IN")}</b></div>
+              <div>One-time incentive: <b>₹{Number(r.one_time_incentive).toLocaleString("en-IN")}</b></div>
               <div>Gift: <b>{r.gift_name ?? "—"}</b></div>
               <div>Status: <b>{r.is_active ? "Active" : "Inactive"}</b></div>
             </CardContent>
@@ -224,7 +224,7 @@ function RankDialog({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Commission %</Label><Input type="number" step="0.01" value={editing.commission_percent} onChange={(e) => set({ commission_percent: Number(e.target.value) })} /></div>
-          <div><Label>One-time incentive (₹)</Label><Input type="number" value={editing.monthly_incentive} onChange={(e) => set({ monthly_incentive: Number(e.target.value) })} /></div>
+          <div><Label>One-time incentive (₹)</Label><Input type="number" value={editing.one_time_incentive} onChange={(e) => set({ one_time_incentive: Number(e.target.value) })} /></div>
         </div>
         <div><Label>Gift name</Label><Input value={editing.gift_name ?? ""} onChange={(e) => set({ gift_name: e.target.value || null })} /></div>
         <div className="flex items-center gap-2">

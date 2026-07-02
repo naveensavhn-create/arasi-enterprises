@@ -1401,8 +1401,6 @@ export type Database = {
           id: string
           paid_at: string | null
           paid_reference: string | null
-          period_month: number | null
-          period_year: number | null
           promoter_id: string
           rank_id: string
           remarks: string | null
@@ -1417,8 +1415,6 @@ export type Database = {
           id?: string
           paid_at?: string | null
           paid_reference?: string | null
-          period_month?: number | null
-          period_year?: number | null
           promoter_id: string
           rank_id: string
           remarks?: string | null
@@ -1433,8 +1429,6 @@ export type Database = {
           id?: string
           paid_at?: string | null
           paid_reference?: string | null
-          period_month?: number | null
-          period_year?: number | null
           promoter_id?: string
           rank_id?: string
           remarks?: string | null
@@ -1540,8 +1534,8 @@ export type Database = {
           id: string
           is_active: boolean
           min_active_customers: number
-          monthly_incentive: number
           name: string
+          one_time_incentive: number
           tier_order: number
           updated_at: string
         }
@@ -1553,8 +1547,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           min_active_customers: number
-          monthly_incentive?: number
           name: string
+          one_time_incentive?: number
           tier_order: number
           updated_at?: string
         }
@@ -1566,8 +1560,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           min_active_customers?: number
-          monthly_incentive?: number
           name?: string
+          one_time_incentive?: number
           tier_order?: number
           updated_at?: string
         }
@@ -2182,8 +2176,6 @@ export type Database = {
           id: string
           paid_at: string | null
           paid_reference: string | null
-          period_month: number | null
-          period_year: number | null
           promoter_id: string
           rank_id: string
           remarks: string | null

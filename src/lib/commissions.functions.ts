@@ -10,7 +10,7 @@ export type Rank = {
   tier_order: number;
   min_active_customers: number;
   commission_percent: number;
-  monthly_incentive: number;
+  one_time_incentive: number;
   gift_name: string | null;
   is_active: boolean;
 };
@@ -46,7 +46,7 @@ const rankSchema = z.object({
   tier_order: z.number().int().min(1),
   min_active_customers: z.number().int().min(0),
   commission_percent: z.number().min(0).max(100),
-  monthly_incentive: z.number().min(0),
+  one_time_incentive: z.number().min(0),
   gift_name: z.string().nullable().optional(),
   is_active: z.boolean().default(true),
 });
@@ -248,7 +248,7 @@ export type PromoterDashboard = {
   remainingToNext: number;
   progressPercent: number;
   commissionPercent: number;
-  monthlyIncentive: number;
+  oneTimeIncentive: number;
   giftName: string | null;
   todayEarnings: number;
   monthEarnings: number;
@@ -308,7 +308,7 @@ export const getMyPromoterDashboard = createServerFn({ method: "GET" })
       remainingToNext,
       progressPercent: Math.min(100, Math.max(0, progressPercent)),
       commissionPercent: Number(currentRank?.commission_percent ?? 0),
-      monthlyIncentive: Number(currentRank?.monthly_incentive ?? 0),
+      oneTimeIncentive: Number(currentRank?.one_time_incentive ?? 0),
       giftName: currentRank?.gift_name ?? null,
       todayEarnings: today,
       monthEarnings: month,
