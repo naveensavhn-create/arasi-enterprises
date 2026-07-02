@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listAdminAuditLog, exportAdminAuditLog, type AuditLogRow } from "@/lib/audit-log.functions";
+import { getMyRole } from "@/lib/roles.functions";
 import { toast } from "sonner";
 import { Download, Filter, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,9 +15,27 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Forbidden, ForbiddenError } from "@/components/access/Forbidden";
 import { format } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/admin/audit-log")({
+  beforeLoad: async () => {
+    const role = await getMyRole();
+    if (role !== "admin") throw new ForbiddenError("admin", role);
+    return { role };
+  },
+  errorComponent: ({ error }) => {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (error instanceof ForbiddenError) {
+      return <Forbidden required={error.required} actual={error.actual} />;
+    }
+    if (/forbidden|unauthorized|admin role required/i.test(msg)) {
+      return <Forbidden required="admin" actual={null} />;
+    }
+    return (
+      <div className="p-6 text-sm text-destructive">{msg || "Something went wrong."}</div>
+    );
+  },
   component: AuditLogPage,
 });
 
