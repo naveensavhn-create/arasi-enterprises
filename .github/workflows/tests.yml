@@ -1,0 +1,79 @@
+name: Tests
+
+# Runs the full Vitest suite on every push to any branch.
+# Designed to fail fast (first failing test aborts the run) and to
+# surface clear, greppable logs in the Actions UI.
+
+on:
+  push:
+    branches: ['**']
+
+concurrency:
+  # Cancel superseded runs on the same ref so pushes fail fast overall.
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Vitest (full suite, fail-fast)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: 'true'
+      FORCE_COLOR: '1'
+      # Vitest: bail on the first failing test for fast feedback.
+      VITEST_BAIL: '1'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Print toolchain versions
+        run: |
+          echo "::group::Toolchain"
+          bun --version
+          node --version
+          echo "::endgroup::"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Guard payments.status filters (require ::text cast)
+        run: bun run check:payment-status-filters
+
+      - name: Run full test suite
+        # --bail=1 aborts the run on the first failing test.
+        # verbose reporter prints every test name so failures are easy to
+        # locate in the Actions log; junit reporter produces a machine-
+        # readable artifact for downstream tooling.
+        run: |
+          bunx vitest run \
+            --bail=1 \
+            --reporter=verbose \
+            --reporter=junit \
+            --outputFile=./test-report.junit.xml
+
+      - name: Upload JUnit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-report
+          path: test-report.junit.xml
+          if-no-files-found: warn
+
+      - name: Failure summary
+        if: failure()
+        run: |
+          {
+            echo "### ❌ Test suite failed"
+            echo ""
+            echo "Commit: \`${GITHUB_SHA}\`"
+            echo "Ref: \`${GITHUB_REF}\`"
+            echo ""
+            echo "Scroll up in the **Run full test suite** step for the first failing test (run is bailed after the first failure)."
+          } >> "$GITHUB_STEP_SUMMARY"
