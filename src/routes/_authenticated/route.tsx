@@ -12,6 +12,7 @@ import { useApplyUiPrefs, getUiPrefs, useSyncUiPrefsWithServer } from "@/lib/ui-
 import { HeaderKycStatus } from "@/components/kyc/KycStatusBadge";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ImpersonationBanner } from "@/components/impersonation/ImpersonationBanner";
+import { ImpersonationExitFab } from "@/components/impersonation/ImpersonationExitFab";
 
 
 export const Route = createFileRoute("/_authenticated")({
@@ -130,6 +131,8 @@ function AuthenticatedShell() {
           <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
             <Outlet />
           </main>
+          <ImpersonationExitFab />
+
         </div>
       </div>
     </SidebarProvider>
