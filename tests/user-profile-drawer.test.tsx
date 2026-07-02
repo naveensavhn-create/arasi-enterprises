@@ -304,9 +304,8 @@ describe("UserProfileDrawer — validation blocks the save mutation", () => {
     // Switch to Aadhaar tab
     fireEvent.click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
 
-    const kycPanel = await screen.findByRole("tabpanel", {
-      name: /aadhaar \/ kyc/i,
-    });
+    const kycPanel = await screen.findByRole("tabpanel");
+
 
     // Break the Aadhaar number then submit via the tab's Save button
     fireEvent.change(within(kycPanel).getByLabelText(/aadhaar number/i), {
