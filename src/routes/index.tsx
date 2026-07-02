@@ -343,8 +343,8 @@ function Landing() {
 
         {/* Footer accent */}
         <div className="mt-20 flex flex-col items-center gap-3">
-          <div className="h-px w-24 bg-[#C5A059]/40" />
-          <p className="text-[10px] uppercase tracking-[0.4em] text-white/30">
+          <div className="h-px w-24 bg-[#C5A059]/40" aria-hidden />
+          <p className="text-[10px] uppercase tracking-[0.4em] text-white/70">
             Exclusively for Members
           </p>
         </div>
