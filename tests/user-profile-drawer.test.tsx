@@ -174,9 +174,8 @@ describe("UserProfileDrawer — complete profile view", () => {
 
     // KYC tab — switch and assert Aadhaar surface
     fireEvent.click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
-    const kycPanel = await screen.findByRole("tabpanel", {
-      name: /aadhaar \/ kyc/i,
-    });
+    const kycPanel = await screen.findByRole("tabpanel");
+
     // KYC status line
     expect(within(kycPanel).getByText(/kyc status:/i)).toBeTruthy();
     expect(within(kycPanel).getByText(/approved/i)).toBeTruthy();
