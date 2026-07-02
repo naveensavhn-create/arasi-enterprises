@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Users, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { Users, Briefcase, ShieldCheck } from "lucide-react";
 import { useSession, useCurrentRole } from "@/lib/auth";
 import { CustomerDashboardBody } from "@/components/customer/CustomerDashboardBody";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
 import { NextDrawCard } from "@/components/dashboard/NextDrawCard";
+import { AdminDashboardOverview } from "@/components/admin/AdminDashboardOverview";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
