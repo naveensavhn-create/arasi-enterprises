@@ -168,10 +168,10 @@ function Row({
   pending,
 }: {
   row: CommissionRow;
-  onUpdate: (v: { id: string; status: "approved" | "paid" | "rejected"; reference?: string }) => void;
+  onUpdate: (v: { id: string; status: "approved" | "paid" | "rejected" | "pending"; reference?: string }) => void;
   pending: boolean;
 }) {
-  const [ref, setRef] = useState("");
+  const [ref, setRef] = useState(row.paid_reference ?? "");
   return (
     <TableRow>
       <TableCell className="font-mono text-xs">{row.ledger_number}</TableCell>
@@ -184,7 +184,7 @@ function Row({
       <TableCell className="text-right font-semibold">₹{Number(row.commission_amount).toLocaleString("en-IN")}</TableCell>
       <TableCell><Badge className={STATUS_COLORS[row.status]}>{row.status}</Badge></TableCell>
       <TableCell>
-        <div className="flex gap-1 items-center">
+        <div className="flex gap-1 items-center flex-wrap">
           {row.status === "pending" && (
             <>
               <Button size="sm" variant="success" disabled={pending} onClick={() => onUpdate({ id: row.id, status: "approved" })}>Approve</Button>
@@ -193,9 +193,27 @@ function Row({
           )}
           {row.status === "approved" && (
             <>
-              <Input placeholder="Ref#" value={ref} onChange={(e) => setRef(e.target.value)} className="h-8 w-24 text-xs" />
-              <Button size="sm" variant="success" disabled={pending} onClick={() => onUpdate({ id: row.id, status: "paid", reference: ref || undefined })}>Mark Paid</Button>
+              <Input placeholder="Ref# (required)" value={ref} onChange={(e) => setRef(e.target.value)} className="h-8 w-28 text-xs" />
+              <Button
+                size="sm"
+                variant="success"
+                disabled={pending || !ref.trim()}
+                onClick={() => onUpdate({ id: row.id, status: "paid", reference: ref.trim() })}
+              >
+                Mark Paid
+              </Button>
+              <Button size="sm" variant="ghost" disabled={pending} onClick={() => onUpdate({ id: row.id, status: "pending" })}>
+                <Undo2 className="h-3 w-3 mr-1" />Reopen
+              </Button>
             </>
+          )}
+          {row.status === "rejected" && (
+            <Button size="sm" variant="ghost" disabled={pending} onClick={() => onUpdate({ id: row.id, status: "pending" })}>
+              <Undo2 className="h-3 w-3 mr-1" />Reopen
+            </Button>
+          )}
+          {row.status === "paid" && row.paid_reference && (
+            <span className="text-xs font-mono text-muted-foreground">Ref: {row.paid_reference}</span>
           )}
         </div>
       </TableCell>
