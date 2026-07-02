@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Award, Gift, TrendingUp, Users } from "lucide-react";
+import { RankBadge, RankBanner } from "@/components/ranks/RankBadge";
 
 export const Route = createFileRoute("/_authenticated/promoter/rank")({
   head: () => ({ meta: [{ title: "My Rank — Promoter" }] }),
