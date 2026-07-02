@@ -300,9 +300,11 @@ describe("UserProfileDrawer — validation blocks the save mutation", () => {
 
   it("rejects a malformed Aadhaar number (non-12-digits)", async () => {
     renderDrawer();
+    await screen.findByLabelText(/full name/i);
 
     // Switch to Aadhaar tab
     fireEvent.click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
+
     const kycPanel = await screen.findByRole("tabpanel", {
       name: /aadhaar \/ kyc/i,
     });
