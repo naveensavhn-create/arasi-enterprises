@@ -91,6 +91,31 @@ export const setDrawStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setDrawMode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z.object({
+      id: z.string().uuid(),
+      mode: z.enum(["manual", "automated"]),
+    }).parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { data: existing, error: readErr } = await context.supabase
+      .from("draws")
+      .select("id,status")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!existing) throw new Error("Draw not found");
+    if (existing.status === "completed" || existing.status === "cancelled") {
+      throw new Error("Cannot change mode of a completed or cancelled draw");
+    }
+    const { error } = await context.supabase.from("draws").update({ mode: data.mode }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const deleteDraw = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => idSchema.parse(i))
