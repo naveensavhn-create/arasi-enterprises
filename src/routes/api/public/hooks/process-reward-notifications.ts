@@ -294,7 +294,12 @@ async function processJob(
   let skippedInfraCode: "skipped_no_email_infra" | "skipped_no_sms_infra";
 
   if (job.channel === "email") {
-    const subject = subjectFor(job.notification_kind, tierName);
+    const brandOverrides = await loadBrandOverrides();
+    const brandName = brandOverrides?.name ?? brand.name;
+    const subject =
+      job.notification_kind === "unlocked"
+        ? `[${brandName}] You've unlocked ${tierName}`
+        : `[${brandName}] Reward claim update — ${tierName}`;
     let html: string;
     let templateName: string;
 
@@ -312,6 +317,7 @@ async function processJob(
           actionUrl: process.env.APP_URL
             ? `${process.env.APP_URL.replace(/\/$/, "")}/customer/rewards`
             : undefined,
+          brand: brandOverrides,
         }),
       );
       templateName = "reward-unlocked";
@@ -329,6 +335,7 @@ async function processJob(
           actionUrl: process.env.APP_URL
             ? `${process.env.APP_URL.replace(/\/$/, "")}/customer/rewards`
             : undefined,
+          brand: brandOverrides,
         }),
       );
       templateName = "reward-claim-status";
