@@ -343,6 +343,67 @@ function AdminPlansPage() {
     },
   });
 
+  const bulkSetActive = useMutation({
+    mutationFn: async ({ ids, active }: { ids: string[]; active: boolean }) => {
+      if (ids.length === 0) return { updated: 0 };
+      const { error, count } = await supabase
+        .from("membership_plans")
+        .update({ is_active: active }, { count: "exact" })
+        .in("id", ids);
+      if (error) throw error;
+      return { updated: count ?? ids.length };
+    },
+    onSuccess: (res, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      toast.success(
+        `${res.updated} plan${res.updated === 1 ? "" : "s"} ${vars.active ? "activated" : "deactivated"}`,
+        {
+          description: vars.active
+            ? "New enrollments can now select these plans."
+            : "Existing memberships are unchanged; new enrollments are blocked.",
+        },
+      );
+      clearSelection();
+      setBulkConfirm(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Bulk update failed"),
+  });
+
+  const bulkDelete = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const results = await Promise.allSettled(
+        ids.map((id) => deletePlanAudited({ data: { planId: id } })),
+      );
+      let deleted = 0;
+      let blocked = 0;
+      let failed = 0;
+      for (const r of results) {
+        if (r.status === "rejected") failed++;
+        else if (r.value.success) deleted++;
+        else blocked++;
+      }
+      return { deleted, blocked, failed };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      qc.invalidateQueries({ queryKey: ["admin-plans-usage"] });
+      qc.invalidateQueries({ queryKey: ["admin-audit"] });
+      const parts: string[] = [];
+      if (res.deleted) parts.push(`${res.deleted} deleted`);
+      if (res.blocked) parts.push(`${res.blocked} blocked (in use)`);
+      if (res.failed) parts.push(`${res.failed} failed`);
+      const msg = parts.join(", ") || "No changes";
+      if (res.deleted > 0 && res.blocked === 0 && res.failed === 0) toast.success(msg);
+      else if (res.deleted === 0) toast.error(msg, { description: "Deactivate in-use plans instead." });
+      else toast.warning(msg, { description: "In-use plans were not deleted." });
+      clearSelection();
+      setBulkConfirm(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Bulk delete failed"),
+  });
+
+
+
   function startCreate() {
     setEditing(null);
     setForm(empty);
