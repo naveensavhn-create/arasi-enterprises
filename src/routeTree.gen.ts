@@ -48,6 +48,7 @@ import { Route as AuthenticatedAdminPaymentsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminMembershipsRouteImport } from './routes/_authenticated/admin/memberships'
 import { Route as AuthenticatedAdminMembershipEmailsRouteImport } from './routes/_authenticated/admin/membership-emails'
 import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authenticated/admin/lucky-draw'
+import { Route as AuthenticatedAdminKycEmailsRouteImport } from './routes/_authenticated/admin/kyc-emails'
 import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authenticated/admin/exports'
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
 import { Route as AuthenticatedAdminDrawResultsRouteImport } from './routes/_authenticated/admin/draw-results'
@@ -283,6 +284,12 @@ const AuthenticatedAdminLuckyDrawRoute =
     path: '/lucky-draw',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminKycEmailsRoute =
+  AuthenticatedAdminKycEmailsRouteImport.update({
+    id: '/kyc-emails',
+    path: '/kyc-emails',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminExportsRoute =
   AuthenticatedAdminExportsRouteImport.update({
     id: '/exports',
@@ -370,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -421,6 +429,7 @@ export interface FileRoutesByTo {
   '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -475,6 +484,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/_authenticated/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/_authenticated/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/_authenticated/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
   '/_authenticated/admin/membership-emails': typeof AuthenticatedAdminMembershipEmailsRoute
   '/_authenticated/admin/memberships': typeof AuthenticatedAdminMembershipsRoute
@@ -529,6 +539,7 @@ export interface FileRouteTypes {
     | '/admin/draw-results'
     | '/admin/email-preview'
     | '/admin/exports'
+    | '/admin/kyc-emails'
     | '/admin/lucky-draw'
     | '/admin/membership-emails'
     | '/admin/memberships'
@@ -580,6 +591,7 @@ export interface FileRouteTypes {
     | '/admin/draw-results'
     | '/admin/email-preview'
     | '/admin/exports'
+    | '/admin/kyc-emails'
     | '/admin/lucky-draw'
     | '/admin/membership-emails'
     | '/admin/memberships'
@@ -633,6 +645,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/draw-results'
     | '/_authenticated/admin/email-preview'
     | '/_authenticated/admin/exports'
+    | '/_authenticated/admin/kyc-emails'
     | '/_authenticated/admin/lucky-draw'
     | '/_authenticated/admin/membership-emails'
     | '/_authenticated/admin/memberships'
@@ -958,6 +971,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminLuckyDrawRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/kyc-emails': {
+      id: '/_authenticated/admin/kyc-emails'
+      path: '/kyc-emails'
+      fullPath: '/admin/kyc-emails'
+      preLoaderRoute: typeof AuthenticatedAdminKycEmailsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/exports': {
       id: '/_authenticated/admin/exports'
       path: '/exports'
@@ -1052,6 +1072,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminDrawResultsRoute: typeof AuthenticatedAdminDrawResultsRoute
   AuthenticatedAdminEmailPreviewRoute: typeof AuthenticatedAdminEmailPreviewRoute
   AuthenticatedAdminExportsRoute: typeof AuthenticatedAdminExportsRoute
+  AuthenticatedAdminKycEmailsRoute: typeof AuthenticatedAdminKycEmailsRoute
   AuthenticatedAdminLuckyDrawRoute: typeof AuthenticatedAdminLuckyDrawRoute
   AuthenticatedAdminMembershipEmailsRoute: typeof AuthenticatedAdminMembershipEmailsRoute
   AuthenticatedAdminMembershipsRoute: typeof AuthenticatedAdminMembershipsRoute
@@ -1078,6 +1099,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminDrawResultsRoute: AuthenticatedAdminDrawResultsRoute,
     AuthenticatedAdminEmailPreviewRoute: AuthenticatedAdminEmailPreviewRoute,
     AuthenticatedAdminExportsRoute: AuthenticatedAdminExportsRoute,
+    AuthenticatedAdminKycEmailsRoute: AuthenticatedAdminKycEmailsRoute,
     AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,
     AuthenticatedAdminMembershipEmailsRoute:
       AuthenticatedAdminMembershipEmailsRoute,
