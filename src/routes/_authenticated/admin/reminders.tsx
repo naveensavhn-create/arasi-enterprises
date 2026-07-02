@@ -115,6 +115,8 @@ function RemindersPage() {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   });
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [dialogTab, setDialogTab] = useState<"recipients" | "preview">("recipients");
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
