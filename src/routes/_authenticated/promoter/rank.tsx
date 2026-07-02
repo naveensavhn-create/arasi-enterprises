@@ -35,6 +35,17 @@ function Page() {
         <p className="text-sm text-muted-foreground">Rank, commission %, incentives and gifts unlock automatically as you grow.</p>
       </div>
 
+      <RankBanner
+        rank={data.currentRank}
+        subtitle={
+          <span>
+            {data.activeCustomers} active customers · Commission {data.commissionPercent}%
+            {data.nextRank ? ` · Next: ${data.nextRank.name} @ ${data.nextRank.min_active_customers}` : " · Top tier reached"}
+          </span>
+        }
+        right={<RankBadge rank={data.currentRank} size="lg" showLabel={false} />}
+      />
+
       <div className="grid gap-4 md:grid-cols-4">
         <Stat icon={<Award className="h-5 w-5" />} label="Current Rank" value={data.currentRank?.name ?? "Unranked"} sub={`Commission ${data.commissionPercent}%`} />
         <Stat icon={<Users className="h-5 w-5" />} label="Active Customers" value={String(data.activeCustomers)} sub={`Pending: ${data.pendingCustomers}`} />
@@ -46,9 +57,17 @@ function Page() {
         <CardHeader><CardTitle>Rank Progress</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           <div className="flex justify-between text-sm">
-            <span>{data.currentRank?.name ?? "Unranked"}</span>
-            <span className="text-muted-foreground">
-              {data.nextRank ? `Next: ${data.nextRank.name} @ ${data.nextRank.min_active_customers} customers` : "Highest rank achieved"}
+            <span className="flex items-center gap-2">
+              <RankBadge rank={data.currentRank} size="sm" showLabel={false} />
+              {data.currentRank?.name ?? "Unranked"}
+            </span>
+            <span className="text-muted-foreground flex items-center gap-2">
+              {data.nextRank ? (
+                <>
+                  Next: {data.nextRank.name} @ {data.nextRank.min_active_customers} customers
+                  <RankBadge rank={data.nextRank} size="sm" showLabel={false} />
+                </>
+              ) : "Highest rank achieved"}
             </span>
           </div>
           <Progress value={data.progressPercent} />
