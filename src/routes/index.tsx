@@ -175,23 +175,6 @@ function Landing() {
             Choose your portal
           </h2>
           <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
-
-          <h1
-            className="text-4xl font-bold leading-[1.1] text-white sm:text-5xl md:text-6xl"
-            style={serif}
-          >
-            Building Dreams,
-            <br className="hidden md:block" /> Creating{" "}
-            <span className="italic text-[#C5A059]">Opportunities</span>
-          </h1>
-          <p className="mx-auto max-w-xl text-base font-light leading-relaxed text-white/60">
-            An exclusive gateway to advance-booking memberships, monthly
-            installments and distinguished member rewards.
-          </p>
-        </div>
-
-        {/* Portal Grid */}
-        <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
           {portals.map((p, idx) => (
             <Link
               key={p.id}
