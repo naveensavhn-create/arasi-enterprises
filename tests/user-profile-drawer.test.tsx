@@ -188,11 +188,12 @@ describe("UserProfileDrawer — complete profile view", () => {
 
     // KYC status line (matcher spans multiple elements — use a fn)
     expect(
-      screen.getByText((_, el) =>
-        !!el && /kyc status:/i.test(el.textContent ?? ""),
-      ),
-    ).toBeTruthy();
+      screen.getAllByText(
+        (_, el) => !!el && /kyc status:/i.test(el.textContent ?? ""),
+      ).length,
+    ).toBeGreaterThan(0);
     expect(screen.getAllByText(/approved/i).length).toBeGreaterThan(0);
+
 
     // Front / back image links
     const linkHrefs = screen
