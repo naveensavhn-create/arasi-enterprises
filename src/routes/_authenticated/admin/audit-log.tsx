@@ -193,7 +193,19 @@ function AuditLogPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex gap-2">
+            <div>
+              <Label htmlFor="paymentId" className="text-xs">Payment ID</Label>
+              <Input id="paymentId" value={paymentId} onChange={(e) => { setPaymentId(e.target.value.trim()); setPage(1); }} placeholder="UUID or Razorpay id" />
+            </div>
+            <div>
+              <Label htmlFor="customerId" className="text-xs">Customer ID</Label>
+              <Input id="customerId" value={customerId} onChange={(e) => { setCustomerId(e.target.value.trim()); setPage(1); }} placeholder="User UUID" />
+            </div>
+            <div>
+              <Label htmlFor="promoterId" className="text-xs">Promoter ID</Label>
+              <Input id="promoterId" value={promoterId} onChange={(e) => { setPromoterId(e.target.value.trim()); setPage(1); }} placeholder="User UUID" />
+            </div>
+            <div className="flex gap-2 md:col-span-3">
               <div className="flex-1">
                 <Label htmlFor="from" className="text-xs">From</Label>
                 <Input id="from" type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} />
