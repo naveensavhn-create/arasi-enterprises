@@ -10,7 +10,14 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { brand, styles, formatTimestamp } from "./_shared";
+import {
+  brand as defaultBrand,
+  styles,
+  formatTimestamp,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
 export interface MembershipActivatedProps {
   recipientName?: string;
@@ -27,6 +34,7 @@ export interface MembershipActivatedProps {
   nextDueAmount?: number | null;
   currency?: string; // default INR
   dashboardUrl?: string;
+  brand?: BrandOverrides;
 }
 
 const fmt = (amount: number, ccy = "INR") =>
