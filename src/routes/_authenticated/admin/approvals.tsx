@@ -314,13 +314,20 @@ function AdminApprovalsPage() {
       </Card>
 
       <ReviewDrawer
-        row={selected}
+        row={selected ? rows.find((r) => r.id === selected.id) ?? selected : null}
         onClose={() => setSelected(null)}
         onDecide={(approve, notes, assignRole) =>
           selected &&
           decideMut.mutate({ userId: selected.id, approve, notes, assignRole })
         }
         pending={decideMut.isPending}
+        pendingAction={
+          decideMut.isPending
+            ? decideMut.variables?.approve
+              ? "approve"
+              : "reject"
+            : null
+        }
       />
     </div>
   );
