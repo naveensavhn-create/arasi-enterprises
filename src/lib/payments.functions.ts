@@ -310,15 +310,44 @@ async function fetchPaymentRows(
     }
   }
 
-  return (rows ?? []).map((r: any) => {
-    const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-    const { profiles: _profiles, ...rest } = r;
+  // Batched profile lookup (payments.customer_id → auth.users; profiles.id
+  // shares the same UUID, so we join manually).
+  const customerIds = Array.from(
+    new Set((rows ?? []).map((r: any) => r.customer_id).filter(Boolean)),
+  ) as string[];
+  const profileMap = new Map<string, { full_name: string | null; email: string | null }>();
+  if (customerIds.length) {
+    const { data: profs, error: pErr } = await sb
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", customerIds);
+    if (pErr) throw new Error(pErr.message);
+    for (const p of profs ?? []) {
+      profileMap.set(p.id, { full_name: p.full_name ?? null, email: p.email ?? null });
+    }
+  }
+
+  const mapped = (rows ?? []).map((r: any) => {
     return {
-      ...rest,
-      profile: p ? { full_name: p.full_name ?? null, email: p.email ?? null } : null,
+      ...r,
+      profile: profileMap.get(r.customer_id) ?? null,
       reconciliation: reconMap.get(r.id) ?? null,
     };
   });
+
+  if (n.sortBy === "customer_name") {
+    const dir = n.sortDir === "asc" ? 1 : -1;
+    mapped.sort((a: any, b: any) => {
+      const an = (a.profile?.full_name ?? "").toLowerCase();
+      const bn = (b.profile?.full_name ?? "").toLowerCase();
+      if (an === bn) return 0;
+      if (!an) return 1;
+      if (!bn) return -1;
+      return an < bn ? -1 * dir : 1 * dir;
+    });
+  }
+
+  return mapped;
 }
 
 
