@@ -377,6 +377,53 @@ export const listOpenDrawsForCustomer = createServerFn({ method: "GET" })
   });
 
 /**
+ * getLatestCompletedDrawForCustomer — returns the most recently completed
+ * draw (if any) along with its winners (public names only) and whether the
+ * current customer was among the winners. Used to persist the
+ * "Winners announced!" state across page refreshes.
+ */
+export const getLatestCompletedDrawForCustomer = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data: draw, error } = await context.supabase
+      .from("draws")
+      .select("id, name, description, prize, prize_value, status, draw_at, drawn_at, winners_count")
+      .eq("status", "completed")
+      .order("drawn_at", { ascending: false, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!draw) return null;
+
+    const { data: winners, error: wErr } = await context.supabase
+      .from("draw_winners")
+      .select("id, customer_id, position, prize, drawn_at")
+      .eq("draw_id", (draw as { id: string }).id)
+      .order("position", { ascending: true });
+    if (wErr) throw new Error(wErr.message);
+    const winRows = (winners ?? []) as Array<{ id: string; customer_id: string; position: number; prize: string; drawn_at: string }>;
+    const custIds = Array.from(new Set(winRows.map((w) => w.customer_id)));
+    const { data: profs } = custIds.length
+      ? await context.supabase.from("profiles").select("id, full_name").in("id", custIds)
+      : { data: [] as Array<{ id: string; full_name: string | null }> };
+    const nameById = new Map<string, string>(
+      ((profs ?? []) as Array<{ id: string; full_name: string | null }>).map((p) => [p.id, p.full_name ?? "Member"]),
+    );
+    const myWin = winRows.find((w) => w.customer_id === context.userId) ?? null;
+    return {
+      draw: draw as { id: string; name: string; description: string | null; prize: string; prize_value: number | null; status: string; draw_at: string | null; drawn_at: string | null; winners_count: number },
+      winners: winRows.map((w) => ({
+        position: w.position,
+        prize: w.prize,
+        drawn_at: w.drawn_at,
+        name: nameById.get(w.customer_id) ?? "Member",
+        isMe: w.customer_id === context.userId,
+      })),
+      myWin: myWin ? { position: myWin.position, prize: myWin.prize, drawn_at: myWin.drawn_at } : null,
+    };
+  });
+
+/**
  * listDrawsForPromoter — Read-only feed of active/recent draws with the
  * public winner list per draw (name only, no PII). Promoters need visibility
  * into upcoming schedules and announced winners for their customers.
