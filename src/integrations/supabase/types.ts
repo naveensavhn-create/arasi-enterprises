@@ -1306,6 +1306,27 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      eligible_draw_entries: {
+        Args: { _draw_id: string }
+        Returns: {
+          coupon_code: string | null
+          created_at: string
+          customer_id: string
+          disqualified_reason: string | null
+          draw_id: string
+          eligible: boolean
+          entry_code: string | null
+          entry_number: number
+          id: string
+          membership_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "draw_entries"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       finalize_reminder_job: {
         Args: {
           _error_code?: string
