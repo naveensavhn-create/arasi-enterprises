@@ -89,9 +89,20 @@ const portals = [
 
 function Landing() {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#020617]">
-      {/* Ambient gilded glows */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-25">
+    <div className="relative min-h-dvh w-full overflow-hidden bg-[#020617]">
+      {/*
+        Ambient decorative glows.
+        - Purely presentational (aria-hidden).
+        - Softened for users who prefer reduced motion / reduced visual noise
+          via `motion-reduce:opacity-0`, which also honours Windows / macOS
+          "reduce transparency" heuristics that many browsers map to
+          prefers-reduced-motion. The core layout remains fully legible
+          without them.
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-25 transition-opacity motion-reduce:opacity-0"
+      >
         <div
           className="absolute -left-[10%] -top-[10%] h-[55%] w-[55%] rounded-full"
           style={{ background: "#C5A059", filter: "blur(180px)" }}
@@ -102,15 +113,24 @@ function Landing() {
         />
       </div>
 
-      {/* Subtle vignette */}
+      {/* Subtle vignette — also dropped for reduced-motion users */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 motion-reduce:opacity-0"
         style={{
           background:
             "radial-gradient(ellipse at center, transparent 0%, rgba(2,6,23,0.6) 100%)",
         }}
       />
+
+      {/* Skip link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-[#C5A059] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#020617] focus:outline-none focus:ring-2 focus:ring-white"
+      >
+        Skip to main content
+      </a>
+
 
       <header className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-8">
         <div className="[&_*]:!text-white [&_.text-muted-foreground]:!text-[#C5A059]/70">
@@ -126,10 +146,13 @@ function Landing() {
         </Link>
       </header>
 
-      <main className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pb-24 pt-8 sm:pt-16">
+      <main
+        id="main-content"
+        className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center px-6 pb-24 pt-8 sm:pt-16"
+      >
         {/* Hero */}
         <div className="mb-14 space-y-5 text-center sm:mb-20">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
             Established Trust · Since 2024
           </p>
           <h1
@@ -140,35 +163,40 @@ function Landing() {
             <br className="hidden md:block" /> Creating{" "}
             <span className="italic text-[#C5A059]">Opportunities</span>
           </h1>
-          <p className="mx-auto max-w-xl text-base font-light leading-relaxed text-white/60">
+          <p className="mx-auto max-w-xl text-base font-light leading-relaxed text-white/80">
             An exclusive gateway to advance-booking memberships, monthly
             installments and distinguished member rewards.
           </p>
         </div>
 
         {/* Portal Grid */}
-        <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
+        <section aria-labelledby="portals-heading" className="w-full">
+          <h2 id="portals-heading" className="sr-only">
+            Choose your portal
+          </h2>
+          <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
           {portals.map((p, idx) => (
             <Link
               key={p.id}
               to="/auth"
               search={{ portal: p.id }}
-              className="group relative flex h-full flex-col border border-[#C5A059]/20 bg-[#0F172A]/40 p-8 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:border-[#C5A059]/60 hover:bg-[#0F172A]/60 md:p-10"
+              className="group relative flex h-full flex-col border border-[#C5A059]/20 bg-[#0F172A]/40 p-8 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:border-[#C5A059]/60 hover:bg-[#0F172A]/60 focus-visible:-translate-y-1 focus-visible:border-[#C5A059]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] motion-reduce:transform-none motion-reduce:transition-none md:p-10"
             >
-              {/* Top gold sweep on hover */}
+              {/* Top gold sweep on hover — decorative, disabled under reduced motion */}
               <div
                 aria-hidden
-                className="absolute left-0 top-0 h-px w-full scale-x-0 bg-gradient-to-r from-transparent via-[#C5A059]/70 to-transparent transition-transform duration-700 group-hover:scale-x-100"
+                className="absolute left-0 top-0 h-px w-full scale-x-0 bg-gradient-to-r from-transparent via-[#C5A059]/70 to-transparent transition-transform duration-700 group-hover:scale-x-100 group-focus-visible:scale-x-100 motion-reduce:transition-none motion-reduce:group-hover:scale-x-0"
               />
-              {/* Corner index */}
+              {/* Corner index — decorative */}
               <span
-                className="absolute right-6 top-6 text-xs font-medium tracking-[0.25em] text-white/25"
+                aria-hidden
+                className="absolute right-6 top-6 text-xs font-medium tracking-[0.25em] text-white/60"
                 style={serif}
               >
                 0{idx + 1}
               </span>
 
-              <div className="mb-8 text-[#C5A059]">
+              <div className="mb-8 text-[#C5A059]" aria-hidden>
                 <p.icon className="h-8 w-8" strokeWidth={1.25} />
               </div>
               <h3
@@ -177,16 +205,18 @@ function Landing() {
               >
                 {p.title}
               </h3>
-              <p className="mb-10 flex-grow text-sm leading-relaxed text-white/55">
+              <p className="mb-10 flex-grow text-sm leading-relaxed text-white/80">
                 {p.desc}
               </p>
               <div className="inline-flex items-center text-xs font-bold uppercase tracking-[0.2em] text-[#C5A059]">
                 Continue
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" aria-hidden />
               </div>
             </Link>
           ))}
-        </div>
+          </div>
+        </section>
+
 
         {/* Programme benefits */}
         <section
@@ -195,7 +225,7 @@ function Landing() {
           className="mt-24 w-full sm:mt-32"
         >
           <div className="mx-auto mb-14 max-w-2xl text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
               How the Programme Works
             </p>
             <h2
@@ -206,7 +236,7 @@ function Landing() {
               Advance booking, paid on a{" "}
               <span className="italic text-[#C5A059]">monthly plan</span>
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-sm font-light leading-relaxed text-white/60 sm:text-base">
+            <p className="mx-auto mt-5 max-w-xl text-sm font-light leading-relaxed text-white/80 sm:text-base">
               Reserve your entitlement today with a modest advance, then settle
               the balance in fixed monthly installments. Every payment is
               receipted, every schedule is transparent, and the plan is
@@ -237,11 +267,11 @@ function Landing() {
                 className="relative flex h-full flex-col border border-[#C5A059]/20 bg-[#0F172A]/40 p-8 backdrop-blur-sm md:p-10"
               >
                 <span
-                  className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]/80"
+                  className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]"
                 >
                   {s.tag}
                 </span>
-                <div className="mt-5 text-[#C5A059]">
+                <div className="mt-5 text-[#C5A059]" aria-hidden>
                   <s.icon className="h-7 w-7" strokeWidth={1.25} />
                 </div>
                 <h3
@@ -250,7 +280,7 @@ function Landing() {
                 >
                   {s.title}
                 </h3>
-                <p className="mt-4 text-sm leading-relaxed text-white/60">
+                <p className="mt-4 text-sm leading-relaxed text-white/80">
                   {s.body}
                 </p>
               </div>
@@ -285,16 +315,16 @@ function Landing() {
                 key={b.title}
                 className="flex h-full flex-col border border-[#C5A059]/15 bg-[#0F172A]/30 p-6 backdrop-blur-sm"
               >
-                <div className="text-[#C5A059]">
+                <div className="text-[#C5A059]" aria-hidden>
                   <b.icon className="h-6 w-6" strokeWidth={1.25} />
                 </div>
-                <h4
+                <h3
                   className="mt-4 text-base font-semibold text-white"
                   style={serif}
                 >
                   {b.title}
-                </h4>
-                <p className="mt-3 text-[13px] leading-relaxed text-white/55">
+                </h3>
+                <p className="mt-3 text-[13px] leading-relaxed text-white/80">
                   {b.body}
                 </p>
               </div>
@@ -302,7 +332,7 @@ function Landing() {
           </div>
 
           {/* Assurance note */}
-          <p className="mx-auto mt-10 max-w-3xl text-center text-xs leading-relaxed text-white/45">
+          <p className="mx-auto mt-10 max-w-3xl text-center text-xs leading-relaxed text-white/75">
             Arasi Enterprises is a membership-based advance booking programme.
             It is not an investment scheme and does not promise returns, profit
             sharing or guaranteed income of any kind. Entitlements and member
@@ -313,8 +343,8 @@ function Landing() {
 
         {/* Footer accent */}
         <div className="mt-20 flex flex-col items-center gap-3">
-          <div className="h-px w-24 bg-[#C5A059]/40" />
-          <p className="text-[10px] uppercase tracking-[0.4em] text-white/30">
+          <div className="h-px w-24 bg-[#C5A059]/40" aria-hidden />
+          <p className="text-[10px] uppercase tracking-[0.4em] text-white/70">
             Exclusively for Members
           </p>
         </div>
