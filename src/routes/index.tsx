@@ -89,9 +89,20 @@ const portals = [
 
 function Landing() {
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#020617]">
-      {/* Ambient gilded glows */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-25">
+    <div className="relative min-h-dvh w-full overflow-hidden bg-[#020617]">
+      {/*
+        Ambient decorative glows.
+        - Purely presentational (aria-hidden).
+        - Softened for users who prefer reduced motion / reduced visual noise
+          via `motion-reduce:opacity-0`, which also honours Windows / macOS
+          "reduce transparency" heuristics that many browsers map to
+          prefers-reduced-motion. The core layout remains fully legible
+          without them.
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-25 transition-opacity motion-reduce:opacity-0"
+      >
         <div
           className="absolute -left-[10%] -top-[10%] h-[55%] w-[55%] rounded-full"
           style={{ background: "#C5A059", filter: "blur(180px)" }}
@@ -102,15 +113,24 @@ function Landing() {
         />
       </div>
 
-      {/* Subtle vignette */}
+      {/* Subtle vignette — also dropped for reduced-motion users */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 motion-reduce:opacity-0"
         style={{
           background:
             "radial-gradient(ellipse at center, transparent 0%, rgba(2,6,23,0.6) 100%)",
         }}
       />
+
+      {/* Skip link for keyboard users */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded focus:bg-[#C5A059] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#020617] focus:outline-none focus:ring-2 focus:ring-white"
+      >
+        Skip to main content
+      </a>
+
 
       <header className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-8">
         <div className="[&_*]:!text-white [&_.text-muted-foreground]:!text-[#C5A059]/70">
