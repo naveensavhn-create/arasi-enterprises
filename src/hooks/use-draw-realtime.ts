@@ -10,7 +10,8 @@ export type RealtimeStatus =
   | "connected"
   | "reconnecting"
   | "error"
-  | "closed";
+  | "closed"
+  | "failed";
 
 /**
  * Subscribes to realtime updates on `draws` and `draw_winners` and invalidates
@@ -34,6 +35,8 @@ export function useDrawRealtime(opts: {
   fallbackPollMs?: number;
   /** Max backoff between resubscribe attempts (ms). Default 30s. */
   maxBackoffMs?: number;
+  /** Max consecutive failed attempts before entering `failed` state. Default 6. */
+  maxAttempts?: number;
 }) {
   const {
     queryKeys,
@@ -41,6 +44,7 @@ export function useDrawRealtime(opts: {
     toastOnComplete = true,
     fallbackPollMs = 20_000,
     maxBackoffMs = 30_000,
+    maxAttempts = 6,
   } = opts;
   const qc = useQueryClient();
 
@@ -101,9 +105,24 @@ export function useDrawRealtime(opts: {
       }
     };
 
+    const failedToastShownRef = { current: false };
+
     const scheduleReconnect = () => {
       clearBackoff();
       if (cancelled) return;
+      if (attempt >= maxAttempts) {
+        setStatus("failed");
+        startPolling();
+        if (toastRef.current && !failedToastShownRef.current) {
+          failedToastShownRef.current = true;
+          toast.error("Live updates unavailable", {
+            description:
+              "We couldn't restore the realtime connection after several attempts. Tap Retry connection to try again.",
+            duration: 10_000,
+          });
+        }
+        return;
+      }
       const delay = Math.min(1000 * 2 ** attempt, maxBackoffMs);
       attempt += 1;
       backoffTimer = setTimeout(() => {
@@ -178,6 +197,7 @@ export function useDrawRealtime(opts: {
           if (subStatus === "SUBSCRIBED") {
             attempt = 0;
             droppedToastShownRef.current = false;
+            failedToastShownRef.current = false;
             setError(null);
             setStatus("connected");
             clearPolling();

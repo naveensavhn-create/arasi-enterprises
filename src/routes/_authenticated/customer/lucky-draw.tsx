@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
 import { DrawTimeline } from "@/components/draws/DrawTimeline";
 import { formatDateTime } from "@/lib/format-datetime";
@@ -139,7 +140,9 @@ function CustomerLuckyDrawPage() {
       ? "bg-green-500"
       : realtime.status === "connecting" || realtime.status === "reconnecting"
         ? "bg-amber-500 animate-pulse"
-        : realtime.status === "error" || realtime.status === "closed"
+        : realtime.status === "error" ||
+            realtime.status === "closed" ||
+            realtime.status === "failed"
           ? "bg-destructive"
           : "bg-muted-foreground/40";
   const liveLabel =
@@ -153,7 +156,9 @@ function CustomerLuckyDrawPage() {
             ? "Offline — auto-refreshing"
             : realtime.status === "closed"
               ? "Disconnected"
-              : "Idle";
+              : realtime.status === "failed"
+                ? "Live updates unavailable"
+                : "Idle";
 
   return (
     <div className="space-y-6">
@@ -176,10 +181,11 @@ function CustomerLuckyDrawPage() {
           </div>
           {(realtime.status === "error" ||
             realtime.status === "closed" ||
-            realtime.status === "reconnecting") && (
+            realtime.status === "reconnecting" ||
+            realtime.status === "failed") && (
             <Button
               size="sm"
-              variant="outline"
+              variant={realtime.status === "failed" ? "default" : "outline"}
               onClick={() => {
                 realtime.reconnect();
                 toast("Retrying live connection…");
@@ -191,6 +197,32 @@ function CustomerLuckyDrawPage() {
           )}
         </div>
       </div>
+
+      {realtime.status === "failed" && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Live updates unavailable</AlertTitle>
+          <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              We couldn't restore the realtime connection after several attempts
+              {realtime.error?.message ? ` (${realtime.error.message})` : ""}.
+              Your data will keep refreshing in the background, but new winners
+              may appear with a short delay.
+            </span>
+            <Button
+              size="sm"
+              onClick={() => {
+                realtime.reconnect();
+                toast("Retrying live connection…");
+              }}
+            >
+              Retry connection
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+
 
 
 
