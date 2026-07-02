@@ -240,14 +240,30 @@ export const pickDrawWinners = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-export const enterDraw = createServerFn({ method: "POST" })
+/**
+ * pickDrawWinnersManual — admin-only manual selection for manual-mode draws.
+ * Provide `entryIds` to award those exact entries (in order), or `count` to
+ * randomly pick that many eligible entries. Reuses the same completion flow
+ * (marks the draw completed and stamps drawn_at + seed) as automated draws,
+ * which triggers the shared realtime "winners announced" notifications on the
+ * customer and promoter portals.
+ */
+export const pickDrawWinnersManual = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) => enterSchema.parse(i))
+  .inputValidator((i: unknown) => pickManualSchema.parse(i))
   .handler(async ({ data, context }) => {
-    const { data: draw, error: drawErr } = await context.supabase
-      .from("draws")
-      .select("id, status, opens_at, closes_at, requires_active_membership, plan_id")
-      .eq("id", data.drawId)
+    await assertAdmin(context);
+    const { data: rows, error } = await context.supabase.rpc("admin_pick_draw_winners_manual", {
+      _draw_id: data.drawId,
+      _entry_ids: data.entryIds && data.entryIds.length > 0 ? data.entryIds : null,
+      _count: data.count ?? null,
+      _seed: data.seed ?? null,
+    });
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+
       .maybeSingle();
     if (drawErr) throw new Error(drawErr.message);
     if (!draw) throw new Error("Draw not found");
