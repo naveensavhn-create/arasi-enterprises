@@ -39,13 +39,6 @@ export type AuditLogListResult = {
   reviewedFieldOptions: string[];
 };
 
-async function assertAdmin(context: { supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" }) => Promise<{ data: unknown }> }; userId: string }) {
-  const { data: isAdmin } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (!isAdmin) throw new Error("Forbidden: admin role required.");
-}
 
 function mapRow(r: {
   id: string;
