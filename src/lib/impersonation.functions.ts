@@ -21,12 +21,12 @@ export const startImpersonation = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase.rpc("start_impersonation", {
       _target_user_id: data.target_user_id,
       _mode: data.mode,
-      _reason: data.reason ?? null,
-      _ip: ip,
-      _user_agent: ua,
+      _reason: data.reason ?? undefined,
+      _ip: ip ?? undefined,
+      _user_agent: ua ?? undefined,
     });
     if (error) throw new Error(error.message);
-    return row;
+    return row as unknown as Record<string, unknown>;
   });
 
 export const endImpersonation = createServerFn({ method: "POST" })
@@ -65,5 +65,5 @@ export const getAdminUserSnapshot = createServerFn({ method: "GET" })
       _user_id: data.user_id,
     });
     if (error) throw new Error(error.message);
-    return snap as Record<string, unknown> | null;
+    return (snap ?? null) as unknown as { [key: string]: unknown } | null;
   });
