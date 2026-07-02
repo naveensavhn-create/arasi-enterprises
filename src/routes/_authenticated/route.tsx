@@ -13,6 +13,7 @@ import { HeaderKycStatus } from "@/components/kyc/KycStatusBadge";
 import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ImpersonationBanner } from "@/components/impersonation/ImpersonationBanner";
 import { ImpersonationExitFab } from "@/components/impersonation/ImpersonationExitFab";
+import { ImpersonationSessionGuard } from "@/components/impersonation/ImpersonationSessionGuard";
 
 
 export const Route = createFileRoute("/_authenticated")({
@@ -132,6 +133,8 @@ function AuthenticatedShell() {
             <Outlet />
           </main>
           <ImpersonationExitFab />
+          <ImpersonationSessionGuard />
+
 
         </div>
       </div>
