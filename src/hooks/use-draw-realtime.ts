@@ -46,6 +46,7 @@ export function useDrawRealtime(opts: {
 
   const [status, setStatus] = useState<RealtimeStatus>("idle");
   const [error, setError] = useState<Error | null>(null);
+  const [reconnectNonce, setReconnectNonce] = useState(0);
 
   // Keep latest keys/flags in refs so we don't tear down on every render.
   const keysRef = useRef(queryKeys);
@@ -229,7 +230,13 @@ export function useDrawRealtime(opts: {
       setStatus("idle");
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, qc, fallbackPollMs, maxBackoffMs]);
+  }, [enabled, qc, fallbackPollMs, maxBackoffMs, reconnectNonce]);
 
-  return { status, error, isConnected: status === "connected" };
+  const reconnect = () => {
+    setError(null);
+    setStatus("connecting");
+    setReconnectNonce((n) => n + 1);
+  };
+
+  return { status, error, isConnected: status === "connected", reconnect };
 }
