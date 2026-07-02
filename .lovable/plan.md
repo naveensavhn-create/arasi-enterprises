@@ -1,70 +1,110 @@
-## Admin Settings Expansion
+# Scope
 
-Extend the Admin Settings area with two new sections: **User Management** and **Site Appearance**. Both are admin-only, gated by the existing `has_role('admin')` check.
+Nine changes across admin, promoter, and the shared preferences surface. Grouped by area so you can accept/reject each block.
 
-### 1. User Management (`/admin/users`)
+---
 
-A single searchable table of all users pulled from `auth.users` + `profiles` + `user_roles`, with per-row actions:
+## 1. Admin — view & edit full profile of any promoter/customer
 
-- **View details** — email, phone, role, created date, last sign-in, membership number if any.
-- **Reset password (email link)** — sends the standard password recovery email to the user's inbox.
-- **Generate temporary password** — server generates a strong random password, updates the user via Auth Admin API, and displays it once in a copy-to-clipboard dialog with a "user must change on next login" note.
-- **Revoke access** — signs the user out of all sessions and disables sign-in by banning the account (Auth Admin `ban_duration`), reversible via "Restore access".
-- **Remove user** — hard delete via Auth Admin API (cascades to profile/roles). Confirmation dialog; blocked when the target is the last admin.
+- Add "View profile" action on `/admin/users` and `/admin/approvals` rows → opens a full profile drawer.
+- Drawer has two modes: **View** (read-only, all fields incl. Aadhaar + document previews via signed URL) and **Edit** (admin can correct any field the user entered wrong).
+- Editable fields: full name, email, phone, address (line1/2, city, state, postal code, country), Aadhaar number, referred-by promoter, role.
+- Every save writes a diff entry to `admin_audit_log` (`profile.edited_by_admin`, `changed_fields`, before/after).
+- Aadhaar edits are gated by a second confirmation dialog + reason field.
 
-Every action is written to `admin_audit_log` with actor, target, action, and reason (min 5 chars, matching the existing pattern).
+## 2. Draws — "New draw" option for admins
 
-### 2. Site Appearance (`/admin/site-settings`)
+- Add a **Create draw** button on `/admin/lucky-draw` opening a dialog with:
+  name, prize, mode (automated/manual), plan (optional), opens_at / closes_at / draw_at, winners_count, requires_active_membership.
+- Zod-validated in `src/lib/draws.functions.ts` (`adminCreateDraw`, admin-only).
+- After creation the list refreshes; if mode=automated the existing enrollment trigger fires.
+- Also add a **Draw result now** button on each open/closed draw row (wraps `admin_pick_draw_winners_manual`).
 
-A new `site_settings` singleton row storing:
+## 3. Preferences — advanced options
 
-- Brand name, tagline, support email/phone.
-- Primary, secondary, accent color (HSL triplets that map to existing CSS tokens).
-- Heading font and body font (choose from a curated Google Fonts list).
-- Logo URL, favicon URL.
-- Footer text.
+Extend `/settings` and `user_ui_prefs` with:
+- **Appearance**: theme (system/light/dark), density (comfortable/compact — already there), accent color.
+- **Notifications**: email on KYC decisions, email on payment reminders, in-app toast duration.
+- **Data & privacy**: default table page size (10/25/50/100), CSV date format, timezone override.
+- **Admin-only** (rendered only when `has_role admin`): default polling interval for ledgers, default reminder-window (days), enable dev/debug panels, sticky filters across sessions, dashboard hero widgets toggle.
 
-The admin form previews changes live. On save, values are persisted to the DB and exposed to every page via a `SiteSettingsProvider` that:
+Migration adds new JSONB columns/keys to `user_ui_prefs`; existing hook `useSyncUiPrefsWithServer` extended, no breaking change.
 
-- Reads settings once on app mount (public read via anon SELECT policy — these are non-sensitive branding values).
-- Applies colors by writing CSS custom properties onto `:root` at runtime.
-- Loads the selected Google Fonts via a `<link>` in the root head.
-- Provides `useSiteSettings()` to any component that needs the brand name, logo, or footer.
+## 4. Plan deletion — cleaner code, only truly removable
 
-### 3. Sidebar & Route Wiring
+- Consolidate `deletePlan` logic in `src/lib/plans.functions.ts` behind a single guard: block if ANY membership (any status) references the plan; use the existing `prevent_plan_delete_with_memberships` trigger + a new `plan_is_deletable(_id)` RPC that returns `{deletable, blocking_memberships_count, active_count}`.
+- `/admin/plans` shows a small chip on each row (Deletable / N memberships blocking) and disables the delete button with a tooltip when blocked.
+- The `AlertDialog` copy now names the exact blocker count returned by the RPC (no more generic errors).
 
-Add "Users" and "Site settings" entries to the admin section of `AppSidebar`. Both routes live under `_authenticated/admin/` so the existing admin gate + bearer middleware apply.
+## 5. Users section — real, tabbed table
 
-### 4. Guardrails
+Right now `/admin/users` renders empty. Replace with:
+- **Tabs**: All | Customers | Promoters | Admins.
+- **Columns**: Display ID (see §6/§7), Name, Email, Phone, Role, KYC status, Registered on, Membership # (if any), Actions (View profile).
+- Server-side search, sort by registered date, pagination (respecting new "default page size" pref from §3).
+- Backed by extended `admin_list_users` RPC (adds `customer_display_id`, `promoter_display_id`, `kyc_status`).
 
-- Password generation and user deletion require the caller be admin (server-side `has_role` check) and additionally require the caller not to be deleting/banning themselves.
-- Last-admin protection reused from the roles module.
-- Generated passwords never persist in logs — the audit entry only records that a rotation happened.
-- Site-settings writes are admin-only; reads are public (anon SELECT), same pattern as marketing content.
+## 6. Customer sequential IDs (start at 1001, continuous)
 
-## Technical notes
+- New table `public.customer_ids (user_id UUID PK, display_id INT UNIQUE, assigned_at)` with a Postgres SEQUENCE starting at **1001**.
+- Trigger on `user_roles` insert: when `role='customer'` and no id yet, allocate next sequence value. Backfill migration assigns IDs to existing customers ordered by `profiles.created_at` (deterministic, gap-free from 1001).
+- Sequence guarantees continuous, non-recyclable integers; deletion doesn't reuse ids (documented).
+- Surface `CUST-01001` style label in the users table, customer dashboard, KYC card.
 
-**Database**
+## 7. Promoter 5-digit IDs + referral links
 
-- New `public.site_settings` table (singleton, id = fixed uuid). Public SELECT to `anon`+`authenticated`; INSERT/UPDATE limited to admins via RLS.
-- Extend `admin_audit_log.action` usage with new values: `user.password_reset_email`, `user.password_generated`, `user.revoked`, `user.restored`, `user.deleted`.
-- New RPC `admin_list_users()` — SECURITY DEFINER, admin-gated — returns joined `auth.users` + `profiles` + roles data safely.
-- New RPC `count_admins()` helper for last-admin protection.
+- New table `public.promoter_ids (user_id UUID PK, display_id CHAR(5) UNIQUE, referral_code TEXT UNIQUE, assigned_at)`.
+- On promotion to `promoter`: allocate a random 5-digit id (10000–99999, retry on collision) and a URL-safe `referral_code` (10 chars).
+- Referral link: `${site.origin}/auth?ref={referral_code}` — copyable from `/promoter/dashboard` and `/promoter/referrals`, and shown in admin's promoter profile drawer.
 
-**Server functions** (`src/lib/user-admin.functions.ts`, `src/lib/site-settings.functions.ts`)
+## 8. Referral link → onboarding flow
 
-- `listUsers`, `sendPasswordResetEmail`, `generateTemporaryPassword`, `setUserBan`, `deleteUser` — all gated with `assertAdmin`, all use `supabaseAdmin` loaded inside the handler for Auth Admin API access.
-- `getSiteSettings` (public), `updateSiteSettings` (admin-only).
+- `/auth` reads `?ref=` → stores it in `sessionStorage` before OAuth/email signup.
+- New RPC `apply_referral_code(_code)` runs post-sign-in: sets `profiles.referred_by_promoter_id` if still NULL, writes `admin_audit_log` entry `customer.referral_applied` with source=`link`.
+- Ignores invalid/expired codes silently; never overrides an existing referrer (matches existing `guard_profile_referrer` trigger).
 
-**Frontend**
+## 9. Referral visibility
 
-- `src/routes/_authenticated/admin/users.tsx` — table, search, action dialogs, "show password once" modal.
-- `src/routes/_authenticated/admin/site-settings.tsx` — themed form with live preview panel.
-- `src/components/providers/SiteSettingsProvider.tsx` — mounts in `__root.tsx`, applies CSS vars and font links.
-- Extend `src/components/layout/AppSidebar.tsx` with the two new items.
+- **Promoter portal** (`/promoter/referrals`, existing page): add "Copy referral link" button + stat card (Total referred, Approved, Pending KYC, This month).
+- **Admin portal**: new `/admin/referrals` page listing every referral (promoter → customer, joined_via link/manual, KYC status, membership #, date). Filter by promoter. CSV export.
 
-**Out of scope for this pass**
+---
 
-- Bulk user CSV import/export (already exists for memberships).
-- Per-page layout customization beyond the global brand tokens.
-- Rich-text footer or CMS pages.
+## Technical details
+
+**Migrations (single approval, ordered):**
+1. `customer_ids` + sequence starting 1001 + backfill + assignment trigger.
+2. `promoter_ids` + assignment trigger + referral code generator (base62, unique).
+3. `user_ui_prefs` JSON schema extension (new keys are opt-in defaults, no breaking change).
+4. RPCs: `plan_is_deletable`, `apply_referral_code`, extended `admin_list_users`, `admin_update_profile` (SECURITY DEFINER, admin-only, writes audit log).
+
+**Server functions (`src/lib/*.functions.ts`):**
+- `admin.functions.ts` — `adminUpdateProfile`, `adminGetProfile`.
+- `draws.functions.ts` — `adminCreateDraw`, existing pick-winners already wired.
+- `plans.functions.ts` — `getPlanDeletability`, wraps RPC.
+- `referrals.functions.ts` (new) — `applyReferralCode`, `listMyReferrals` (promoter), `adminListReferrals`.
+
+**UI:**
+- New drawer `src/components/admin/UserProfileDrawer.tsx` (view + edit modes, react-hook-form + zod).
+- New dialog `src/components/admin/CreateDrawDialog.tsx`.
+- `src/routes/admin/users.tsx` rebuilt with Tabs + DataTable.
+- `src/routes/admin/referrals.tsx` new.
+- `src/routes/settings.tsx` new sections; admin-only block gated by `has_role`.
+
+**Tests (Vitest, matching existing patterns):**
+- `tests/admin-update-profile-audit.test.ts` — audit log diff + Aadhaar-edit guard.
+- `tests/customer-display-id-sequence.test.ts` — starts at 1001, continuous, no reuse.
+- `tests/promoter-referral-code.test.ts` — uniqueness, 5-digit id, `apply_referral_code` idempotency + no-overwrite.
+- `tests/admin-create-draw.test.ts` — admin-only, valid inputs, auto-enrollment fires.
+- `tests/plan-deletability.test.ts` — blocked when memberships exist, allowed otherwise.
+
+**Security:** every new RPC is `SECURITY DEFINER` with explicit `has_role(auth.uid(), 'admin')` gate (or promoter-owner gate for referral queries). No new anon grants. All profile edits audit-logged.
+
+---
+
+## Out of scope (say if you want them in)
+
+- Public "signup with referral" landing page redesign.
+- Bulk edit / CSV import of profiles.
+- Referral rewards / commissions.
+- Rotating a promoter's referral code (can add on request).
