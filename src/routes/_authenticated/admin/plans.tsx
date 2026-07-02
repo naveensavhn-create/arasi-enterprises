@@ -33,6 +33,67 @@ import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 import { deletePlanAudited } from "@/lib/plans.functions";
 import { BLOCKING_STATUSES, computePlanUsage, usageFor } from "@/lib/plans-precheck";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+
+const planFormSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Plan name is required")
+      .max(100, "Plan name must be 100 characters or fewer"),
+    description: z
+      .string()
+      .trim()
+      .max(500, "Description must be 500 characters or fewer")
+      .optional()
+      .or(z.literal("")),
+    has_advance: z.boolean(),
+    advance_amount: z.string(),
+    monthly_installment: z
+      .string()
+      .refine((v) => v.trim() !== "" && !Number.isNaN(Number(v)), "Enter a valid amount")
+      .refine((v) => Number(v) >= 0, "Monthly installment cannot be negative"),
+    duration_months: z
+      .string()
+      .refine((v) => v.trim() !== "" && Number.isInteger(Number(v)), "Enter a whole number of months")
+      .refine((v) => Number(v) >= 1, "Duration must be at least 1 month")
+      .refine((v) => Number(v) <= 120, "Duration cannot exceed 120 months"),
+    benefits: z.string().max(2000, "Benefits text is too long").optional().or(z.literal("")),
+    is_active: z.boolean(),
+    display_order: z
+      .string()
+      .refine((v) => v.trim() !== "" && Number.isInteger(Number(v)), "Display order must be a whole number")
+      .refine((v) => Number(v) >= 0, "Display order cannot be negative"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.has_advance) {
+      const n = Number(data.advance_amount);
+      if (data.advance_amount.trim() === "" || Number.isNaN(n)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["advance_amount"],
+          message: "Enter a valid advance amount",
+        });
+      } else if (n <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["advance_amount"],
+          message: "Advance must be greater than 0 (or turn off the advance requirement)",
+        });
+      }
+    }
+    const advance = data.has_advance ? Number(data.advance_amount || 0) : 0;
+    const monthly = Number(data.monthly_installment || 0);
+    const months = Number(data.duration_months || 0);
+    if (advance + monthly * months <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["monthly_installment"],
+        message: "Plan total must be greater than 0",
+      });
+    }
+  });
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
