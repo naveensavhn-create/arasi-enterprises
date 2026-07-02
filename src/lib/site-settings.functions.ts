@@ -49,6 +49,28 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(
 
 const hslTriplet = /^\d{1,3}\s+\d{1,3}%\s+\d{1,3}%$/;
 
+const cronExpression = z
+  .string()
+  .trim()
+  .min(1, "Required")
+  .max(120)
+  .regex(/^[0-9*\-,/\s]+$/, "Only digits, spaces and * , - / are allowed")
+  .refine(
+    (v) => v.trim().split(/\s+/).length === 5,
+    "Must be a 5-field cron expression (min hour dom mon dow)",
+  );
+
+// IANA timezone names: Continent/City, plus a few single-segment ones (UTC, GMT).
+const ianaTimezone = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .regex(
+    /^[A-Za-z][A-Za-z0-9+\-]*(?:\/[A-Za-z0-9_+\-]+){0,2}$/,
+    "Use an IANA timezone name, e.g. Asia/Kolkata",
+  );
+
 const updateSchema = z.object({
   brand_name: z.string().trim().min(1).max(120),
   tagline: z.string().trim().max(200).nullable().optional(),
@@ -62,7 +84,10 @@ const updateSchema = z.object({
   logo_url: z.string().trim().url().max(500).nullable().or(z.literal("")).optional(),
   favicon_url: z.string().trim().url().max(500).nullable().or(z.literal("")).optional(),
   footer_text: z.string().trim().max(500).nullable().optional(),
+  reminder_cron_schedule: cronExpression.default(DEFAULT_REMINDER_CRON_SCHEDULE),
+  reminder_cron_timezone: ianaTimezone.default(DEFAULT_REMINDER_CRON_TIMEZONE),
 });
+
 
 export const updateSiteSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
