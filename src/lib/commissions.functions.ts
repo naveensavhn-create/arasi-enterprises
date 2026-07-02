@@ -349,18 +349,12 @@ export const listMyIncentives = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
-export const generateMonthlyIncentives = createServerFn({ method: "POST" })
+export const generateRankIncentives = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i: unknown) =>
-    z.object({ year: z.number().int().min(2024).max(2100), month: z.number().int().min(1).max(12) }).parse(i),
-  )
-  .handler(async ({ data, context }) => {
-    const { data: count, error } = await context.supabase.rpc("admin_generate_monthly_incentives", {
-      _year: data.year,
-      _month: data.month,
-    });
+  .handler(async ({ context }) => {
+    const { data: count, error } = await context.supabase.rpc("admin_generate_rank_incentives");
     if (error) throw new Error(error.message);
-    return { generated: count as number };
+    return { generated: (count as number) ?? 0 };
   });
 
 export const updateIncentiveStatus = createServerFn({ method: "POST" })
