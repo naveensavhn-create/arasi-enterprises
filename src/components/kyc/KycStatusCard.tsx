@@ -56,7 +56,7 @@ const COPY = {
   },
 } as const;
 
-const ROLE_LABEL: Record<NonNullable<KycProfile["role"]>, string> = {
+export const ROLE_LABEL: Record<NonNullable<KycProfile["role"]>, string> = {
   admin: "Administrator",
   promoter: "Promoter",
   customer: "Customer",
