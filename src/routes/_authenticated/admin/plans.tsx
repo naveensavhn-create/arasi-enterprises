@@ -147,6 +147,7 @@ function AdminPlansPage() {
   const [editing, setEditing] = useState<Plan | null>(null);
   const [form, setForm] = useState<FormState>(empty);
   const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null);
+  const [confirmToggle, setConfirmToggle] = useState<Plan | null>(null);
   const [historyPlan, setHistoryPlan] = useState<Plan | null>(null);
   const [showErrors, setShowErrors] = useState(false);
   const [search, setSearch] = useState("");
