@@ -80,7 +80,11 @@ export const listKycEmailNotifications = createServerFn({ method: "GET" })
     if (data.decision) q = q.eq("decision", data.decision);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return (rows ?? []) as unknown as KycEmailNotification[];
+    return ((rows ?? []) as Array<Record<string, unknown>>).map((r) => ({
+      ...(r as unknown as Omit<KycEmailNotification, "attempts_log" | "metadata">),
+      attempts_log: JSON.stringify(r.attempts_log ?? []),
+      metadata: JSON.stringify(r.metadata ?? {}),
+    })) as KycEmailNotification[];
   });
 
 export const retryKycEmailNotification = createServerFn({ method: "POST" })
