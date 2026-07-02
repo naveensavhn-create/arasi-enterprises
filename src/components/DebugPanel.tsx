@@ -114,7 +114,7 @@ export function DebugPanel() {
     };
   }, [enabled]);
 
-  if (!enabled) return null;
+  if (!mounted || !enabled) return null;
 
   const badgeColor =
     entries.length === 0
