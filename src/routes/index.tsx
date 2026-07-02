@@ -315,16 +315,16 @@ function Landing() {
                 key={b.title}
                 className="flex h-full flex-col border border-[#C5A059]/15 bg-[#0F172A]/30 p-6 backdrop-blur-sm"
               >
-                <div className="text-[#C5A059]">
+                <div className="text-[#C5A059]" aria-hidden>
                   <b.icon className="h-6 w-6" strokeWidth={1.25} />
                 </div>
-                <h4
+                <h3
                   className="mt-4 text-base font-semibold text-white"
                   style={serif}
                 >
                   {b.title}
-                </h4>
-                <p className="mt-3 text-[13px] leading-relaxed text-white/55">
+                </h3>
+                <p className="mt-3 text-[13px] leading-relaxed text-white/80">
                   {b.body}
                 </p>
               </div>
@@ -332,7 +332,7 @@ function Landing() {
           </div>
 
           {/* Assurance note */}
-          <p className="mx-auto mt-10 max-w-3xl text-center text-xs leading-relaxed text-white/45">
+          <p className="mx-auto mt-10 max-w-3xl text-center text-xs leading-relaxed text-white/75">
             Arasi Enterprises is a membership-based advance booking programme.
             It is not an investment scheme and does not promise returns, profit
             sharing or guaranteed income of any kind. Entitlements and member
