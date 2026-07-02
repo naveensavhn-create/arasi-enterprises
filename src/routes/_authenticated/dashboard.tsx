@@ -3,6 +3,7 @@ import { Users, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
 import { useSession, useCurrentRole } from "@/lib/auth";
 import { CustomerDashboardBody } from "@/components/customer/CustomerDashboardBody";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
+import { NextDrawCard } from "@/components/dashboard/NextDrawCard";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -68,11 +69,18 @@ function Dashboard() {
         <KycStatusCard />
       </div>
 
+      {role === "promoter" && (
+        <div className="mt-8">
+          <NextDrawCard ctaTo="/promoter/lucky-draw" />
+        </div>
+      )}
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <PlaceholderCard title="Memberships" body="Coming in the next module." />
         <PlaceholderCard title="Payments" body="Razorpay integration lands next." />
         <PlaceholderCard title="Rewards & Lucky Draw" body="Wired after payments." />
       </div>
+
 
 
       <div className="mt-8 rounded-xl border border-dashed border-border bg-card p-6">

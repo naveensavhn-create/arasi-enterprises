@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
+import { NextDrawCard } from "@/components/dashboard/NextDrawCard";
 
 
 
@@ -387,6 +388,9 @@ export function CustomerDashboardBody() {
         </div>
       )}
 
+
+      {/* Lucky draw status */}
+      <NextDrawCard ctaTo="/customer/lucky-draw" />
 
       {/* Quick actions */}
       <Card>
