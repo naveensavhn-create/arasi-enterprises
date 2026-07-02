@@ -14,6 +14,7 @@ import MembershipActivated, {
 } from "@/lib/email-templates/membership-activated";
 import { brand } from "@/lib/email-templates/_shared";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loadBrandOverrides } from "@/lib/email/load-brand.server";
 
 export interface SendMembershipActivatedInput {
   membershipId: string;
