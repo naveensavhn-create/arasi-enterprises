@@ -31,18 +31,19 @@ vi.mock("sonner", () => {
 // getProfile and updateProfile resolve without a real backend.
 const mockUpdate = vi.fn(async () => ({ ok: true as const }));
 let mockProfile: AdminProfileDetail | null = null;
-vi.mock("@tanstack/react-start", () => ({
-  useServerFn: (fn: unknown) => {
-    // adminUpdateProfile — identify by having .middleware chain (any function)
-    // We just return two distinct wrappers based on call order below via closure.
-    return (args?: { data?: unknown }) => {
+vi.mock("@tanstack/react-start", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-start")>();
+  return {
+    ...actual,
+    useServerFn: (fn: unknown) => (args?: { data?: unknown }) => {
       if (fn && (fn as { __kind?: string }).__kind === "update") {
         return mockUpdate(args);
       }
       return Promise.resolve(mockProfile);
-    };
-  },
-}));
+    },
+  };
+});
+
 
 vi.mock("@/lib/user-profile.functions", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/user-profile.functions")>();
