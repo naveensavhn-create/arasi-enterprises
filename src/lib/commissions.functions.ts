@@ -343,8 +343,7 @@ export const listMyIncentives = createServerFn({ method: "GET" })
       .from("promoter_incentives")
       .select("*")
       .eq("promoter_id", context.userId)
-      .order("period_year", { ascending: false })
-      .order("period_month", { ascending: false });
+      .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
