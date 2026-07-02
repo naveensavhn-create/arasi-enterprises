@@ -38,12 +38,17 @@ import { Route } from "@/routes/_authenticated/customer/referrals";
 // `Route` here is the options object returned by our mocked createFileRoute.
 const CustomerReferralsPage = (Route as unknown as { component: () => JSX.Element }).component;
 
+const writeText = vi.fn(async () => undefined);
+Object.defineProperty(navigator, "clipboard", {
+  configurable: true,
+  value: { writeText },
+});
+
 beforeEach(() => {
   successToast.mockClear();
   errorToast.mockClear();
-  Object.assign(navigator, {
-    clipboard: { writeText: vi.fn(async () => undefined) },
-  });
+  writeText.mockReset();
+  writeText.mockResolvedValue(undefined);
 });
 
 afterEach(() => cleanup());
