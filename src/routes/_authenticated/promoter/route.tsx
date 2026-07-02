@@ -31,5 +31,5 @@ export const Route = createFileRoute("/_authenticated/promoter")({
       </div>
     );
   },
-  component: () => <Outlet />,
+  component: PromoterLayout,
 });
