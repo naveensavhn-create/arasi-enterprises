@@ -406,6 +406,54 @@ export type Database = {
         }
         Relationships: []
       }
+      impersonation_sessions: {
+        Row: {
+          admin_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          ip_address: string | null
+          mode: string
+          reason: string | null
+          session_token: string
+          started_at: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          ip_address?: string | null
+          mode?: string
+          reason?: string | null
+          session_token?: string
+          started_at?: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          ended_at?: string | null
+          id?: string
+          ip_address?: string | null
+          mode?: string
+          reason?: string | null
+          session_token?: string
+          started_at?: string
+          target_role?: Database["public"]["Enums"]["app_role"]
+          target_user_id?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       installments: {
         Row: {
           amount: number
@@ -2206,6 +2254,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_user_snapshot: { Args: { _user_id: string }; Returns: Json }
       admin_void_receipt: {
         Args: { _reason: string; _receipt_id: string }
         Returns: {
@@ -2363,6 +2412,30 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      end_impersonation: {
+        Args: never
+        Returns: {
+          admin_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          ip_address: string | null
+          mode: string
+          reason: string | null
+          session_token: string
+          started_at: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+          updated_at: string
+          user_agent: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "impersonation_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       finalize_kyc_email_job: {
         Args: {
           _error_code?: string
@@ -2458,6 +2531,22 @@ export type Database = {
         }
       }
       generate_receipt_number: { Args: never; Returns: string }
+      get_active_impersonation: {
+        Args: never
+        Returns: {
+          id: string
+          mode: string
+          reason: string
+          started_at: string
+          target_customer_display_id: number
+          target_email: string
+          target_full_name: string
+          target_membership_number: string
+          target_promoter_display_id: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+        }[]
+      }
       get_active_reminder_template: {
         Args: {
           _channel: Database["public"]["Enums"]["reminder_channel"]
@@ -2492,6 +2581,23 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      list_impersonation_history: {
+        Args: { _limit?: number; _offset?: number }
+        Returns: {
+          admin_email: string
+          admin_id: string
+          ended_at: string
+          id: string
+          ip_address: string
+          mode: string
+          reason: string
+          started_at: string
+          target_email: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+          user_agent: string
+        }[]
       }
       mark_all_notifications_read: { Args: never; Returns: undefined }
       mark_installment_paid: {
@@ -2658,6 +2764,36 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "kyc_email_notifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      start_impersonation: {
+        Args: {
+          _ip?: string
+          _mode?: string
+          _reason?: string
+          _target_user_id: string
+          _user_agent?: string
+        }
+        Returns: {
+          admin_id: string
+          created_at: string
+          ended_at: string | null
+          id: string
+          ip_address: string | null
+          mode: string
+          reason: string | null
+          session_token: string
+          started_at: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          target_user_id: string
+          updated_at: string
+          user_agent: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "impersonation_sessions"
           isOneToOne: true
           isSetofReturn: false
         }

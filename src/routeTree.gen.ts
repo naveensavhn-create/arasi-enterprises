@@ -72,6 +72,7 @@ import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/ap
 import { Route as ApiPublicHooksProcessPaymentRemindersRouteImport } from './routes/api/public/hooks/process-payment-reminders'
 import { Route as ApiPublicHooksProcessExportJobsRouteImport } from './routes/api/public/hooks/process-export-jobs'
 import { Route as ApiPublicHooksEnqueuePaymentRemindersRouteImport } from './routes/api/public/hooks/enqueue-payment-reminders'
+import { Route as AuthenticatedAdminViewAsUserIdRouteImport } from './routes/_authenticated/admin/view-as.$userId'
 import { Route as ApiAdminDrawsDrawIdPickRouteImport } from './routes/api/admin/draws.$drawId.pick'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -437,6 +438,12 @@ const ApiPublicHooksEnqueuePaymentRemindersRoute =
     path: '/api/public/hooks/enqueue-payment-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAdminViewAsUserIdRoute =
+  AuthenticatedAdminViewAsUserIdRouteImport.update({
+    id: '/view-as/$userId',
+    path: '/view-as/$userId',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const ApiAdminDrawsDrawIdPickRoute = ApiAdminDrawsDrawIdPickRouteImport.update({
   id: '/api/admin/draws/$drawId/pick',
   path: '/api/admin/draws/$drawId/pick',
@@ -501,6 +508,7 @@ export interface FileRoutesByFullPath {
   '/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/reward-certificate/$rewardId': typeof AuthenticatedRewardCertificateRewardIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/admin/view-as/$userId': typeof AuthenticatedAdminViewAsUserIdRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
@@ -565,6 +573,7 @@ export interface FileRoutesByTo {
   '/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/reward-certificate/$rewardId': typeof AuthenticatedRewardCertificateRewardIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/admin/view-as/$userId': typeof AuthenticatedAdminViewAsUserIdRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
@@ -632,6 +641,7 @@ export interface FileRoutesById {
   '/_authenticated/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/_authenticated/reward-certificate/$rewardId': typeof AuthenticatedRewardCertificateRewardIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/admin/view-as/$userId': typeof AuthenticatedAdminViewAsUserIdRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
@@ -699,6 +709,7 @@ export interface FileRouteTypes {
     | '/receipts/$receiptNumber'
     | '/reward-certificate/$rewardId'
     | '/admin/'
+    | '/admin/view-as/$userId'
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
@@ -763,6 +774,7 @@ export interface FileRouteTypes {
     | '/receipts/$receiptNumber'
     | '/reward-certificate/$rewardId'
     | '/admin'
+    | '/admin/view-as/$userId'
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
@@ -829,6 +841,7 @@ export interface FileRouteTypes {
     | '/_authenticated/receipts/$receiptNumber'
     | '/_authenticated/reward-certificate/$rewardId'
     | '/_authenticated/admin/'
+    | '/_authenticated/admin/view-as/$userId'
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
@@ -1293,6 +1306,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEnqueuePaymentRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/view-as/$userId': {
+      id: '/_authenticated/admin/view-as/$userId'
+      path: '/view-as/$userId'
+      fullPath: '/admin/view-as/$userId'
+      preLoaderRoute: typeof AuthenticatedAdminViewAsUserIdRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/api/admin/draws/$drawId/pick': {
       id: '/api/admin/draws/$drawId/pick'
       path: '/api/admin/draws/$drawId/pick'
@@ -1334,6 +1354,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSiteSettingsRoute: typeof AuthenticatedAdminSiteSettingsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
+  AuthenticatedAdminViewAsUserIdRoute: typeof AuthenticatedAdminViewAsUserIdRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
@@ -1370,6 +1391,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminSiteSettingsRoute: AuthenticatedAdminSiteSettingsRoute,
     AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
+    AuthenticatedAdminViewAsUserIdRoute: AuthenticatedAdminViewAsUserIdRoute,
   }
 
 const AuthenticatedAdminRouteRouteWithChildren =

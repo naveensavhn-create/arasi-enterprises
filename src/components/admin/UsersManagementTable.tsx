@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 import {
   KeyRound,
   Mail,
@@ -16,6 +17,7 @@ import {
   Link2,
   UserCheck,
   UserX,
+  UserCog,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -311,6 +313,21 @@ export function UsersManagementTable({
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
+                            {u.role && u.role !== "admin" && (
+                              <Button
+                                asChild
+                                size="icon"
+                                variant="ghost"
+                                title={u.role === "promoter" ? "View promoter portal" : "View customer portal"}
+                              >
+                                <Link
+                                  to="/admin/view-as/$userId"
+                                  params={{ userId: u.id }}
+                                >
+                                  <UserCog className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            )}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="icon" variant="ghost">
@@ -321,6 +338,14 @@ export function UsersManagementTable({
                                 <DropdownMenuItem onClick={() => setViewUserId(u.id)}>
                                   <Eye className="mr-2 h-4 w-4" /> View / edit profile
                                 </DropdownMenuItem>
+                                {u.role && u.role !== "admin" && (
+                                  <DropdownMenuItem asChild>
+                                    <Link to="/admin/view-as/$userId" params={{ userId: u.id }}>
+                                      <UserCog className="mr-2 h-4 w-4" />
+                                      {u.role === "promoter" ? "View promoter portal" : "View customer portal"}
+                                    </Link>
+                                  </DropdownMenuItem>
+                                )}
                                 <DropdownMenuSeparator />
                                 {u.role !== "admin" && canApprove && (
                                   <DropdownMenuItem onClick={() => setAction({ kind: "approve", user: u })}>
