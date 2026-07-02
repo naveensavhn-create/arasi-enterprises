@@ -116,10 +116,10 @@ function PromoterLuckyDrawPage() {
                       {d.requires_active_membership ? " · Active membership required" : ""}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-3">
-                    <div><span className="font-medium text-foreground">Opens:</span> {fmt(d.opens_at)}</div>
-                    <div><span className="font-medium text-foreground">Closes:</span> {fmt(d.closes_at)}</div>
-                    <div><span className="font-medium text-foreground">Draw date:</span> {fmt(d.draw_at)}</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <DrawTimeBadge kind="opens" iso={d.opens_at} showRelative />
+                    <DrawTimeBadge kind="closes" iso={d.closes_at} showRelative />
+                    <DrawTimeBadge kind="draw" iso={d.draw_at} showRelative />
                   </div>
                 </CardContent>
               </Card>
