@@ -888,8 +888,10 @@ function AdminPlansPage() {
           </CardContent>
         </Card>
       ) : (
+        <>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredPlans.map((p) => {
+          {pagedPlans.map((p) => {
+
             const enrolled = usageForPlan(p.id);
             const noAdvance = Number(p.advance_amount) <= 0;
             return (
