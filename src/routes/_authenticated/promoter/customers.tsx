@@ -196,16 +196,39 @@ function PromoterCustomersPage() {
     onError: (e: any) => toast.error(e?.message ?? "Failed to register customer"),
   });
 
+  // Per-customer submission error surfaced inline (in addition to a toast).
+  const [submitErrors, setSubmitErrors] = useState<Record<string, string>>({});
+
   const submitMut = useMutation({
     mutationFn: (v: { userId: string; note: string | null }) =>
       submitFn({ data: v } as any),
+    onMutate: (v) => {
+      setSubmitErrors((prev) => {
+        if (!(v.userId in prev)) return prev;
+        const next = { ...prev };
+        delete next[v.userId];
+        return next;
+      });
+    },
     onSuccess: () => {
       toast.success("Submitted to admin for review");
       qc.invalidateQueries({ queryKey: ["promoter-referred-customers"] });
       setSelected(null);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't submit for review"),
+    onError: (e: any, v) => {
+      const msg = e?.message?.trim() || "Couldn't submit for review";
+      toast.error(msg);
+      setSubmitErrors((prev) => ({ ...prev, [v.userId]: msg }));
+    },
   });
+
+  const clearSubmitError = (userId: string) =>
+    setSubmitErrors((prev) => {
+      if (!(userId in prev)) return prev;
+      const next = { ...prev };
+      delete next[userId];
+      return next;
+    });
 
   const rows = filtered;
   const total = listQ.data?.length ?? 0;
