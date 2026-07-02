@@ -10,6 +10,7 @@ import {
   getUnreadNotificationCount,
   markNotificationRead,
   markAllNotificationsRead,
+  type NotificationRow,
 } from "@/lib/notifications.functions";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -96,7 +97,7 @@ export function NotificationBell() {
   });
 
   const unread = countQ.data?.count ?? 0;
-  const items = listQ.data ?? [];
+  const items: NotificationRow[] = (listQ.data as NotificationRow[] | undefined) ?? [];
 
   return (
     <Popover>
