@@ -22,6 +22,7 @@ import { useSession, portalToRole, type AppRole } from "@/lib/auth";
 const searchSchema = z.object({
   portal: z.enum(["customer", "promoter", "admin"]).catch("customer"),
   mode: z.enum(["signin", "signup", "forgot"]).optional(),
+  ref: z.string().trim().min(4).max(32).optional(),
 });
 
 export const Route = createFileRoute("/auth")({
