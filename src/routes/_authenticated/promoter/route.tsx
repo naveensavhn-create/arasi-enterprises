@@ -1,6 +1,17 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { getMyRole } from "@/lib/roles.functions";
 import { Forbidden, ForbiddenError } from "@/components/access/Forbidden";
+import { useDrawRealtime } from "@/hooks/use-draw-realtime";
+
+function PromoterLayout() {
+  useDrawRealtime({
+    queryKeys: [
+      ["dashboard", "next-draw"],
+      ["promoter", "lucky-draw"],
+    ],
+  });
+  return <Outlet />;
+}
 
 export const Route = createFileRoute("/_authenticated/promoter")({
   beforeLoad: async () => {
@@ -20,5 +31,5 @@ export const Route = createFileRoute("/_authenticated/promoter")({
       </div>
     );
   },
-  component: () => <Outlet />,
+  component: PromoterLayout,
 });

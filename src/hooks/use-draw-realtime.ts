@@ -45,11 +45,38 @@ export function useDrawRealtime(opts: {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "draws" },
+        (payload) => {
+          const name = (payload.new as { name?: string } | null)?.name;
+          const status = (payload.new as { status?: string } | null)?.status;
+          if (toastOnComplete && status !== "completed") {
+            toast("New lucky draw available", {
+              description: name ? `${name} is now live. Check it out!` : "A new draw was just created.",
+            });
+          }
+          invalidate();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "draw_winners" },
+        (payload) => {
+          if (toastOnComplete) {
+            const pos = (payload.new as { position?: number } | null)?.position;
+            toast.success("Winner announced!", {
+              description: pos ? `Position #${pos} has been drawn.` : "A winner was just picked.",
+            });
+          }
+          invalidate();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "draw_winners" },
         () => invalidate(),
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "draw_winners" },
+        { event: "DELETE", schema: "public", table: "draw_winners" },
         () => invalidate(),
       )
       .subscribe();
