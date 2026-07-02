@@ -69,6 +69,7 @@ import { Route as AuthenticatedAdminAuditLogRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminApprovalsRouteImport } from './routes/_authenticated/admin/approvals'
 import { Route as AuthenticatedAdminSplatRouteImport } from './routes/_authenticated/admin/$'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
+import { Route as ApiPublicHooksRunReconciliationRouteImport } from './routes/api/public/hooks/run-reconciliation'
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
 import { Route as ApiPublicHooksProcessRewardNotificationsRouteImport } from './routes/api/public/hooks/process-reward-notifications'
 import { Route as ApiPublicHooksProcessPaymentRemindersRouteImport } from './routes/api/public/hooks/process-payment-reminders'
@@ -423,6 +424,12 @@ const ApiPublicRazorpayWebhookRoute =
     path: '/api/public/razorpay/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRunReconciliationRoute =
+  ApiPublicHooksRunReconciliationRouteImport.update({
+    id: '/api/public/hooks/run-reconciliation',
+    path: '/api/public/hooks/run-reconciliation',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksReconcilePaymentsRoute =
   ApiPublicHooksReconcilePaymentsRouteImport.update({
     id: '/api/public/hooks/reconcile-payments',
@@ -537,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/process-reward-notifications': typeof ApiPublicHooksProcessRewardNotificationsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
+  '/api/public/hooks/run-reconciliation': typeof ApiPublicHooksRunReconciliationRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
 }
@@ -605,6 +613,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/process-reward-notifications': typeof ApiPublicHooksProcessRewardNotificationsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
+  '/api/public/hooks/run-reconciliation': typeof ApiPublicHooksRunReconciliationRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
 }
@@ -676,6 +685,7 @@ export interface FileRoutesById {
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
   '/api/public/hooks/process-reward-notifications': typeof ApiPublicHooksProcessRewardNotificationsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
+  '/api/public/hooks/run-reconciliation': typeof ApiPublicHooksRunReconciliationRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
 }
@@ -747,6 +757,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/process-reward-notifications'
     | '/api/public/hooks/reconcile-payments'
+    | '/api/public/hooks/run-reconciliation'
     | '/api/public/razorpay/webhook'
     | '/api/admin/draws/$drawId/pick'
   fileRoutesByTo: FileRoutesByTo
@@ -815,6 +826,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/process-reward-notifications'
     | '/api/public/hooks/reconcile-payments'
+    | '/api/public/hooks/run-reconciliation'
     | '/api/public/razorpay/webhook'
     | '/api/admin/draws/$drawId/pick'
   id:
@@ -885,6 +897,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/process-payment-reminders'
     | '/api/public/hooks/process-reward-notifications'
     | '/api/public/hooks/reconcile-payments'
+    | '/api/public/hooks/run-reconciliation'
     | '/api/public/razorpay/webhook'
     | '/api/admin/draws/$drawId/pick'
   fileRoutesById: FileRoutesById
@@ -899,6 +912,7 @@ export interface RootRouteChildren {
   ApiPublicHooksProcessPaymentRemindersRoute: typeof ApiPublicHooksProcessPaymentRemindersRoute
   ApiPublicHooksProcessRewardNotificationsRoute: typeof ApiPublicHooksProcessRewardNotificationsRoute
   ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
+  ApiPublicHooksRunReconciliationRoute: typeof ApiPublicHooksRunReconciliationRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiAdminDrawsDrawIdPickRoute: typeof ApiAdminDrawsDrawIdPickRoute
 }
@@ -1325,6 +1339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRazorpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/run-reconciliation': {
+      id: '/api/public/hooks/run-reconciliation'
+      path: '/api/public/hooks/run-reconciliation'
+      fullPath: '/api/public/hooks/run-reconciliation'
+      preLoaderRoute: typeof ApiPublicHooksRunReconciliationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/reconcile-payments': {
       id: '/api/public/hooks/reconcile-payments'
       path: '/api/public/hooks/reconcile-payments'
@@ -1566,6 +1587,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksProcessRewardNotificationsRoute:
     ApiPublicHooksProcessRewardNotificationsRoute,
   ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
+  ApiPublicHooksRunReconciliationRoute: ApiPublicHooksRunReconciliationRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiAdminDrawsDrawIdPickRoute: ApiAdminDrawsDrawIdPickRoute,
 }
