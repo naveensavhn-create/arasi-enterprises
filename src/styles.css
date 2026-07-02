@@ -174,3 +174,10 @@
 :root[data-density="compact"] .density-cell {
   padding-block: 0.375rem;
 }
+
+@media print {
+  body { background: white !important; }
+  .print\:hidden, [data-sidebar], nav, header[role="banner"] { display: none !important; }
+  .print-receipt { box-shadow: none !important; margin: 0 !important; }
+  @page { margin: 12mm; }
+}
