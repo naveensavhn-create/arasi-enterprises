@@ -1401,8 +1401,8 @@ export type Database = {
           id: string
           paid_at: string | null
           paid_reference: string | null
-          period_month: number
-          period_year: number
+          period_month: number | null
+          period_year: number | null
           promoter_id: string
           rank_id: string
           remarks: string | null
@@ -1417,8 +1417,8 @@ export type Database = {
           id?: string
           paid_at?: string | null
           paid_reference?: string | null
-          period_month: number
-          period_year: number
+          period_month?: number | null
+          period_year?: number | null
           promoter_id: string
           rank_id: string
           remarks?: string | null
@@ -1433,8 +1433,8 @@ export type Database = {
           id?: string
           paid_at?: string | null
           paid_reference?: string | null
-          period_month?: number
-          period_year?: number
+          period_month?: number | null
+          period_year?: number | null
           promoter_id?: string
           rank_id?: string
           remarks?: string | null
@@ -1979,10 +1979,7 @@ export type Database = {
         Args: { _payment_id: string }
         Returns: undefined
       }
-      admin_generate_monthly_incentives: {
-        Args: { _month: number; _year: number }
-        Returns: number
-      }
+      admin_generate_rank_incentives: { Args: never; Returns: number }
       admin_list_kyc: {
         Args: { _status?: string }
         Returns: {
@@ -2185,8 +2182,8 @@ export type Database = {
           id: string
           paid_at: string | null
           paid_reference: string | null
-          period_month: number
-          period_year: number
+          period_month: number | null
+          period_year: number | null
           promoter_id: string
           rank_id: string
           remarks: string | null
