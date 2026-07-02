@@ -53,6 +53,7 @@ import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
 import { Route as AuthenticatedAdminDrawResultsRouteImport } from './routes/_authenticated/admin/draw-results'
 import { Route as AuthenticatedAdminCustomersRouteImport } from './routes/_authenticated/admin/customers'
+import { Route as AuthenticatedAdminAuditLogRouteImport } from './routes/_authenticated/admin/audit-log'
 import { Route as AuthenticatedAdminApprovalsRouteImport } from './routes/_authenticated/admin/approvals'
 import { Route as AuthenticatedAdminSplatRouteImport } from './routes/_authenticated/admin/$'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
@@ -314,6 +315,12 @@ const AuthenticatedAdminCustomersRoute =
     path: '/customers',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminAuditLogRoute =
+  AuthenticatedAdminAuditLogRouteImport.update({
+    id: '/audit-log',
+    path: '/audit-log',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminApprovalsRoute =
   AuthenticatedAdminApprovalsRouteImport.update({
     id: '/approvals',
@@ -373,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/$': typeof AuthenticatedAdminSplatRoute
   '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
+  '/admin/audit-log': typeof AuthenticatedAdminAuditLogRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
@@ -425,6 +433,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/$': typeof AuthenticatedAdminSplatRoute
   '/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
+  '/admin/audit-log': typeof AuthenticatedAdminAuditLogRoute
   '/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
@@ -480,6 +489,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/admin/$': typeof AuthenticatedAdminSplatRoute
   '/_authenticated/admin/approvals': typeof AuthenticatedAdminApprovalsRoute
+  '/_authenticated/admin/audit-log': typeof AuthenticatedAdminAuditLogRoute
   '/_authenticated/admin/customers': typeof AuthenticatedAdminCustomersRoute
   '/_authenticated/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/_authenticated/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/$'
     | '/admin/approvals'
+    | '/admin/audit-log'
     | '/admin/customers'
     | '/admin/draw-results'
     | '/admin/email-preview'
@@ -587,6 +598,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/$'
     | '/admin/approvals'
+    | '/admin/audit-log'
     | '/admin/customers'
     | '/admin/draw-results'
     | '/admin/email-preview'
@@ -641,6 +653,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/admin/$'
     | '/_authenticated/admin/approvals'
+    | '/_authenticated/admin/audit-log'
     | '/_authenticated/admin/customers'
     | '/_authenticated/admin/draw-results'
     | '/_authenticated/admin/email-preview'
@@ -1006,6 +1019,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCustomersRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/audit-log': {
+      id: '/_authenticated/admin/audit-log'
+      path: '/audit-log'
+      fullPath: '/admin/audit-log'
+      preLoaderRoute: typeof AuthenticatedAdminAuditLogRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/approvals': {
       id: '/_authenticated/admin/approvals'
       path: '/approvals'
@@ -1068,6 +1088,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSplatRoute: typeof AuthenticatedAdminSplatRoute
   AuthenticatedAdminApprovalsRoute: typeof AuthenticatedAdminApprovalsRoute
+  AuthenticatedAdminAuditLogRoute: typeof AuthenticatedAdminAuditLogRoute
   AuthenticatedAdminCustomersRoute: typeof AuthenticatedAdminCustomersRoute
   AuthenticatedAdminDrawResultsRoute: typeof AuthenticatedAdminDrawResultsRoute
   AuthenticatedAdminEmailPreviewRoute: typeof AuthenticatedAdminEmailPreviewRoute
@@ -1095,6 +1116,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
   {
     AuthenticatedAdminSplatRoute: AuthenticatedAdminSplatRoute,
     AuthenticatedAdminApprovalsRoute: AuthenticatedAdminApprovalsRoute,
+    AuthenticatedAdminAuditLogRoute: AuthenticatedAdminAuditLogRoute,
     AuthenticatedAdminCustomersRoute: AuthenticatedAdminCustomersRoute,
     AuthenticatedAdminDrawResultsRoute: AuthenticatedAdminDrawResultsRoute,
     AuthenticatedAdminEmailPreviewRoute: AuthenticatedAdminEmailPreviewRoute,
