@@ -20,6 +20,15 @@ export default defineConfig({
         "src/integrations/supabase/**",
         "src/components/ui/**",
       ],
+      // Agreed minimum coverage floor. Fails the run (and CI) if any
+      // metric drops below these thresholds. Raise deliberately — never
+      // lower without team sign-off.
+      thresholds: {
+        lines: 50,
+        statements: 50,
+        functions: 45,
+        branches: 40,
+      },
     },
   },
   resolve: {
