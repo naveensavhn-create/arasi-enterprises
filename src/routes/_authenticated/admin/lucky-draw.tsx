@@ -89,6 +89,8 @@ function AdminLuckyDrawPage() {
   const setStatus = useServerFn(setDrawStatus);
   const remove = useServerFn(deleteDraw);
   const pick = useServerFn(pickDrawWinners);
+  const setMode = useServerFn(setDrawMode);
+
 
   const { data: draws = [], isLoading } = useQuery({
     queryKey: ["admin", "draws"],
