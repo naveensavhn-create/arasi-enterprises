@@ -46,7 +46,7 @@ const rankSchema = z.object({
   tier_order: z.number().int().min(1),
   min_active_customers: z.number().int().min(0),
   commission_percent: z.number().min(0).max(100),
-  monthly_incentive: z.number().min(0),
+  one_time_incentive: z.number().min(0),
   gift_name: z.string().nullable().optional(),
   is_active: z.boolean().default(true),
 });
