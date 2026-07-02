@@ -232,9 +232,9 @@ const PaymentReminder: React.FC<PaymentReminderProps> = ({
 
             <Hr style={base.divider} />
             <Text style={base.muted}>
-              Already paid in the last day or two? Please ignore this note — our
-              records update shortly after your bank confirms. For anything
-              else, reply to this email or write to {b.supportEmail}.
+              {outroOverride?.trim()
+                ? outroOverride
+                : `Already paid in the last day or two? Please ignore this note — our records update shortly after your bank confirms. For anything else, reply to this email or write to ${b.supportEmail}.`}
             </Text>
           </Section>
 
