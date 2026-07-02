@@ -54,6 +54,7 @@ import { Route as AuthenticatedAdminMembershipEmailsRouteImport } from './routes
 import { Route as AuthenticatedAdminLuckyDrawRouteImport } from './routes/_authenticated/admin/lucky-draw'
 import { Route as AuthenticatedAdminKycEmailsRouteImport } from './routes/_authenticated/admin/kyc-emails'
 import { Route as AuthenticatedAdminIncentivesRouteImport } from './routes/_authenticated/admin/incentives'
+import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin/gifts'
 import { Route as AuthenticatedAdminExportsRouteImport } from './routes/_authenticated/admin/exports'
 import { Route as AuthenticatedAdminEmailPreviewRouteImport } from './routes/_authenticated/admin/email-preview'
 import { Route as AuthenticatedAdminDrawResultsRouteImport } from './routes/_authenticated/admin/draw-results'
@@ -326,6 +327,11 @@ const AuthenticatedAdminIncentivesRoute =
     path: '/incentives',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
+const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
+  id: '/gifts',
+  path: '/gifts',
+  getParentRoute: () => AuthenticatedAdminRouteRoute,
+} as any)
 const AuthenticatedAdminExportsRoute =
   AuthenticatedAdminExportsRouteImport.update({
     id: '/exports',
@@ -427,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/incentives': typeof AuthenticatedAdminIncentivesRoute
   '/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -486,6 +493,7 @@ export interface FileRoutesByTo {
   '/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/incentives': typeof AuthenticatedAdminIncentivesRoute
   '/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -548,6 +556,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/draw-results': typeof AuthenticatedAdminDrawResultsRoute
   '/_authenticated/admin/email-preview': typeof AuthenticatedAdminEmailPreviewRoute
   '/_authenticated/admin/exports': typeof AuthenticatedAdminExportsRoute
+  '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/admin/incentives': typeof AuthenticatedAdminIncentivesRoute
   '/_authenticated/admin/kyc-emails': typeof AuthenticatedAdminKycEmailsRoute
   '/_authenticated/admin/lucky-draw': typeof AuthenticatedAdminLuckyDrawRoute
@@ -610,6 +619,7 @@ export interface FileRouteTypes {
     | '/admin/draw-results'
     | '/admin/email-preview'
     | '/admin/exports'
+    | '/admin/gifts'
     | '/admin/incentives'
     | '/admin/kyc-emails'
     | '/admin/lucky-draw'
@@ -669,6 +679,7 @@ export interface FileRouteTypes {
     | '/admin/draw-results'
     | '/admin/email-preview'
     | '/admin/exports'
+    | '/admin/gifts'
     | '/admin/incentives'
     | '/admin/kyc-emails'
     | '/admin/lucky-draw'
@@ -730,6 +741,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/draw-results'
     | '/_authenticated/admin/email-preview'
     | '/_authenticated/admin/exports'
+    | '/_authenticated/admin/gifts'
     | '/_authenticated/admin/incentives'
     | '/_authenticated/admin/kyc-emails'
     | '/_authenticated/admin/lucky-draw'
@@ -1103,6 +1115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminIncentivesRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/gifts': {
+      id: '/_authenticated/admin/gifts'
+      path: '/gifts'
+      fullPath: '/admin/gifts'
+      preLoaderRoute: typeof AuthenticatedAdminGiftsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/exports': {
       id: '/_authenticated/admin/exports'
       path: '/exports'
@@ -1213,6 +1232,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminDrawResultsRoute: typeof AuthenticatedAdminDrawResultsRoute
   AuthenticatedAdminEmailPreviewRoute: typeof AuthenticatedAdminEmailPreviewRoute
   AuthenticatedAdminExportsRoute: typeof AuthenticatedAdminExportsRoute
+  AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedAdminIncentivesRoute: typeof AuthenticatedAdminIncentivesRoute
   AuthenticatedAdminKycEmailsRoute: typeof AuthenticatedAdminKycEmailsRoute
   AuthenticatedAdminLuckyDrawRoute: typeof AuthenticatedAdminLuckyDrawRoute
@@ -1245,6 +1265,7 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminDrawResultsRoute: AuthenticatedAdminDrawResultsRoute,
     AuthenticatedAdminEmailPreviewRoute: AuthenticatedAdminEmailPreviewRoute,
     AuthenticatedAdminExportsRoute: AuthenticatedAdminExportsRoute,
+    AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
     AuthenticatedAdminIncentivesRoute: AuthenticatedAdminIncentivesRoute,
     AuthenticatedAdminKycEmailsRoute: AuthenticatedAdminKycEmailsRoute,
     AuthenticatedAdminLuckyDrawRoute: AuthenticatedAdminLuckyDrawRoute,

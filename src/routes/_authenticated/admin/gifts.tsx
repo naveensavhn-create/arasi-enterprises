@@ -44,7 +44,15 @@ function Page() {
   const [status, setStatus] = useState<Gift["status"]>("approved");
 
   const updMut = useMutation({
-    mutationFn: (v: Parameters<typeof upd>[0]["data"]) => upd({ data: v }),
+    mutationFn: (v: {
+      id: string;
+      status: Gift["status"];
+      courier?: string;
+      tracking?: string;
+      serial?: string;
+      proof_url?: string;
+      remarks?: string;
+    }) => upd({ data: v }),
     onSuccess: () => {
       toast.success("Updated");
       qc.invalidateQueries({ queryKey: ["admin-gifts"] });
@@ -52,6 +60,7 @@ function Page() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <div className="p-6 space-y-4">
