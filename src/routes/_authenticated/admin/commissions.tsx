@@ -55,7 +55,7 @@ function Page() {
   const total = filtered.reduce((a, r) => a + Number(r.commission_amount), 0);
 
   const updMut = useMutation({
-    mutationFn: (v: { id: string; status: "approved" | "paid" | "rejected"; reference?: string }) =>
+    mutationFn: (v: { id: string; status: "approved" | "paid" | "rejected" | "pending"; reference?: string }) =>
       update({ data: v }),
     onSuccess: () => {
       toast.success("Updated");
