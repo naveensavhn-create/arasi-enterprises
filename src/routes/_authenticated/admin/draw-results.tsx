@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/table";
 import { toast } from "sonner";
 import { listAllDrawWinners, type DrawResultRow } from "@/lib/draws.functions";
+import { DrawTimeBadge } from "@/components/draws/DrawTimeBadge";
+import { formatDateTime } from "@/lib/format-datetime";
 
 export const Route = createFileRoute("/_authenticated/admin/draw-results")({
   head: () => ({
@@ -24,8 +26,8 @@ export const Route = createFileRoute("/_authenticated/admin/draw-results")({
   component: DrawResultsPage,
 });
 
-function fmt(ts: string) {
-  try { return new Date(ts).toLocaleString(); } catch { return ts; }
+function fmt(ts: string | null | undefined) {
+  return formatDateTime(ts);
 }
 
 function csvEscape(v: unknown): string {
@@ -190,7 +192,7 @@ function DrawResultsPage() {
             {latest ? (
               <div>
                 <div className="font-medium">{latest.draw_name}</div>
-                <div className="text-muted-foreground">{fmt(latest.drawn_at)}</div>
+                <div className="mt-1"><DrawTimeBadge kind="drawn" iso={latest.drawn_at} /></div>
               </div>
             ) : (
               <span className="text-muted-foreground">No draws completed yet.</span>
@@ -282,7 +284,9 @@ function DrawResultsPage() {
                         </div>
                       </TableCell>
                       <TableCell>{r.prize}</TableCell>
-                      <TableCell className="whitespace-nowrap text-sm">{fmt(r.drawn_at)}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <DrawTimeBadge kind="drawn" iso={r.drawn_at} showLabel={false} />
+                      </TableCell>
                       <TableCell className="text-right font-mono text-xs text-muted-foreground">
                         {r.entry_id.slice(0, 8)}
                       </TableCell>
