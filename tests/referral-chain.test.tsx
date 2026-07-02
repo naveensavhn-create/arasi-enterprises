@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { describe, it, expect, afterEach } from "vitest";
+import { render, screen, within, cleanup } from "@testing-library/react";
 import { ReferralChain, type ReferralChainNode } from "@/components/admin/ReferralChain";
+
+afterEach(() => cleanup());
 
 const promoter = (
   overrides: Partial<ReferralChainNode> & Pick<ReferralChainNode, "id">,
