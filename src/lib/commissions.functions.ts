@@ -10,7 +10,7 @@ export type Rank = {
   tier_order: number;
   min_active_customers: number;
   commission_percent: number;
-  monthly_incentive: number;
+  one_time_incentive: number;
   gift_name: string | null;
   is_active: boolean;
 };
