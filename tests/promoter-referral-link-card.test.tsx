@@ -13,7 +13,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const successToast = vi.fn();
@@ -75,16 +75,16 @@ describe("PromoterReferralLinkCard", () => {
   });
 
   it("copies the referral URL to the clipboard on 'Copy link'", async () => {
-    const user = userEvent.setup();
+    
     renderCard();
     const btn = await screen.findByRole("button", { name: /copy link/i });
-    await user.click(btn);
+    fireEvent.click(btn);
     expect(writeText).toHaveBeenCalledWith(FIXTURE.referral_url);
     expect(successToast).toHaveBeenCalledWith("Link copied");
   });
 
   it("copies the raw referral code (not the URL) on the code button", async () => {
-    const user = userEvent.setup();
+    
     renderCard();
     await screen.findByText(FIXTURE.referral_code);
     // The code section has a small ghost copy button; pick the last copy button.
@@ -92,17 +92,17 @@ describe("PromoterReferralLinkCard", () => {
       b.querySelector("svg.lucide-copy") !== null,
     );
     const codeCopy = copyButtons[copyButtons.length - 1];
-    await user.click(codeCopy);
+    fireEvent.click(codeCopy);
     expect(writeText).toHaveBeenCalledWith(FIXTURE.referral_code);
     expect(successToast).toHaveBeenCalledWith("Code copied");
   });
 
   it("surfaces an error toast if the clipboard write fails", async () => {
     writeText.mockRejectedValueOnce(new Error("denied"));
-    const user = userEvent.setup();
+    
     renderCard();
     const btn = await screen.findByRole("button", { name: /copy link/i });
-    await user.click(btn);
+    fireEvent.click(btn);
     expect(errorToast).toHaveBeenCalledWith("Copy failed");
   });
 });

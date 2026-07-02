@@ -13,7 +13,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { fireEvent } from "@testing-library/react";
 
 const OWNER_ID = "abcdef12-3456-7890-abcd-ef1234567890";
 const EXPECTED_CODE = OWNER_ID.slice(0, 8).toUpperCase(); // "ABCDEF12"
@@ -70,17 +70,17 @@ describe("Customer referrals page", () => {
   });
 
   it("copies the code and URL to the clipboard from their respective buttons", async () => {
-    const user = userEvent.setup();
+    
     render(<CustomerReferralsPage />);
 
     const copyButtons = screen
       .getAllByRole("button")
       .filter((b) => b.querySelector("svg.lucide-copy") !== null);
     // First = code, second = URL (in DOM order).
-    await user.click(copyButtons[0]);
+    fireEvent.click(copyButtons[0]);
     expect(writeText).toHaveBeenLastCalledWith(EXPECTED_CODE);
 
-    await user.click(copyButtons[1]);
+    fireEvent.click(copyButtons[1]);
     expect(writeText).toHaveBeenLastCalledWith(
       `${window.location.origin}/?ref=${EXPECTED_CODE}`,
     );
