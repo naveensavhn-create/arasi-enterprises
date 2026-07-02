@@ -80,8 +80,8 @@ function auditFile(path: string): Finding[] {
       .some((l) => /\/\/\s*PUBLIC_OK\b/.test(l));
 
     const issues: string[] = [];
-    if (!hasValidator) {
-      issues.push("missing .inputValidator() — every server fn must validate input");
+    if (!hasValidator && consumesInput) {
+      issues.push("missing .inputValidator() — handler consumes `data` but declares no schema");
     }
     if (!hasAuthMiddleware && !publicOk) {
       issues.push(
