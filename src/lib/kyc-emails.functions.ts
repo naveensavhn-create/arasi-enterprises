@@ -34,7 +34,7 @@ export type KycEmailNotification = {
   reviewer_email: string | null;
   review_notes: string | null;
   assigned_role: string | null;
-  attempts_log: unknown[];
+  attempts_log: Array<Record<string, unknown>>;
   metadata: Record<string, unknown>;
   is_test: boolean;
   created_at: string;
