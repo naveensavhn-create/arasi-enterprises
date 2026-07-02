@@ -22,6 +22,7 @@ import { useSession, portalToRole, type AppRole } from "@/lib/auth";
 const searchSchema = z.object({
   portal: z.enum(["customer", "promoter", "admin"]).catch("customer"),
   mode: z.enum(["signin", "signup", "forgot"]).optional(),
+  ref: z.string().trim().min(4).max(32).optional(),
 });
 
 export const Route = createFileRoute("/auth")({
@@ -54,11 +55,18 @@ const PORTAL_META: Record<AppRole, { title: string; icon: typeof Users; blurb: s
 };
 
 function AuthPage() {
-  const { portal, mode } = Route.useSearch();
+  const { portal, mode, ref } = Route.useSearch();
   const navigate = useNavigate();
   const { user, loading } = useSession();
   const role = portalToRole(portal);
   const meta = PORTAL_META[role];
+
+  // Persist referral code across auth flow (email confirm, OAuth) so we can apply after sign-in.
+  useEffect(() => {
+    if (ref && typeof window !== "undefined") {
+      try { window.sessionStorage.setItem("arasi.ref", ref); } catch { /* ignore */ }
+    }
+  }, [ref]);
 
   // Redirect logged-in users to dashboard
   useEffect(() => {
@@ -66,6 +74,7 @@ function AuthPage() {
       navigate({ to: "/dashboard" });
     }
   }, [loading, user, navigate]);
+
 
   return (
     <div
@@ -302,7 +311,7 @@ function SignUpForm({ role }: { role: AppRole }) {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: emailR.data,
         password: pwR.data,
         options: {
@@ -315,6 +324,20 @@ function SignUpForm({ role }: { role: AppRole }) {
         },
       });
       if (error) throw error;
+
+      // If a promoter referral code was captured (via ?ref=CODE), apply it now.
+      const refCode = typeof window !== "undefined"
+        ? window.sessionStorage.getItem("arasi.ref")
+        : null;
+      if (refCode && signUpData.session) {
+        try {
+          const { applyReferralCode } = await import("@/lib/user-profile.functions");
+          await applyReferralCode({ data: { code: refCode } });
+          window.sessionStorage.removeItem("arasi.ref");
+        } catch {
+          // Non-blocking: retried on next visit while ref is still in sessionStorage.
+        }
+      }
       toast.success("Account created — signing you in");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Sign up failed");
@@ -322,6 +345,7 @@ function SignUpForm({ role }: { role: AppRole }) {
       setSubmitting(false);
     }
   }
+
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">

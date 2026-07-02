@@ -56,6 +56,24 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_ids: {
+        Row: {
+          assigned_at: string
+          display_id: number
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          display_id: number
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          display_id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       draw_entries: {
         Row: {
           coupon_code: string | null
@@ -997,6 +1015,27 @@ export type Database = {
         }
         Relationships: []
       }
+      promoter_ids: {
+        Row: {
+          assigned_at: string
+          display_id: string
+          referral_code: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          display_id: string
+          referral_code: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          display_id?: string
+          referral_code?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       razorpay_webhook_events: {
         Row: {
           event_id: string
@@ -1299,12 +1338,16 @@ export type Database = {
         Returns: {
           banned_until: string
           created_at: string
+          customer_display_id: number
           email: string
           full_name: string
           id: string
+          kyc_status: Database["public"]["Enums"]["kyc_status"]
           last_sign_in_at: string
           membership_number: string
           phone: string
+          promoter_display_id: string
+          promoter_referral_code: string
           role: Database["public"]["Enums"]["app_role"]
         }[]
       }
@@ -1370,6 +1413,42 @@ export type Database = {
             }
             Returns: undefined
           }
+      admin_update_profile: {
+        Args: {
+          _aadhaar_address?: string
+          _aadhaar_number?: string
+          _address_line1?: string
+          _address_line2?: string
+          _city?: string
+          _clear_referrer?: boolean
+          _country?: string
+          _email?: string
+          _full_name?: string
+          _phone?: string
+          _postal_code?: string
+          _reason?: string
+          _referred_by?: string
+          _state?: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      allocate_promoter_credentials: {
+        Args: { _user_id: string }
+        Returns: {
+          assigned_at: string
+          display_id: string
+          referral_code: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "promoter_ids"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      apply_referral_code: { Args: { _code: string }; Returns: string }
       apply_reminder_cron_settings: {
         Args: { _schedule: string; _timezone: string }
         Returns: undefined
@@ -1639,6 +1718,14 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      plan_is_deletable: {
+        Args: { _plan_id: string }
+        Returns: {
+          active_count: number
+          blocking_count: number
+          deletable: boolean
+        }[]
       }
       promoter_list_my_customers: {
         Args: never

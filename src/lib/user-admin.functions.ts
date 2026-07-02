@@ -66,6 +66,10 @@ export type AdminUserRow = {
   last_sign_in_at: string | null;
   banned_until: string | null;
   membership_number: string | null;
+  customer_display_id: number | null;
+  promoter_display_id: string | null;
+  promoter_referral_code: string | null;
+  kyc_status: "unsubmitted" | "pending" | "approved" | "rejected" | null;
 };
 
 export const listAllUsers = createServerFn({ method: "GET" })

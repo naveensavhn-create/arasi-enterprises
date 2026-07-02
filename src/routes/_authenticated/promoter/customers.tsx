@@ -66,6 +66,8 @@ import {
   submitReferralForReview,
   type ReferredCustomer,
 } from "@/lib/promoter.functions";
+import { PromoterReferralLinkCard } from "@/components/promoter/PromoterReferralLinkCard";
+
 
 export const Route = createFileRoute("/_authenticated/promoter/customers")({
   head: () => ({ meta: [{ title: "My Customers — Promoter" }] }),
@@ -211,6 +213,10 @@ function PromoterCustomersPage() {
           <UserPlus className="mr-2 h-4 w-4" /> Register customer
         </Button>
       </div>
+
+      <PromoterReferralLinkCard />
+
+
 
       <div className="grid gap-3 sm:grid-cols-3">
         <StatCard icon={<Users className="h-4 w-4" />} value={total} label="Total referred" />

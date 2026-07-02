@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Trophy, Search, Users, CalendarClock, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trophy, Search, Users, CalendarClock, Download, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -148,12 +148,19 @@ function DrawResultsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Draw Results</h1>
-        <p className="text-sm text-muted-foreground">
-          Every recorded winner across all draws — sorted by most recent. Each customer can win a
-          given draw at most once (enforced by the database).
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Draw Results</h1>
+          <p className="text-sm text-muted-foreground">
+            Every recorded winner across all draws — sorted by most recent. Each customer can win a
+            given draw at most once (enforced by the database).
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/admin/lucky-draw">
+            <Plus className="mr-2 h-4 w-4" /> New draw
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
