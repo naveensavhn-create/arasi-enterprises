@@ -70,21 +70,21 @@ const MembershipActivated: React.FC<MembershipActivatedProps> = ({
   nextDueAmount,
   currency = "INR",
   dashboardUrl,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   return (
     <Html lang="en" dir="ltr">
       <Head />
       <Preview>
-        Your {planName} membership at {brand.name} is now active.
+        Your {planName} membership at {b.name} is now active.
       </Preview>
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
+
 
             <Heading as="h1" style={styles.h1}>
               Welcome — your {planName} membership is active
