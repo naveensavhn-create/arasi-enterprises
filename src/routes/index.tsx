@@ -225,7 +225,7 @@ function Landing() {
           className="mt-24 w-full sm:mt-32"
         >
           <div className="mx-auto mb-14 max-w-2xl text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
               How the Programme Works
             </p>
             <h2
@@ -236,7 +236,7 @@ function Landing() {
               Advance booking, paid on a{" "}
               <span className="italic text-[#C5A059]">monthly plan</span>
             </h2>
-            <p className="mx-auto mt-5 max-w-xl text-sm font-light leading-relaxed text-white/60 sm:text-base">
+            <p className="mx-auto mt-5 max-w-xl text-sm font-light leading-relaxed text-white/80 sm:text-base">
               Reserve your entitlement today with a modest advance, then settle
               the balance in fixed monthly installments. Every payment is
               receipted, every schedule is transparent, and the plan is
