@@ -13,6 +13,7 @@ import KycDecision, {
 } from "@/lib/email-templates/kyc-decision";
 import { brand } from "@/lib/email-templates/_shared";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loadBrandOverrides } from "@/lib/email/load-brand.server";
 
 export type KycDecision = "approved" | "rejected";
 
