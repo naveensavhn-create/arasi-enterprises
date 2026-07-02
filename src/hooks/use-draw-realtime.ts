@@ -105,9 +105,24 @@ export function useDrawRealtime(opts: {
       }
     };
 
+    const failedToastShownRef = { current: false };
+
     const scheduleReconnect = () => {
       clearBackoff();
       if (cancelled) return;
+      if (attempt >= maxAttempts) {
+        setStatus("failed");
+        startPolling();
+        if (toastRef.current && !failedToastShownRef.current) {
+          failedToastShownRef.current = true;
+          toast.error("Live updates unavailable", {
+            description:
+              "We couldn't restore the realtime connection after several attempts. Tap Retry connection to try again.",
+            duration: 10_000,
+          });
+        }
+        return;
+      }
       const delay = Math.min(1000 * 2 ** attempt, maxBackoffMs);
       attempt += 1;
       backoffTimer = setTimeout(() => {
