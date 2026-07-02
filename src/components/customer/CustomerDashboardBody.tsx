@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
+import { NextDrawCard } from "@/components/dashboard/NextDrawCard";
 
 
 
