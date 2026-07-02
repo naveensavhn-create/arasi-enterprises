@@ -390,7 +390,7 @@ export const listMyPaymentSummaries = createServerFn({ method: "GET" })
         paid_at: p.paid_at!,
         amount: Number(p.amount),
         currency: p.currency ?? "INR",
-        payment_method: p.payment_method ?? null,
+        payment_method: p.method ?? null,
         provider_payment_id: p.provider_payment_id ?? null,
         installment_sequence: inst?.sequence ?? null,
         installment_due_date: inst?.due_date ?? null,
