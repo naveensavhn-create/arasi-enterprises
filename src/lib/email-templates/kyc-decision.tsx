@@ -148,13 +148,13 @@ const KycDecision: React.FC<KycDecisionProps> = ({
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
               {approved
-                ? `Welcome aboard! If anything looks off, reply to this email or reach us at ${brand.supportEmail}.`
-                : `If you believe this decision is a mistake, reply to this email or contact ${brand.supportEmail} and we'll take another look.`}
+                ? `Welcome aboard! If anything looks off, reply to this email or reach us at ${b.supportEmail}.`
+                : `If you believe this decision is a mistake, reply to this email or contact ${b.supportEmail} and we'll take another look.`}
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             account notification.
           </Text>
         </Container>
@@ -167,7 +167,7 @@ export default KycDecision;
 
 export const template = {
   component: KycDecision,
-  subject: `[${brand.name}] Your KYC decision`,
+  subject: `[${defaultBrand.name}] Your KYC decision`,
   displayName: "KYC decision",
   previewData: {
     recipientName: "Priya Sharma",
