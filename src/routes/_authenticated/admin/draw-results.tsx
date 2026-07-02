@@ -148,12 +148,19 @@ function DrawResultsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Draw Results</h1>
-        <p className="text-sm text-muted-foreground">
-          Every recorded winner across all draws — sorted by most recent. Each customer can win a
-          given draw at most once (enforced by the database).
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Draw Results</h1>
+          <p className="text-sm text-muted-foreground">
+            Every recorded winner across all draws — sorted by most recent. Each customer can win a
+            given draw at most once (enforced by the database).
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/admin/lucky-draw">
+            <Plus className="mr-2 h-4 w-4" /> New draw
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
