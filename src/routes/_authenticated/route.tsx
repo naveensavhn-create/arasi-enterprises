@@ -33,6 +33,8 @@ export const Route = createFileRoute("/_authenticated")({
     }
   },
   pendingComponent: () => <RouteLoading label="Checking your session…" />,
+  pendingMs: 0,
+  pendingMinMs: 300,
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     return (
