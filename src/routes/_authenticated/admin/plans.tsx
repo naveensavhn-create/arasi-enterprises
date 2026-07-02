@@ -29,7 +29,7 @@ import {
 import { Loader2, Package, Plus, Pencil, Trash2, History, Sparkles, Calendar, Wallet, TrendingUp, CheckCircle2, Users, Search, X, ArrowDownAZ, ArrowUpAZ, Power, PowerOff, CheckSquare } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 import { deletePlanAudited } from "@/lib/plans.functions";
@@ -158,6 +158,9 @@ function AdminPlansPage() {
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkConfirm, setBulkConfirm] = useState<null | "activate" | "deactivate" | "delete">(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number>(12);
+
 
   const toggleSelected = (id: string) =>
     setSelected((s) => {
@@ -464,6 +467,21 @@ function AdminPlansPage() {
     setAdvanceOnly(false);
   };
 
+  // Reset to page 1 whenever filters, sort, or page size change
+  useEffect(() => {
+    setPage(1);
+  }, [search, activeOnly, advanceOnly, sortBy, sortDir, pageSize]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPlans.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * pageSize;
+  const pageEnd = Math.min(pageStart + pageSize, filteredPlans.length);
+  const pagedPlans = useMemo(
+    () => filteredPlans.slice(pageStart, pageEnd),
+    [filteredPlans, pageStart, pageEnd],
+  );
+
+
   return (
     <div className="space-y-6">
       {/* Hero header */}
@@ -757,9 +775,10 @@ function AdminPlansPage() {
       {/* Bulk actions toolbar */}
       {!isLoading && filteredPlans.length > 0 && (
         (() => {
-          const visibleIds = filteredPlans.map((p) => p.id);
+          const visibleIds = pagedPlans.map((p) => p.id);
           const selectedVisible = visibleIds.filter((id) => selected.has(id));
-          const allSelected = selectedVisible.length === visibleIds.length;
+          const allSelected = visibleIds.length > 0 && selectedVisible.length === visibleIds.length;
+
           const someSelected = selectedVisible.length > 0 && !allSelected;
           const count = selected.size;
           return (
@@ -869,8 +888,10 @@ function AdminPlansPage() {
           </CardContent>
         </Card>
       ) : (
+        <>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {filteredPlans.map((p) => {
+          {pagedPlans.map((p) => {
+
             const enrolled = usageForPlan(p.id);
             const noAdvance = Number(p.advance_amount) <= 0;
             return (
@@ -1008,7 +1029,69 @@ function AdminPlansPage() {
             );
           })}
         </div>
+        {filteredPlans.length > pageSize && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card p-3 shadow-sm">
+            <div className="text-sm text-muted-foreground">
+              Showing <span className="font-medium text-foreground">{pageStart + 1}</span>–
+              <span className="font-medium text-foreground">{pageEnd}</span> of{" "}
+              <span className="font-medium text-foreground">{filteredPlans.length}</span> plans
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                Per page
+                <select
+                  className="h-8 rounded-md border bg-background px-2 text-sm"
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                >
+                  {[6, 12, 24, 48, 96].map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage(1)}
+                >
+                  « First
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage <= 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  Prev
+                </Button>
+                <span className="px-2 text-sm tabular-nums text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage >= totalPages}
+                  onClick={() => setPage(totalPages)}
+                >
+                  Last »
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
+
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
