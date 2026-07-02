@@ -149,6 +149,11 @@ function AdminPlansPage() {
   const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null);
   const [historyPlan, setHistoryPlan] = useState<Plan | null>(null);
   const [showErrors, setShowErrors] = useState(false);
+  const [search, setSearch] = useState("");
+  const [activeOnly, setActiveOnly] = useState(false);
+  const [advanceOnly, setAdvanceOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<"display_order" | "name" | "total_value" | "duration_months">("display_order");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const validation = useMemo(() => planFormSchema.safeParse(form), [form]);
   const errors = useMemo(() => {
