@@ -354,7 +354,7 @@ function ReferralCodeChip({ code }: { code: string }) {
 
   const copy = async () => {
     await navigator.clipboard.writeText(link);
-    toast({ title: "Referral link copied" });
+    toast("Referral link copied");
   };
 
   return (
@@ -415,7 +415,7 @@ function QrPreview({ link, code }: { link: string; code: string }) {
           variant="outline"
           onClick={async () => {
             await navigator.clipboard.writeText(link);
-            toast({ title: "Link copied" });
+            toast("Link copied");
           }}
         >
           <Copy className="h-4 w-4 mr-1" /> Copy link
