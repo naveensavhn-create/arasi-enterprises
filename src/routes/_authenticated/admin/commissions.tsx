@@ -119,6 +119,11 @@ function Page() {
           <div className="flex items-center gap-3">
             <div className="text-sm">Total: <b>₹{total.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</b> ({filtered.length})</div>
             <Button variant="outline" size="sm" onClick={exportCsv}><Download className="h-4 w-4 mr-1" />CSV</Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/commission-statement" search={{ status, autoprint: false }} target="_blank">
+                <Printer className="h-4 w-4 mr-1" />Statement PDF
+              </Link>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
