@@ -887,7 +887,14 @@ function AdminPlansPage() {
 
                 <div className="flex flex-col gap-4 p-5">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
+                    <div className="flex min-w-0 items-start gap-2">
+                      <Checkbox
+                        className="mt-1 shrink-0"
+                        checked={selected.has(p.id)}
+                        onCheckedChange={() => toggleSelected(p.id)}
+                        aria-label={`Select ${p.name}`}
+                      />
+                      <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate text-lg font-semibold">{p.name}</h3>
                         <Badge variant={p.is_active ? "default" : "secondary"} className="shrink-0">
