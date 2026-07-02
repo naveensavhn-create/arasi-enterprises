@@ -263,7 +263,7 @@ export function UserProfileDrawer({ userId, onClose }: Props) {
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
                     <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                    <Button type="submit" disabled={saveMut.isPending}>
+                    <Button type="submit" variant="success" disabled={saveMut.isPending}>
                       {saveMut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Save changes
                     </Button>

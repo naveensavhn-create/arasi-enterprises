@@ -93,7 +93,7 @@ function ResetPassword() {
                 disabled={!ready}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={!ready || submitting}>
+            <Button type="submit" variant="success" className="w-full" disabled={!ready || submitting}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Update password
             </Button>

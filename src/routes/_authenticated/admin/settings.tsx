@@ -382,7 +382,7 @@ function AdminSettings() {
                 disabled={promote.isPending}
               />
             </div>
-            <Button type="submit" disabled={promote.isPending || !email.trim()}>
+            <Button type="submit" variant="success" disabled={promote.isPending || !email.trim()}>
               {promote.isPending ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Promoting…</>
               ) : (
