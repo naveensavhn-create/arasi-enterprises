@@ -554,9 +554,13 @@ function AdminPlansPage() {
 
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                  <Button onClick={() => save.mutate()} disabled={save.isPending || !form.name}>
+                  <Button
+                    onClick={handleSave}
+                    disabled={save.isPending || !validation.success}
+                    aria-disabled={save.isPending || !validation.success}
+                  >
                     {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {editing ? "Save changes" : "Create plan"}
+                    {save.isPending ? "Saving…" : editing ? "Save changes" : "Create plan"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
