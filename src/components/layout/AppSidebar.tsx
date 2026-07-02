@@ -105,6 +105,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
     {
       label: "Business",
       items: [
+        { title: "My Rank", url: "/promoter/rank", icon: Award },
         { title: "My Customers", url: "/promoter/customers", icon: Users },
         { title: "Collections", url: "/promoter/collections", icon: Wallet },
         { title: "Commissions", url: "/promoter/commissions", icon: Receipt },
@@ -112,6 +113,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Lucky Draw", url: "/promoter/lucky-draw", icon: Trophy },
       ],
     },
+
     {
       label: "System",
       items: [
