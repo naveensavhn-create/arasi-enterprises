@@ -3,6 +3,7 @@ import { Users, Briefcase, ShieldCheck, ArrowRight } from "lucide-react";
 import { useSession, useCurrentRole } from "@/lib/auth";
 import { CustomerDashboardBody } from "@/components/customer/CustomerDashboardBody";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
+import { NextDrawCard } from "@/components/dashboard/NextDrawCard";
 
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
