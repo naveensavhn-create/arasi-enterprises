@@ -394,16 +394,24 @@ function AdminPlansPage() {
                       <Input
                         placeholder="e.g. Gold"
                         value={form.name}
+                        aria-invalid={!!showErr("name")}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                       />
+                      {showErr("name") && (
+                        <p className="text-xs text-destructive">{showErr("name")}</p>
+                      )}
                     </div>
                     <div className="grid gap-1.5">
                       <Label className="text-xs">Display order</Label>
                       <Input
                         type="number"
                         value={form.display_order}
+                        aria-invalid={!!showErr("display_order")}
                         onChange={(e) => setForm({ ...form, display_order: e.target.value })}
                       />
+                      {showErr("display_order") && (
+                        <p className="text-xs text-destructive">{showErr("display_order")}</p>
+                      )}
                     </div>
                   </div>
 
@@ -413,8 +421,12 @@ function AdminPlansPage() {
                       rows={2}
                       placeholder="Short pitch shown to customers"
                       value={form.description}
+                      aria-invalid={!!showErr("description")}
                       onChange={(e) => setForm({ ...form, description: e.target.value })}
                     />
+                    {showErr("description") && (
+                      <p className="text-xs text-destructive">{showErr("description")}</p>
+                    )}
                   </div>
 
                   {/* Advance toggle */}
