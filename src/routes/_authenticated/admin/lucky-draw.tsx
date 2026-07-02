@@ -733,6 +733,15 @@ function DrawDetailDialog({ draw, onClose, focusManual = false }: { draw: Draw |
                   {draw.status}
                 </Badge>
               </div>
+            </div>
+            <DrawTimeline
+              opensAt={draw.opens_at}
+              closesAt={draw.closes_at}
+              drawAt={draw.draw_at}
+              drawnAt={draw.drawn_at}
+              showLabels
+            />
+            <div className="flex justify-end">
               {canPick && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
