@@ -10,7 +10,15 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { brand, colors, styles, formatTimestamp } from "./_shared";
+import {
+  brand as defaultBrand,
+  colors,
+  styles,
+  formatTimestamp,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
 export type RewardClaimStatus =
   | "locked"
