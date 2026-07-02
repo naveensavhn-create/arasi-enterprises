@@ -909,6 +909,7 @@ function AdminPlansPage() {
                       {p.description && (
                         <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.description}</p>
                       )}
+                      </div>
                     </div>
                     <div className="flex shrink-0 gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">
                       <Button size="icon" variant="ghost" onClick={() => startEdit(p)} title="Edit">
