@@ -33,6 +33,7 @@ import { Route as AuthenticatedCustomerRewardsRouteImport } from './routes/_auth
 import { Route as AuthenticatedCustomerReferralsRouteImport } from './routes/_authenticated/customer/referrals'
 import { Route as AuthenticatedCustomerReceiptsRouteImport } from './routes/_authenticated/customer/receipts'
 import { Route as AuthenticatedCustomerPaymentsRouteImport } from './routes/_authenticated/customer/payments'
+import { Route as AuthenticatedCustomerPaymentSummaryRouteImport } from './routes/_authenticated/customer/payment-summary'
 import { Route as AuthenticatedCustomerMembershipRouteImport } from './routes/_authenticated/customer/membership'
 import { Route as AuthenticatedCustomerLuckyDrawRouteImport } from './routes/_authenticated/customer/lucky-draw'
 import { Route as AuthenticatedCustomerInstallmentsRouteImport } from './routes/_authenticated/customer/installments'
@@ -209,6 +210,12 @@ const AuthenticatedCustomerPaymentsRoute =
   AuthenticatedCustomerPaymentsRouteImport.update({
     id: '/payments',
     path: '/payments',
+    getParentRoute: () => AuthenticatedCustomerRouteRoute,
+  } as any)
+const AuthenticatedCustomerPaymentSummaryRoute =
+  AuthenticatedCustomerPaymentSummaryRouteImport.update({
+    id: '/payment-summary',
+    path: '/payment-summary',
     getParentRoute: () => AuthenticatedCustomerRouteRoute,
   } as any)
 const AuthenticatedCustomerMembershipRoute =
@@ -509,6 +516,7 @@ export interface FileRoutesByFullPath {
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/customer/membership': typeof AuthenticatedCustomerMembershipRoute
+  '/customer/payment-summary': typeof AuthenticatedCustomerPaymentSummaryRoute
   '/customer/payments': typeof AuthenticatedCustomerPaymentsRoute
   '/customer/receipts': typeof AuthenticatedCustomerReceiptsRoute
   '/customer/referrals': typeof AuthenticatedCustomerReferralsRoute
@@ -576,6 +584,7 @@ export interface FileRoutesByTo {
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/customer/membership': typeof AuthenticatedCustomerMembershipRoute
+  '/customer/payment-summary': typeof AuthenticatedCustomerPaymentSummaryRoute
   '/customer/payments': typeof AuthenticatedCustomerPaymentsRoute
   '/customer/receipts': typeof AuthenticatedCustomerReceiptsRoute
   '/customer/referrals': typeof AuthenticatedCustomerReferralsRoute
@@ -646,6 +655,7 @@ export interface FileRoutesById {
   '/_authenticated/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
   '/_authenticated/customer/lucky-draw': typeof AuthenticatedCustomerLuckyDrawRoute
   '/_authenticated/customer/membership': typeof AuthenticatedCustomerMembershipRoute
+  '/_authenticated/customer/payment-summary': typeof AuthenticatedCustomerPaymentSummaryRoute
   '/_authenticated/customer/payments': typeof AuthenticatedCustomerPaymentsRoute
   '/_authenticated/customer/receipts': typeof AuthenticatedCustomerReceiptsRoute
   '/_authenticated/customer/referrals': typeof AuthenticatedCustomerReferralsRoute
@@ -716,6 +726,7 @@ export interface FileRouteTypes {
     | '/customer/installments'
     | '/customer/lucky-draw'
     | '/customer/membership'
+    | '/customer/payment-summary'
     | '/customer/payments'
     | '/customer/receipts'
     | '/customer/referrals'
@@ -783,6 +794,7 @@ export interface FileRouteTypes {
     | '/customer/installments'
     | '/customer/lucky-draw'
     | '/customer/membership'
+    | '/customer/payment-summary'
     | '/customer/payments'
     | '/customer/receipts'
     | '/customer/referrals'
@@ -852,6 +864,7 @@ export interface FileRouteTypes {
     | '/_authenticated/customer/installments'
     | '/_authenticated/customer/lucky-draw'
     | '/_authenticated/customer/membership'
+    | '/_authenticated/customer/payment-summary'
     | '/_authenticated/customer/payments'
     | '/_authenticated/customer/receipts'
     | '/_authenticated/customer/referrals'
@@ -1058,6 +1071,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/customer/payments'
       preLoaderRoute: typeof AuthenticatedCustomerPaymentsRouteImport
+      parentRoute: typeof AuthenticatedCustomerRouteRoute
+    }
+    '/_authenticated/customer/payment-summary': {
+      id: '/_authenticated/customer/payment-summary'
+      path: '/payment-summary'
+      fullPath: '/customer/payment-summary'
+      preLoaderRoute: typeof AuthenticatedCustomerPaymentSummaryRouteImport
       parentRoute: typeof AuthenticatedCustomerRouteRoute
     }
     '/_authenticated/customer/membership': {
@@ -1449,6 +1469,7 @@ interface AuthenticatedCustomerRouteRouteChildren {
   AuthenticatedCustomerInstallmentsRoute: typeof AuthenticatedCustomerInstallmentsRoute
   AuthenticatedCustomerLuckyDrawRoute: typeof AuthenticatedCustomerLuckyDrawRoute
   AuthenticatedCustomerMembershipRoute: typeof AuthenticatedCustomerMembershipRoute
+  AuthenticatedCustomerPaymentSummaryRoute: typeof AuthenticatedCustomerPaymentSummaryRoute
   AuthenticatedCustomerPaymentsRoute: typeof AuthenticatedCustomerPaymentsRoute
   AuthenticatedCustomerReceiptsRoute: typeof AuthenticatedCustomerReceiptsRoute
   AuthenticatedCustomerReferralsRoute: typeof AuthenticatedCustomerReferralsRoute
@@ -1464,6 +1485,8 @@ const AuthenticatedCustomerRouteRouteChildren: AuthenticatedCustomerRouteRouteCh
       AuthenticatedCustomerInstallmentsRoute,
     AuthenticatedCustomerLuckyDrawRoute: AuthenticatedCustomerLuckyDrawRoute,
     AuthenticatedCustomerMembershipRoute: AuthenticatedCustomerMembershipRoute,
+    AuthenticatedCustomerPaymentSummaryRoute:
+      AuthenticatedCustomerPaymentSummaryRoute,
     AuthenticatedCustomerPaymentsRoute: AuthenticatedCustomerPaymentsRoute,
     AuthenticatedCustomerReceiptsRoute: AuthenticatedCustomerReceiptsRoute,
     AuthenticatedCustomerReferralsRoute: AuthenticatedCustomerReferralsRoute,
