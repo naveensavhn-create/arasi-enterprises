@@ -66,6 +66,10 @@ function auditFile(path: string): Finding[] {
     const chain = chainLines.join("\n");
 
     const hasValidator = /\.inputValidator\s*\(/.test(chain);
+    // A handler is "input-consuming" if its arg object destructures `data`.
+    // Handlers that only take `{ context }` (or no args) have zero input
+    // attack surface and don't need a Zod validator.
+    const consumesInput = /\.handler\s*\(\s*async\s*\(\s*\{[^}]*\bdata\b/.test(chain);
     const hasAuthMiddleware =
       /\.middleware\s*\(\s*\[[^\]]*\brequireSupabaseAuth\b/.test(chain);
 
