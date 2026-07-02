@@ -181,6 +181,7 @@ async function finalizeClaimedJob(jobId: string): Promise<KycEmailAttemptResult>
   };
 
   try {
+    const brandOverrides = await loadBrandOverrides();
     const props: KycDecisionProps = {
       decision: job.decision,
       recipientName:
@@ -193,6 +194,7 @@ async function finalizeClaimedJob(jobId: string): Promise<KycEmailAttemptResult>
       reviewNotes: job.review_notes ?? undefined,
       assignedRole: job.assigned_role ?? undefined,
       actionUrl: (job.metadata?.actionUrl as string | undefined) ?? undefined,
+      brand: brandOverrides,
     };
     const html = await render(React.createElement(KycDecision, props));
     const dispatched = await dispatchIfConfigured({
