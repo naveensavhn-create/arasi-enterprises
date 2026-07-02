@@ -189,19 +189,24 @@ function AdminPlansPage() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const advance = form.has_advance ? Number(form.advance_amount || 0) : 0;
+      const parsed = planFormSchema.safeParse(form);
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Please fix the highlighted fields");
+      }
+      const d = parsed.data;
+      const advance = d.has_advance ? Number(d.advance_amount || 0) : 0;
       const payload = {
-        name: form.name.trim(),
-        description: form.description.trim() || null,
+        name: d.name.trim(),
+        description: (d.description ?? "").trim() || null,
         advance_amount: advance,
-        monthly_installment: Number(form.monthly_installment || 0),
-        duration_months: Number(form.duration_months || 0),
-        benefits: form.benefits
+        monthly_installment: Number(d.monthly_installment),
+        duration_months: Number(d.duration_months),
+        benefits: (d.benefits ?? "")
           .split("\n")
           .map((s) => s.trim())
           .filter(Boolean),
-        is_active: form.is_active,
-        display_order: Number(form.display_order) || 0,
+        is_active: d.is_active,
+        display_order: Number(d.display_order),
       };
       if (editing) {
         const { error } = await supabase.from("membership_plans").update(payload).eq("id", editing.id);
@@ -216,10 +221,21 @@ function AdminPlansPage() {
       setOpen(false);
       setEditing(null);
       setForm(empty);
+      setShowErrors(false);
       toast.success(editing ? "Plan updated" : "Plan created");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Save failed"),
   });
+
+  const handleSave = () => {
+    if (save.isPending) return;
+    if (!validation.success) {
+      setShowErrors(true);
+      toast.error(validation.error.issues[0]?.message ?? "Please fix the highlighted fields");
+      return;
+    }
+    save.mutate();
+  };
 
   const toggleActive = useMutation({
     mutationFn: async (p: Plan) => {
