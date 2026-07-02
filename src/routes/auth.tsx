@@ -55,11 +55,18 @@ const PORTAL_META: Record<AppRole, { title: string; icon: typeof Users; blurb: s
 };
 
 function AuthPage() {
-  const { portal, mode } = Route.useSearch();
+  const { portal, mode, ref } = Route.useSearch();
   const navigate = useNavigate();
   const { user, loading } = useSession();
   const role = portalToRole(portal);
   const meta = PORTAL_META[role];
+
+  // Persist referral code across auth flow (email confirm, OAuth) so we can apply after sign-in.
+  useEffect(() => {
+    if (ref && typeof window !== "undefined") {
+      try { window.sessionStorage.setItem("arasi.ref", ref); } catch { /* ignore */ }
+    }
+  }, [ref]);
 
   // Redirect logged-in users to dashboard
   useEffect(() => {
@@ -67,6 +74,7 @@ function AuthPage() {
       navigate({ to: "/dashboard" });
     }
   }, [loading, user, navigate]);
+
 
   return (
     <div
