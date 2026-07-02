@@ -98,6 +98,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
         { title: "Plan Deletions", url: "/admin/plan-deletions", icon: ShieldCheck },
         { title: "Audit Log", url: "/admin/audit-log", icon: ShieldCheck },
         { title: "Reconciliation", url: "/admin/reconciliation", icon: Activity },
+        { title: "Impersonation Docs", url: "/admin/docs/impersonation", icon: ShieldCheck },
         { title: "Preferences", url: "/settings", icon: SlidersHorizontal },
       ],
     },
