@@ -115,27 +115,27 @@ export const getReferralTree = createServerFn({ method: "GET" })
       const [membershipsRes, paymentsRes] = await Promise.all([
         supabase
           .from("memberships")
-          .select("customer_id, status, membership_number, created_at")
-          .in("customer_id", referredIds)
+          .select("user_id, status, membership_number, created_at")
+          .in("user_id", referredIds)
           .order("created_at", { ascending: false }),
         supabase
           .from("payments")
           .select("customer_id, amount, status")
           .in("customer_id", referredIds)
-          .eq("status", "captured"),
+          .eq("status", "paid"),
       ]);
       if (membershipsRes.error) throw new Error(membershipsRes.error.message);
       if (paymentsRes.error) throw new Error(paymentsRes.error.message);
 
-      for (const m of membershipsRes.data ?? []) {
-        if (!membershipsByCustomer.has(m.customer_id)) {
-          membershipsByCustomer.set(m.customer_id, {
+      for (const m of (membershipsRes.data ?? []) as Array<{ user_id: string; status: string; membership_number: string | null }>) {
+        if (!membershipsByCustomer.has(m.user_id)) {
+          membershipsByCustomer.set(m.user_id, {
             status: m.status,
             membership_number: m.membership_number,
           });
         }
       }
-      for (const p of paymentsRes.data ?? []) {
+      for (const p of (paymentsRes.data ?? []) as Array<{ customer_id: string; amount: number | string }>) {
         paidByCustomer.set(
           p.customer_id,
           (paidByCustomer.get(p.customer_id) ?? 0) + Number(p.amount ?? 0),
