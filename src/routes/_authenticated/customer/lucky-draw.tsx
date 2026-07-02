@@ -58,6 +58,15 @@ function CustomerLuckyDrawPage() {
     queryFn: () => listDrawsFn(),
   });
 
+  useDrawRealtime({
+    enabled: !!session?.user.id,
+    queryKeys: [
+      ["customer-open-draws", session?.user.id],
+      ["customer-draw-results", session?.user.id],
+    ],
+  });
+
+
   // Monthly on-time payment eligibility (kept from prior version)
   const eligQ = useQuery({
     queryKey: ["my-draw-eligibility", session?.user.id],
