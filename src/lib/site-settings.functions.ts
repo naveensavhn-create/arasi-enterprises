@@ -16,13 +16,19 @@ export type SiteSettings = {
   logo_url: string | null;
   favicon_url: string | null;
   footer_text: string | null;
+  reminder_cron_schedule: string;
+  reminder_cron_timezone: string;
   updated_at: string;
 };
+
+export const DEFAULT_REMINDER_CRON_SCHEDULE = "* * * * *";
+export const DEFAULT_REMINDER_CRON_TIMEZONE = "Asia/Kolkata";
 
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000001";
 
 const COLUMNS =
-  "brand_name, tagline, support_email, support_phone, primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, favicon_url, footer_text, updated_at";
+  "brand_name, tagline, support_email, support_phone, primary_color, secondary_color, accent_color, heading_font, body_font, logo_url, favicon_url, footer_text, reminder_cron_schedule, reminder_cron_timezone, updated_at";
+
 
 export const getSiteSettings = createServerFn({ method: "GET" }).handler(
   async (): Promise<SiteSettings | null> => {
