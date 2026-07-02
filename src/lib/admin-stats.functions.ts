@@ -1,11 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { aggregateOneTimeIncentives, type IncentiveTotals } from "@/lib/incentives-aggregate";
 
 export type AdminDashboardStats = {
   promoters: number;
   customers: number;
   totalRevenue: number;
   commissions: { total: number; paid: number; pending: number };
+  /**
+   * Rank incentives are one-time awards (unique per promoter+rank). The
+   * dashboard reports them as awarded totals — never as a monthly average.
+   */
+  oneTimeIncentives: IncentiveTotals;
   pendingAmount: number;
   overdueAmount: number;
   kycPending: number;
