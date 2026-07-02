@@ -402,8 +402,8 @@ export const listAdminPayments = createServerFn({ method: "GET" })
             let tq = sb.from("payments").select("amount, status", { count: "exact" });
             tq = tq.in("id", webhookPaymentIds);
             tq = applyPaymentStatusEq(tq, n.status);
-            if (n.orderId) tq = tq.ilike("provider_order_id", `%${n.orderId}%`);
-            if (n.paymentId) tq = tq.ilike("provider_payment_id", `%${n.paymentId}%`);
+            if (n.orderId) { const s = sanitizePostgrestLike(n.orderId); if (s) tq = tq.ilike("provider_order_id", `%${s}%`); }
+            if (n.paymentId) { const s = sanitizePostgrestLike(n.paymentId); if (s) tq = tq.ilike("provider_payment_id", `%${s}%`); }
             if (customerIdsExact && customerIdsExact.length) tq = tq.in("customer_id", customerIdsExact);
             const { data: agg, error, count } = await tq.limit(50_000);
             if (error) throw new Error(error.message);
