@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Trophy, Ticket, CalendarClock, Plus, Play, Ban, Trash2, Users, X } from "lucide-react";
+import { Trophy, Ticket, CalendarClock, Plus, Play, Ban, Trash2, Users, X, Sparkles } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -101,6 +101,7 @@ function AdminLuckyDrawPage() {
 
   const [openCreate, setOpenCreate] = useState(false);
   const [selected, setSelected] = useState<Draw | null>(null);
+  const [focusManual, setFocusManual] = useState(false);
 
   const createMut = useMutation({
     mutationFn: (input: {
@@ -404,9 +405,19 @@ function AdminLuckyDrawPage() {
                       </div>
                     </TableCell>
                     <TableCell className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" onClick={() => setSelected(d)}>
+                      <Button size="sm" variant="outline" onClick={() => { setFocusManual(false); setSelected(d); }}>
                         <Users className="mr-1 h-3.5 w-3.5" /> Entries
                       </Button>
+                      {d.status !== "completed" && d.status !== "cancelled" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => { setFocusManual(true); setSelected(d); }}
+                          title="Open manual winner pick"
+                        >
+                          <Sparkles className="mr-1 h-3.5 w-3.5" /> Manual
+                        </Button>
+                      )}
                       {d.status !== "completed" && d.status !== "cancelled" && (
                         <>
                           {d.status === "scheduled" && (
@@ -489,7 +500,11 @@ function AdminLuckyDrawPage() {
         </CardContent>
       </Card>
 
-      <DrawDetailDialog draw={selected} onClose={() => setSelected(null)} />
+      <DrawDetailDialog
+        draw={selected}
+        focusManual={focusManual}
+        onClose={() => { setSelected(null); setFocusManual(false); }}
+      />
     </div>
   );
 }
