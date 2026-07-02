@@ -223,10 +223,10 @@ export const requestReward = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: row, error } = await context.supabase.rpc("request_customer_reward", {
       _reward_id: data.id,
-      _note: data.note ?? null,
-    });
+      _note: data.note ?? "",
+    } as never);
     if (error) throw new Error(error.message);
-    return row as CustomerRewardRow;
+    return row as unknown as CustomerRewardRow;
   });
 
 // ============ Admin ledger ============
