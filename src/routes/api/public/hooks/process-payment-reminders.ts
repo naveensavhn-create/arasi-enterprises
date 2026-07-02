@@ -429,6 +429,10 @@ async function processJob(
         due: dueFormatted,
         membership:
           membership.member_display_id ?? membership.membership_number,
+        // Brand-aware DLT placeholders — ignored by MSG91 if the template
+        // doesn't reference them, populated from Site Settings otherwise.
+        brand: (brand?.name ?? "").slice(0, 30),
+        logo: (brand?.logoUrl ?? "").slice(0, 200),
       },
       idempotencyKey: `payment-reminder:${job.id}:${job.attempts}`,
     });
