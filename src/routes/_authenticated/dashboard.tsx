@@ -85,11 +85,3 @@ function Dashboard() {
   );
 }
 
-function PlaceholderCard({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-[var(--shadow-card)]">
-      <h3 className="text-sm font-semibold">{title}</h3>
-      <p className="mt-1 text-xs text-muted-foreground">{body}</p>
-    </div>
-  );
-}
