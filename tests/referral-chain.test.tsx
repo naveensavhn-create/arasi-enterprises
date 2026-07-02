@@ -99,7 +99,9 @@ describe("ReferralChain", () => {
   it("falls back to em dash when a node has no name", () => {
     render(
       <ReferralChain
-        chain={[promoter({ id: "u1", full_name: null, display_id: null, referral_code: null })]}
+        chain={[
+          { id: "u1", full_name: null, display_id: null, referral_code: null },
+        ]}
       />,
     );
     const node = screen.getByTestId("referral-chain-node");
