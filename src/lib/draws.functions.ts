@@ -263,7 +263,14 @@ export const pickDrawWinnersManual = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
-
+export const enterDraw = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => enterSchema.parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: draw, error: drawErr } = await context.supabase
+      .from("draws")
+      .select("id, status, opens_at, closes_at, requires_active_membership, plan_id")
+      .eq("id", data.drawId)
       .maybeSingle();
     if (drawErr) throw new Error(drawErr.message);
     if (!draw) throw new Error("Draw not found");
