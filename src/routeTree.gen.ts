@@ -69,6 +69,7 @@ import { Route as AuthenticatedAdminApprovalsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminSplatRouteImport } from './routes/_authenticated/admin/$'
 import { Route as ApiPublicRazorpayWebhookRouteImport } from './routes/api/public/razorpay/webhook'
 import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
+import { Route as ApiPublicHooksProcessRewardNotificationsRouteImport } from './routes/api/public/hooks/process-reward-notifications'
 import { Route as ApiPublicHooksProcessPaymentRemindersRouteImport } from './routes/api/public/hooks/process-payment-reminders'
 import { Route as ApiPublicHooksProcessExportJobsRouteImport } from './routes/api/public/hooks/process-export-jobs'
 import { Route as ApiPublicHooksEnqueuePaymentRemindersRouteImport } from './routes/api/public/hooks/enqueue-payment-reminders'
@@ -421,6 +422,12 @@ const ApiPublicHooksReconcilePaymentsRoute =
     path: '/api/public/hooks/reconcile-payments',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksProcessRewardNotificationsRoute =
+  ApiPublicHooksProcessRewardNotificationsRouteImport.update({
+    id: '/api/public/hooks/process-reward-notifications',
+    path: '/api/public/hooks/process-reward-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProcessPaymentRemindersRoute =
   ApiPublicHooksProcessPaymentRemindersRouteImport.update({
     id: '/api/public/hooks/process-payment-reminders',
@@ -520,6 +527,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
+  '/api/public/hooks/process-reward-notifications': typeof ApiPublicHooksProcessRewardNotificationsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
@@ -586,6 +594,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
+  '/api/public/hooks/process-reward-notifications': typeof ApiPublicHooksProcessRewardNotificationsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
@@ -655,6 +664,7 @@ export interface FileRoutesById {
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
   '/api/public/hooks/process-payment-reminders': typeof ApiPublicHooksProcessPaymentRemindersRoute
+  '/api/public/hooks/process-reward-notifications': typeof ApiPublicHooksProcessRewardNotificationsRoute
   '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/razorpay/webhook': typeof ApiPublicRazorpayWebhookRoute
   '/api/admin/draws/$drawId/pick': typeof ApiAdminDrawsDrawIdPickRoute
@@ -724,6 +734,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
+    | '/api/public/hooks/process-reward-notifications'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
     | '/api/admin/draws/$drawId/pick'
@@ -790,6 +801,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
+    | '/api/public/hooks/process-reward-notifications'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
     | '/api/admin/draws/$drawId/pick'
@@ -858,6 +870,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
     | '/api/public/hooks/process-payment-reminders'
+    | '/api/public/hooks/process-reward-notifications'
     | '/api/public/hooks/reconcile-payments'
     | '/api/public/razorpay/webhook'
     | '/api/admin/draws/$drawId/pick'
@@ -871,6 +884,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEnqueuePaymentRemindersRoute: typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   ApiPublicHooksProcessExportJobsRoute: typeof ApiPublicHooksProcessExportJobsRoute
   ApiPublicHooksProcessPaymentRemindersRoute: typeof ApiPublicHooksProcessPaymentRemindersRoute
+  ApiPublicHooksProcessRewardNotificationsRoute: typeof ApiPublicHooksProcessRewardNotificationsRoute
   ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
   ApiPublicRazorpayWebhookRoute: typeof ApiPublicRazorpayWebhookRoute
   ApiAdminDrawsDrawIdPickRoute: typeof ApiAdminDrawsDrawIdPickRoute
@@ -1298,6 +1312,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksReconcilePaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/process-reward-notifications': {
+      id: '/api/public/hooks/process-reward-notifications'
+      path: '/api/public/hooks/process-reward-notifications'
+      fullPath: '/api/public/hooks/process-reward-notifications'
+      preLoaderRoute: typeof ApiPublicHooksProcessRewardNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/process-payment-reminders': {
       id: '/api/public/hooks/process-payment-reminders'
       path: '/api/public/hooks/process-payment-reminders'
@@ -1519,6 +1540,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksProcessExportJobsRoute: ApiPublicHooksProcessExportJobsRoute,
   ApiPublicHooksProcessPaymentRemindersRoute:
     ApiPublicHooksProcessPaymentRemindersRoute,
+  ApiPublicHooksProcessRewardNotificationsRoute:
+    ApiPublicHooksProcessRewardNotificationsRoute,
   ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
   ApiPublicRazorpayWebhookRoute: ApiPublicRazorpayWebhookRoute,
   ApiAdminDrawsDrawIdPickRoute: ApiAdminDrawsDrawIdPickRoute,
