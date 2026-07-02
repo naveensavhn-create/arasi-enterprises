@@ -175,18 +175,18 @@ function SiteSettingsPage() {
                     onChange={(e) => set("support_phone", e.target.value)}
                   />
                 </Field>
-                <Field label="Logo URL">
-                  <Input
+                <Field label="Logo">
+                  <BrandAssetUploader
+                    kind="logo"
                     value={form.logo_url ?? ""}
-                    onChange={(e) => set("logo_url", e.target.value)}
-                    placeholder="https://…"
+                    onChange={(v) => set("logo_url", v)}
                   />
                 </Field>
-                <Field label="Favicon URL">
-                  <Input
+                <Field label="Favicon">
+                  <BrandAssetUploader
+                    kind="favicon"
                     value={form.favicon_url ?? ""}
-                    onChange={(e) => set("favicon_url", e.target.value)}
-                    placeholder="https://…"
+                    onChange={(v) => set("favicon_url", v)}
                   />
                 </Field>
               </div>
