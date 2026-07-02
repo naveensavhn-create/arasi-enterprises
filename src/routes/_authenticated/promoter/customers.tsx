@@ -66,6 +66,8 @@ import {
   submitReferralForReview,
   type ReferredCustomer,
 } from "@/lib/promoter.functions";
+import { PromoterReferralLinkCard } from "@/components/promoter/PromoterReferralLinkCard";
+
 
 export const Route = createFileRoute("/_authenticated/promoter/customers")({
   head: () => ({ meta: [{ title: "My Customers — Promoter" }] }),
