@@ -66,7 +66,7 @@ function CustomerLuckyDrawPage() {
     staleTime: 30_000,
   });
 
-  useDrawRealtime({
+  const realtime = useDrawRealtime({
     enabled: !!session?.user.id,
     queryKeys: [
       ["customer-open-draws", session?.user.id],
