@@ -353,6 +353,32 @@ function AdminPlansPage() {
   const activeCount = data?.filter((p) => p.is_active).length ?? 0;
   const totalEnrolled = usage ? Object.values(usage).reduce((a, b) => a + b, 0) : 0;
 
+  const filteredPlans = useMemo(() => {
+    if (!data) return [];
+    const q = search.trim().toLowerCase();
+    const filtered = data.filter((p) => {
+      if (activeOnly && !p.is_active) return false;
+      if (advanceOnly && Number(p.advance_amount) <= 0) return false;
+      if (!q) return true;
+      const hay = `${p.name} ${p.description ?? ""} ${(p.benefits ?? []).join(" ")}`.toLowerCase();
+      return hay.includes(q);
+    });
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      if (sortBy === "name") return a.name.localeCompare(b.name) * dir;
+      const av = Number((a as unknown as Record<string, unknown>)[sortBy] ?? 0);
+      const bv = Number((b as unknown as Record<string, unknown>)[sortBy] ?? 0);
+      return (av - bv) * dir;
+    });
+  }, [data, search, activeOnly, advanceOnly, sortBy, sortDir]);
+
+  const filtersActive = search.trim() !== "" || activeOnly || advanceOnly;
+  const clearFilters = () => {
+    setSearch("");
+    setActiveOnly(false);
+    setAdvanceOnly(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Hero header */}
