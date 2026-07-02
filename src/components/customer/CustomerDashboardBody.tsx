@@ -137,10 +137,11 @@ export function CustomerDashboardBody() {
   }
 
   if (membershipsQ.isError) {
+    const err = membershipsQ.error as unknown;
     const message =
-      membershipsQ.error instanceof Error
-        ? membershipsQ.error.message
-        : "We couldn't load your dashboard.";
+      (typeof err === "object" && err && "message" in err && typeof (err as { message: unknown }).message === "string"
+        ? (err as { message: string }).message
+        : null) ?? "We couldn't load your dashboard.";
     return (
       <div
         role="alert"
