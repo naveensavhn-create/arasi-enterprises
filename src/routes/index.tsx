@@ -180,22 +180,23 @@ function Landing() {
               key={p.id}
               to="/auth"
               search={{ portal: p.id }}
-              className="group relative flex h-full flex-col border border-[#C5A059]/20 bg-[#0F172A]/40 p-8 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:border-[#C5A059]/60 hover:bg-[#0F172A]/60 md:p-10"
+              className="group relative flex h-full flex-col border border-[#C5A059]/20 bg-[#0F172A]/40 p-8 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:border-[#C5A059]/60 hover:bg-[#0F172A]/60 focus-visible:-translate-y-1 focus-visible:border-[#C5A059]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] motion-reduce:transform-none motion-reduce:transition-none md:p-10"
             >
-              {/* Top gold sweep on hover */}
+              {/* Top gold sweep on hover — decorative, disabled under reduced motion */}
               <div
                 aria-hidden
-                className="absolute left-0 top-0 h-px w-full scale-x-0 bg-gradient-to-r from-transparent via-[#C5A059]/70 to-transparent transition-transform duration-700 group-hover:scale-x-100"
+                className="absolute left-0 top-0 h-px w-full scale-x-0 bg-gradient-to-r from-transparent via-[#C5A059]/70 to-transparent transition-transform duration-700 group-hover:scale-x-100 group-focus-visible:scale-x-100 motion-reduce:transition-none motion-reduce:group-hover:scale-x-0"
               />
-              {/* Corner index */}
+              {/* Corner index — decorative */}
               <span
-                className="absolute right-6 top-6 text-xs font-medium tracking-[0.25em] text-white/25"
+                aria-hidden
+                className="absolute right-6 top-6 text-xs font-medium tracking-[0.25em] text-white/60"
                 style={serif}
               >
                 0{idx + 1}
               </span>
 
-              <div className="mb-8 text-[#C5A059]">
+              <div className="mb-8 text-[#C5A059]" aria-hidden>
                 <p.icon className="h-8 w-8" strokeWidth={1.25} />
               </div>
               <h3
@@ -204,16 +205,18 @@ function Landing() {
               >
                 {p.title}
               </h3>
-              <p className="mb-10 flex-grow text-sm leading-relaxed text-white/55">
+              <p className="mb-10 flex-grow text-sm leading-relaxed text-white/80">
                 {p.desc}
               </p>
               <div className="inline-flex items-center text-xs font-bold uppercase tracking-[0.2em] text-[#C5A059]">
                 Continue
-                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" aria-hidden />
               </div>
             </Link>
           ))}
-        </div>
+          </div>
+        </section>
+
 
         {/* Programme benefits */}
         <section
