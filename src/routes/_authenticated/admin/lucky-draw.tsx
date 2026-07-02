@@ -706,6 +706,17 @@ function DrawDetailDialog({ draw, onClose, focusManual = false }: { draw: Draw |
     });
   };
 
+  const manualRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (draw && focusManual && manualRef.current) {
+      const el = manualRef.current;
+      const t = setTimeout(() => {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 80);
+      return () => clearTimeout(t);
+    }
+  }, [draw, focusManual]);
+
   return (
     <Dialog open={!!draw} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-3xl">
@@ -751,7 +762,7 @@ function DrawDetailDialog({ draw, onClose, focusManual = false }: { draw: Draw |
             </div>
 
             {canPick && (
-              <Card className="border-dashed">
+              <Card ref={manualRef} className={`border-dashed ${focusManual ? "ring-2 ring-primary/50" : ""}`}>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm">Manual pick</CardTitle>
                 </CardHeader>
