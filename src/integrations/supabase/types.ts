@@ -1783,6 +1783,77 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          event_type: string
+          from_status: Database["public"]["Enums"]["reward_claim_status"] | null
+          id: string
+          membership_id: string | null
+          metadata: Json
+          note: string | null
+          reward_id: string | null
+          tier_id: string | null
+          to_status: Database["public"]["Enums"]["reward_claim_status"] | null
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          event_type: string
+          from_status?:
+            | Database["public"]["Enums"]["reward_claim_status"]
+            | null
+          id?: string
+          membership_id?: string | null
+          metadata?: Json
+          note?: string | null
+          reward_id?: string | null
+          tier_id?: string | null
+          to_status?: Database["public"]["Enums"]["reward_claim_status"] | null
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          event_type?: string
+          from_status?:
+            | Database["public"]["Enums"]["reward_claim_status"]
+            | null
+          id?: string
+          membership_id?: string | null
+          metadata?: Json
+          note?: string | null
+          reward_id?: string | null
+          tier_id?: string | null
+          to_status?: Database["public"]["Enums"]["reward_claim_status"] | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_events_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_events_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "customer_rewards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_events_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "reward_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reward_tiers: {
         Row: {
           certificate_body: string | null
@@ -2657,6 +2728,10 @@ export type Database = {
           target_user_id: string
           user_agent: string
         }[]
+      }
+      log_reward_recompute: {
+        Args: { _membership_id: string; _unlocked: number }
+        Returns: undefined
       }
       mark_all_notifications_read: { Args: never; Returns: undefined }
       mark_installment_paid: {
