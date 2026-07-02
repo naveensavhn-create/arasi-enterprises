@@ -417,19 +417,9 @@ export const Route = createFileRoute(
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey =
-          request.headers.get("apikey") ??
-          request.headers.get("Authorization")?.replace(/^Bearer\s+/i, "");
-        const expected =
-          process.env.SUPABASE_PUBLISHABLE_KEY ??
-          process.env.SUPABASE_ANON_KEY ??
-          "";
-        if (!expected || apiKey !== expected) {
-          return new Response(JSON.stringify({ error: "Unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        const { verifyCronRequest } = await import("@/lib/cron-auth.server");
+        const denied = await verifyCronRequest(request);
+        if (denied) return denied;
 
         const supabaseAdmin = createClient<Database>(
           process.env.SUPABASE_URL!,
