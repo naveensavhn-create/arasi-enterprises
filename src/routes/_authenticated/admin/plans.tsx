@@ -777,10 +777,11 @@ function AdminPlansPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => toggleActive.mutate(p)}
+                        onClick={() => setConfirmToggle(p)}
                         title={p.is_active ? "Deactivate" : "Activate"}
+                        aria-label={p.is_active ? `Deactivate ${p.name}` : `Activate ${p.name}`}
                       >
-                        <Switch checked={p.is_active} />
+                        <Switch checked={p.is_active} tabIndex={-1} className="pointer-events-none" />
                       </Button>
                       <Button
                         size="icon"
