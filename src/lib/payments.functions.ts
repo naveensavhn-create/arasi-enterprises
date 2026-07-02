@@ -312,15 +312,15 @@ async function fetchPaymentRows(
 
   // Batched profile lookup (payments.customer_id → auth.users; profiles.id
   // shares the same UUID, so we join manually).
-  const customerIds = Array.from(
+  const uniqueCustomerIds = Array.from(
     new Set((rows ?? []).map((r: any) => r.customer_id).filter(Boolean)),
   ) as string[];
   const profileMap = new Map<string, { full_name: string | null; email: string | null }>();
-  if (customerIds.length) {
+  if (uniqueCustomerIds.length) {
     const { data: profs, error: pErr } = await sb
       .from("profiles")
       .select("id, full_name, email")
-      .in("id", customerIds);
+      .in("id", uniqueCustomerIds);
     if (pErr) throw new Error(pErr.message);
     for (const p of profs ?? []) {
       profileMap.set(p.id, { full_name: p.full_name ?? null, email: p.email ?? null });
