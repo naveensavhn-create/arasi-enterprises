@@ -65,7 +65,64 @@ export const Route = createFileRoute("/")({
   }),
   component: Landing,
   errorComponent: HomeErrorFallback,
+  pendingComponent: HomeSkeleton,
+  pendingMs: 0,
+  pendingMinMs: 250,
 });
+
+function HomeSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      aria-label="Loading home page"
+      className="min-h-screen w-full bg-[#0b1220] text-slate-100"
+    >
+      <span className="sr-only">Loading Arasi Enterprises home page…</span>
+
+      {/* Header */}
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-amber-400/10" />
+          <div className="space-y-2">
+            <div className="h-3 w-24 animate-pulse rounded bg-amber-400/10" />
+            <div className="h-2 w-16 animate-pulse rounded bg-amber-400/5" />
+          </div>
+        </div>
+        <div className="h-9 w-24 animate-pulse rounded-full border border-amber-400/20 bg-amber-400/5" />
+      </header>
+
+      {/* Hero */}
+      <section className="mx-auto max-w-4xl px-6 pt-16 text-center">
+        <div className="mx-auto mb-6 h-3 w-56 animate-pulse rounded bg-amber-400/10" />
+        <div className="mx-auto mb-4 h-12 w-3/4 animate-pulse rounded bg-slate-700/40" />
+        <div className="mx-auto mb-8 h-12 w-2/3 animate-pulse rounded bg-slate-700/40" />
+        <div className="mx-auto mb-2 h-3 w-full max-w-2xl animate-pulse rounded bg-slate-700/30" />
+        <div className="mx-auto mb-2 h-3 w-5/6 max-w-xl animate-pulse rounded bg-slate-700/30" />
+        <div className="mx-auto h-3 w-2/3 max-w-lg animate-pulse rounded bg-slate-700/30" />
+        <div className="mt-10 flex justify-center gap-3">
+          <div className="h-11 w-36 animate-pulse rounded-full bg-amber-400/30" />
+          <div className="h-11 w-36 animate-pulse rounded-full border border-amber-400/20 bg-amber-400/5" />
+        </div>
+      </section>
+
+      {/* Cards grid */}
+      <section className="mx-auto mt-20 grid max-w-6xl gap-6 px-6 pb-16 sm:grid-cols-2 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="space-y-3 rounded-xl border border-amber-400/10 bg-slate-800/30 p-6"
+          >
+            <div className="h-8 w-8 animate-pulse rounded bg-amber-400/20" />
+            <div className="h-4 w-3/4 animate-pulse rounded bg-slate-700/50" />
+            <div className="h-3 w-full animate-pulse rounded bg-slate-700/30" />
+            <div className="h-3 w-5/6 animate-pulse rounded bg-slate-700/30" />
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
 
 function HomeErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
