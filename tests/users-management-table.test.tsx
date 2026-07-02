@@ -147,7 +147,7 @@ describe("UsersManagementTable", () => {
     await screen.findByText("Cust A");
 
     // Switch to Promoters.
-    (getTabButton(/Promoters/) as HTMLElement).click();
+    await userEvent.click(getTabButton(/Promoters/) as HTMLElement);
 
     await waitFor(() => {
       expect(screen.queryByText("Cust A")).toBeNull();
