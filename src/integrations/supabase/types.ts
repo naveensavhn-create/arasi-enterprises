@@ -1854,6 +1854,132 @@ export type Database = {
           },
         ]
       }
+      reward_notification_jobs: {
+        Row: {
+          attempts: number
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          error_code: string | null
+          error_message: string | null
+          event_id: string
+          from_status: Database["public"]["Enums"]["reward_claim_status"] | null
+          id: string
+          last_attempt_at: string | null
+          max_attempts: number
+          membership_id: string | null
+          metadata: Json
+          next_attempt_at: string | null
+          notification_kind: Database["public"]["Enums"]["reward_notification_kind"]
+          provider: string | null
+          provider_message_id: string | null
+          recipient_email: string | null
+          recipient_id: string
+          recipient_phone: string | null
+          reward_id: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["reminder_status"]
+          tier_id: string | null
+          to_status: Database["public"]["Enums"]["reward_claim_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at?: string
+          dead_letter_at?: string | null
+          dead_letter_reason?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          event_id: string
+          from_status?:
+            | Database["public"]["Enums"]["reward_claim_status"]
+            | null
+          id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number
+          membership_id?: string | null
+          metadata?: Json
+          next_attempt_at?: string | null
+          notification_kind: Database["public"]["Enums"]["reward_notification_kind"]
+          provider?: string | null
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          recipient_id: string
+          recipient_phone?: string | null
+          reward_id?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["reminder_status"]
+          tier_id?: string | null
+          to_status?: Database["public"]["Enums"]["reward_claim_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          channel?: Database["public"]["Enums"]["reminder_channel"]
+          created_at?: string
+          dead_letter_at?: string | null
+          dead_letter_reason?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          event_id?: string
+          from_status?:
+            | Database["public"]["Enums"]["reward_claim_status"]
+            | null
+          id?: string
+          last_attempt_at?: string | null
+          max_attempts?: number
+          membership_id?: string | null
+          metadata?: Json
+          next_attempt_at?: string | null
+          notification_kind?: Database["public"]["Enums"]["reward_notification_kind"]
+          provider?: string | null
+          provider_message_id?: string | null
+          recipient_email?: string | null
+          recipient_id?: string
+          recipient_phone?: string | null
+          reward_id?: string | null
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["reminder_status"]
+          tier_id?: string | null
+          to_status?: Database["public"]["Enums"]["reward_claim_status"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_notification_jobs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "reward_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_notification_jobs_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_notification_jobs_reward_id_fkey"
+            columns: ["reward_id"]
+            isOneToOne: false
+            referencedRelation: "customer_rewards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_notification_jobs_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "reward_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reward_tiers: {
         Row: {
           certificate_body: string | null
@@ -2515,6 +2641,45 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_due_reward_notification_jobs: {
+        Args: { _limit?: number }
+        Returns: {
+          attempts: number
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          error_code: string | null
+          error_message: string | null
+          event_id: string
+          from_status: Database["public"]["Enums"]["reward_claim_status"] | null
+          id: string
+          last_attempt_at: string | null
+          max_attempts: number
+          membership_id: string | null
+          metadata: Json
+          next_attempt_at: string | null
+          notification_kind: Database["public"]["Enums"]["reward_notification_kind"]
+          provider: string | null
+          provider_message_id: string | null
+          recipient_email: string | null
+          recipient_id: string
+          recipient_phone: string | null
+          reward_id: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["reminder_status"]
+          tier_id: string | null
+          to_status: Database["public"]["Enums"]["reward_claim_status"] | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "reward_notification_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       cleanup_rate_limit_buckets: { Args: never; Returns: number }
       count_active_admins: { Args: never; Returns: number }
       current_user_role: {
@@ -2656,6 +2821,54 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "payment_reminder_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      finalize_reward_notification_job: {
+        Args: {
+          _error_code?: string
+          _error_message?: string
+          _job_id: string
+          _metadata?: Json
+          _provider?: string
+          _provider_message_id?: string
+          _retry_in_seconds?: number
+          _status: string
+        }
+        Returns: {
+          attempts: number
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          error_code: string | null
+          error_message: string | null
+          event_id: string
+          from_status: Database["public"]["Enums"]["reward_claim_status"] | null
+          id: string
+          last_attempt_at: string | null
+          max_attempts: number
+          membership_id: string | null
+          metadata: Json
+          next_attempt_at: string | null
+          notification_kind: Database["public"]["Enums"]["reward_notification_kind"]
+          provider: string | null
+          provider_message_id: string | null
+          recipient_email: string | null
+          recipient_id: string
+          recipient_phone: string | null
+          reward_id: string | null
+          scheduled_at: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["reminder_status"]
+          tier_id: string | null
+          to_status: Database["public"]["Enums"]["reward_claim_status"] | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reward_notification_jobs"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -2966,6 +3179,7 @@ export type Database = {
         | "dispatched"
         | "delivered"
         | "rejected"
+      reward_notification_kind: "unlocked" | "status_change"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3124,6 +3338,7 @@ export const Constants = {
         "delivered",
         "rejected",
       ],
+      reward_notification_kind: ["unlocked", "status_change"],
     },
   },
 } as const
