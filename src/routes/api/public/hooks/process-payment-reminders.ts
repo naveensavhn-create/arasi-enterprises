@@ -448,6 +448,8 @@ async function processJob(
   if (dispatched.status === skippedInfraCode) {
     await finalize(supabase, job.id, {
       status: "skipped",
+      provider: providerName,
+      providerMessageId: dispatched.providerMessageId ?? null,
       errorCode: dispatched.errorCode ?? null,
       errorMessage: dispatched.errorMessage ?? null,
     });
@@ -456,6 +458,8 @@ async function processJob(
 
   await finalize(supabase, job.id, {
     status: "failed",
+    provider: providerName,
+    providerMessageId: dispatched.providerMessageId ?? null,
     errorCode: dispatched.errorCode ?? null,
     errorMessage: dispatched.errorMessage ?? null,
     retryInSeconds: backoffSecondsFor(job.attempts),
