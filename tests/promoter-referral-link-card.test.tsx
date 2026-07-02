@@ -79,7 +79,7 @@ describe("PromoterReferralLinkCard", () => {
     renderCard();
     const btn = await screen.findByRole("button", { name: /copy link/i });
     await user.click(btn);
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(FIXTURE.referral_url);
+    expect(writeText).toHaveBeenCalledWith(FIXTURE.referral_url);
     expect(successToast).toHaveBeenCalledWith("Link copied");
   });
 
@@ -93,12 +93,12 @@ describe("PromoterReferralLinkCard", () => {
     );
     const codeCopy = copyButtons[copyButtons.length - 1];
     await user.click(codeCopy);
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(FIXTURE.referral_code);
+    expect(writeText).toHaveBeenCalledWith(FIXTURE.referral_code);
     expect(successToast).toHaveBeenCalledWith("Code copied");
   });
 
   it("surfaces an error toast if the clipboard write fails", async () => {
-    (navigator.clipboard.writeText as any) = vi.fn(async () => { throw new Error("denied"); });
+    (writeText as any) = vi.fn(async () => { throw new Error("denied"); });
     const user = userEvent.setup();
     renderCard();
     const btn = await screen.findByRole("button", { name: /copy link/i });
