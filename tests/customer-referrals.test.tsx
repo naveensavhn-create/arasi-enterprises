@@ -12,7 +12,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { fireEvent } from "@testing-library/react";
 
 const OWNER_ID = "abcdef12-3456-7890-abcd-ef1234567890";
@@ -86,8 +86,8 @@ describe("Customer referrals page", () => {
       `${window.location.origin}/?ref=${EXPECTED_CODE}`,
     );
 
-    expect(successToast).toHaveBeenCalledWith("Copied to clipboard");
-    expect(successToast).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(successToast).toHaveBeenCalledWith("Copied to clipboard"));
+    await waitFor(() => expect(successToast).toHaveBeenCalledTimes(2));
   });
 
   it("renders the referral list section with its empty-state message", () => {

@@ -12,7 +12,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -81,7 +81,7 @@ describe("PromoterReferralLinkCard", () => {
     const btn = await screen.findByRole("button", { name: /copy link/i });
     fireEvent.click(btn);
     expect(writeText).toHaveBeenCalledWith(FIXTURE.referral_url);
-    expect(successToast).toHaveBeenCalledWith("Link copied");
+    await waitFor(() => expect(successToast).toHaveBeenCalledWith("Link copied"));
   });
 
   it("copies the raw referral code (not the URL) on the code button", async () => {
@@ -95,7 +95,7 @@ describe("PromoterReferralLinkCard", () => {
     const codeCopy = copyButtons[copyButtons.length - 1];
     fireEvent.click(codeCopy);
     expect(writeText).toHaveBeenCalledWith(FIXTURE.referral_code);
-    expect(successToast).toHaveBeenCalledWith("Code copied");
+    await waitFor(() => expect(successToast).toHaveBeenCalledWith("Code copied"));
   });
 
   it("surfaces an error toast if the clipboard write fails", async () => {
@@ -104,6 +104,6 @@ describe("PromoterReferralLinkCard", () => {
     renderCard();
     const btn = await screen.findByRole("button", { name: /copy link/i });
     fireEvent.click(btn);
-    expect(errorToast).toHaveBeenCalledWith("Copy failed");
+    await waitFor(() => expect(errorToast).toHaveBeenCalledWith("Copy failed"));
   });
 });
