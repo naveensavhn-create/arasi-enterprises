@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Logo } from "@/components/brand/Logo";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 import type { ReceiptRow } from "@/lib/receipts.functions";
 
 const inr = (n: number) =>
