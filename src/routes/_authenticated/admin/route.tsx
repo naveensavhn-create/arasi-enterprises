@@ -27,6 +27,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
     }
   },
   pendingComponent: () => <RouteLoading label="Loading admin portal…" />,
+  pendingMs: 0,
+  pendingMinMs: 300,
   errorComponent: ({ error, reset }) => {
     const router = useRouter();
     if (error instanceof ForbiddenError) {
