@@ -142,10 +142,11 @@ async function mountKycTab(profile: AdminProfileDetail) {
   mockProfile = profile;
   const { UserProfileDrawer } = await import("@/components/admin/UserProfileDrawer");
   render(withQuery(<UserProfileDrawer userId={profile.id} onClose={() => {}} />));
-  // Wait for the query to settle and the KYC tab trigger to appear.
   const trigger = await screen.findByRole("tab", { name: /aadhaar \/ kyc/i });
-  fireEvent.click(trigger);
+  const user = userEvent.setup();
+  await user.click(trigger);
 }
+
 
 // ---- Render tests --------------------------------------------------------
 
