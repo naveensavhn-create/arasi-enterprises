@@ -96,6 +96,7 @@ export async function sendRoleChangeEmail(
   try {
     // 2. Render the template so we know it compiles even when infra is absent.
     let html: string;
+    const brandOverrides = await loadBrandOverrides();
     if (input.kind === "promote") {
       const props: AdminRolePromotedProps = {
         recipientName: input.recipientName ?? undefined,
@@ -106,6 +107,7 @@ export async function sendRoleChangeEmail(
         changedAt: input.changedAt,
         reason: input.reason,
         dashboardUrl: input.dashboardUrl,
+        brand: brandOverrides,
       };
       html = await render(React.createElement(AdminRolePromoted, props));
     } else {
@@ -117,6 +119,7 @@ export async function sendRoleChangeEmail(
         newRole: input.newRole,
         changedAt: input.changedAt,
         reason: input.reason,
+        brand: brandOverrides,
       };
       html = await render(React.createElement(AdminRoleRevoked, props));
     }
