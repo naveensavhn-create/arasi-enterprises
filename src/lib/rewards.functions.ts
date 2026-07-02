@@ -273,9 +273,9 @@ export const adminUpdateRewardStatus = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase.rpc("admin_update_reward_status", {
       _reward_id: data.id,
       _new_status: data.status,
-      _admin_note: data.admin_note ?? null,
-      _tracking: data.tracking_reference ?? null,
-    });
+      _admin_note: data.admin_note ?? "",
+      _tracking: data.tracking_reference ?? "",
+    } as never);
     if (error) throw new Error(error.message);
-    return row as CustomerRewardRow;
+    return row as unknown as CustomerRewardRow;
   });
