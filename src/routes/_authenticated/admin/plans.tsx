@@ -246,13 +246,24 @@ function AdminPlansPage() {
 
   const toggleActive = useMutation({
     mutationFn: async (p: Plan) => {
+      const next = !p.is_active;
       const { error } = await supabase
         .from("membership_plans")
-        .update({ is_active: !p.is_active })
+        .update({ is_active: next })
         .eq("id", p.id);
       if (error) throw error;
+      return { next, name: p.name };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-plans"] }),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      toast.success(res.next ? `${res.name} activated` : `${res.name} deactivated`, {
+        description: res.next
+          ? "New enrollments can now select this plan."
+          : "Existing memberships are unchanged; new enrollments are blocked.",
+      });
+      setConfirmToggle(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update plan status"),
   });
 
   // Explicit, idempotent "deactivate" — used from the delete dialog so a
