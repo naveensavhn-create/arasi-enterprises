@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Logo } from "@/components/brand/Logo";
+import { useSiteSettings } from "@/components/providers/SiteSettingsProvider";
 import type { ReceiptRow } from "@/lib/receipts.functions";
 
 const inr = (n: number) =>
@@ -10,6 +11,7 @@ const fmt = (iso: string | null) =>
   iso ? new Date(iso).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : "—";
 
 export function ReceiptView({ receipt }: { receipt: ReceiptRow }) {
+  const settings = useSiteSettings();
   const [qr, setQr] = useState<string>("");
 
   useEffect(() => {
@@ -30,9 +32,9 @@ export function ReceiptView({ receipt }: { receipt: ReceiptRow }) {
 
       <header className="flex items-start justify-between border-b pb-6">
         <div>
-          <Logo />
+          <Logo src={settings.logo_url} />
           <p className="mt-2 text-xs text-slate-500">
-            ARASI Enterprises · Payment Receipt
+            {settings.brand_name || "ARASI Enterprises"} · Payment Receipt
           </p>
         </div>
         <div className="text-right">
