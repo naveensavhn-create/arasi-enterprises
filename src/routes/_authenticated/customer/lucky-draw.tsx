@@ -139,7 +139,9 @@ function CustomerLuckyDrawPage() {
       ? "bg-green-500"
       : realtime.status === "connecting" || realtime.status === "reconnecting"
         ? "bg-amber-500 animate-pulse"
-        : realtime.status === "error" || realtime.status === "closed"
+        : realtime.status === "error" ||
+            realtime.status === "closed" ||
+            realtime.status === "failed"
           ? "bg-destructive"
           : "bg-muted-foreground/40";
   const liveLabel =
@@ -153,7 +155,9 @@ function CustomerLuckyDrawPage() {
             ? "Offline — auto-refreshing"
             : realtime.status === "closed"
               ? "Disconnected"
-              : "Idle";
+              : realtime.status === "failed"
+                ? "Live updates unavailable"
+                : "Idle";
 
   return (
     <div className="space-y-6">
