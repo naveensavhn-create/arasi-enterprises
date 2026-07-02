@@ -47,8 +47,10 @@ import {
   listDrawWinners,
   listDraws,
   pickDrawWinners,
+  pickDrawWinnersManual,
   setDrawStatus,
 } from "@/lib/draws.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/_authenticated/admin/lucky-draw")({
   head: () => ({ meta: [{ title: "Lucky Draw — Admin" }] }),
