@@ -254,9 +254,8 @@ describe("PaymentDetailDrawer — end-to-end remediation flow per required field
 
       // 2. Drawer opens; destructive Alert with ARIA wiring is present.
       const alert = await getOpenAlert();
-      expect(alert).toHaveAttribute("id", "payment-invalid-row-alert");
-      expect(alert).toHaveAttribute(
-        "aria-labelledby",
+      expect(alert.getAttribute("id")).toBe("payment-invalid-row-alert");
+      expect(alert.getAttribute("aria-labelledby")).toBe(
         "payment-invalid-row-alert-title",
       );
 
