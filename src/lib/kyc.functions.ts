@@ -182,6 +182,45 @@ export const setKycDecision = createServerFn({ method: "POST" })
       _assign_role: data.assignRole ?? null,
     } as any);
     if (error) throw new Error(error.message);
+
+    // Fire-and-log the branded KYC decision email. Failures are captured
+    // in `kyc_email_notifications` so admins can retry from the log.
+    try {
+      const [{ data: target }, { data: actor }] = await Promise.all([
+        context.supabase
+          .from("profiles")
+          .select("email,full_name")
+          .eq("id", data.userId)
+          .maybeSingle(),
+        context.supabase
+          .from("profiles")
+          .select("email,full_name")
+          .eq("id", context.userId)
+          .maybeSingle(),
+      ]);
+      if (target?.email) {
+        const { enqueueKycDecisionEmail } = await import(
+          "@/lib/email/send-kyc-decision.server"
+        );
+        await enqueueKycDecisionEmail({
+          decision: data.approve ? "approved" : "rejected",
+          recipientEmail: target.email as string,
+          recipientName: (target.full_name as string | null) ?? undefined,
+          reviewerName: (actor?.full_name as string | null) ?? undefined,
+          reviewerEmail: (actor?.email as string | null) ?? undefined,
+          reviewedAt: new Date().toISOString(),
+          reviewNotes: data.notes ?? null,
+          assignedRole: data.assignRole ?? null,
+          targetUserId: data.userId,
+          triggeredBy: context.userId,
+        });
+      }
+    } catch (e) {
+      // Never fail the decision RPC if the email log/send fails —
+      // the failure is already recorded in kyc_email_notifications.
+      console.warn("KYC decision email enqueue failed:", e);
+    }
+
     return { ok: true };
   });
 
