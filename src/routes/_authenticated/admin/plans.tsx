@@ -601,6 +601,7 @@ function AdminPlansPage() {
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
                   <Button
+                    variant="success"
                     onClick={handleSave}
                     disabled={save.isPending || !validation.success}
                     aria-disabled={save.isPending || !validation.success}
