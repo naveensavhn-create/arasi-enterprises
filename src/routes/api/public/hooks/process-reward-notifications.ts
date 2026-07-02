@@ -367,6 +367,11 @@ async function processJob(
         status: (job.to_status ?? "").toString(),
         reward: rewardNumber ?? "",
         tracking: reward?.tracking_reference ?? "",
+        // Brand-aware variables — DLT templates that include ##brand## or
+        // ##logo## placeholders will render the Site Settings values. Extras
+        // are safely ignored by MSG91 for templates that don't reference them.
+        brand: (brandOverrides?.name ?? brand.name).slice(0, 30),
+        logo: (brandOverrides?.logoUrl ?? "").slice(0, 200),
       },
       idempotencyKey: `reward-notification:${job.id}:${job.attempts}`,
     });
