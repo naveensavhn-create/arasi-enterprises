@@ -220,19 +220,14 @@ async function fetchPaymentRows(
        provider_order_id, provider_payment_id, error_code, error_description,
        paid_at, created_at, customer_id, membership_id, installment_id,
        memberships:membership_id ( membership_number ),
-       installments:installment_id ( sequence, due_date ),
-       profiles:customer_id ( full_name, email )`,
+       installments:installment_id ( sequence, due_date )`,
     );
 
-  // Sorting: customer_name sorts by the embedded profiles.full_name;
-  // everything else is a direct payments column. Secondary sort on
-  // created_at keeps ordering stable for ties.
+  // Sorting: customer_name can't be pushed down (profiles isn't embeddable —
+  // payments.customer_id FKs auth.users, not public.profiles), so for that
+  // option we order by created_at at the DB level and re-sort the fetched
+  // page by resolved profile name below. Everything else is a direct column.
   if (n.sortBy === "customer_name") {
-    query = query.order("full_name", {
-      ascending: n.sortDir === "asc",
-      nullsFirst: false,
-      referencedTable: "profiles",
-    });
     query = query.order("created_at", { ascending: false });
   } else {
     query = query.order(n.sortBy, { ascending: n.sortDir === "asc", nullsFirst: false });
@@ -315,15 +310,44 @@ async function fetchPaymentRows(
     }
   }
 
-  return (rows ?? []).map((r: any) => {
-    const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-    const { profiles: _profiles, ...rest } = r;
+  // Batched profile lookup (payments.customer_id → auth.users; profiles.id
+  // shares the same UUID, so we join manually).
+  const uniqueCustomerIds = Array.from(
+    new Set((rows ?? []).map((r: any) => r.customer_id).filter(Boolean)),
+  ) as string[];
+  const profileMap = new Map<string, { full_name: string | null; email: string | null }>();
+  if (uniqueCustomerIds.length) {
+    const { data: profs, error: pErr } = await sb
+      .from("profiles")
+      .select("id, full_name, email")
+      .in("id", uniqueCustomerIds);
+    if (pErr) throw new Error(pErr.message);
+    for (const p of profs ?? []) {
+      profileMap.set(p.id, { full_name: p.full_name ?? null, email: p.email ?? null });
+    }
+  }
+
+  const mapped = (rows ?? []).map((r: any) => {
     return {
-      ...rest,
-      profile: p ? { full_name: p.full_name ?? null, email: p.email ?? null } : null,
+      ...r,
+      profile: profileMap.get(r.customer_id) ?? null,
       reconciliation: reconMap.get(r.id) ?? null,
     };
   });
+
+  if (n.sortBy === "customer_name") {
+    const dir = n.sortDir === "asc" ? 1 : -1;
+    mapped.sort((a: any, b: any) => {
+      const an = (a.profile?.full_name ?? "").toLowerCase();
+      const bn = (b.profile?.full_name ?? "").toLowerCase();
+      if (an === bn) return 0;
+      if (!an) return 1;
+      if (!bn) return -1;
+      return an < bn ? -1 * dir : 1 * dir;
+    });
+  }
+
+  return mapped;
 }
 
 
