@@ -115,6 +115,7 @@ export const getAdminDashboardStats = createServerFn({ method: "GET" })
       customers: customersQ.count ?? 0,
       totalRevenue,
       commissions,
+      oneTimeIncentives: aggregateOneTimeIncentives((incentivesQ.data ?? []) as any),
       pendingAmount: sumRemaining(pendingQ.data as any),
       overdueAmount: sumRemaining(overdueQ.data as any),
       kycPending: kycPendingQ.count ?? 0,
