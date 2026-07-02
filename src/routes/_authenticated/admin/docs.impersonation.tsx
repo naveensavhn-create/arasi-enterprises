@@ -153,11 +153,16 @@ function ImpersonationDocsPage() {
                 Admin → Audit Log
               </Link>{" "}
               — filter by event type <code>impersonation.start</code>,{" "}
-              <code>impersonation.end</code>, or{" "}
-              <code>impersonation.mutation</code>. Filter by customer or
+              <code>impersonation.end</code>, or any
+              per-action entry named{" "}
+              <code>impersonation.mutation.&lt;table&gt;.&lt;op&gt;</code>{" "}
+              (e.g. <code>impersonation.mutation.memberships.update</code>).
+              Each mutation record includes the affected record IDs and the
+              exact columns that changed. Filter by customer or
               promoter to see everything done on that account. Export to CSV
               for compliance reviews.
             </li>
+
             <li>
               <Link to="/admin/reconciliation" className="text-primary underline-offset-4 hover:underline">
                 Admin → Reconciliation
