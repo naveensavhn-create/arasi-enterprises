@@ -266,8 +266,14 @@ async function fetchPaymentRows(
     if (n.fromISO) query = query.gte("created_at", n.fromISO);
     if (n.toISO) query = query.lt("created_at", n.toISO);
   }
-  if (n.orderId) query = query.ilike("provider_order_id", `%${n.orderId}%`);
-  if (n.paymentId) query = query.ilike("provider_payment_id", `%${n.paymentId}%`);
+  if (n.orderId) {
+    const s = sanitizePostgrestLike(n.orderId);
+    if (s) query = query.ilike("provider_order_id", `%${s}%`);
+  }
+  if (n.paymentId) {
+    const s = sanitizePostgrestLike(n.paymentId);
+    if (s) query = query.ilike("provider_payment_id", `%${s}%`);
+  }
   if (n.customer) {
     if (!customerIdsExact || customerIdsExact.length === 0) {
       // No matching customer — return empty result set.
@@ -277,14 +283,17 @@ async function fetchPaymentRows(
     }
   }
   if (n.q) {
-    const like = `%${n.q}%`;
-    const parts = [
-      `provider_order_id.ilike.${like}`,
-      `provider_payment_id.ilike.${like}`,
-    ];
-    if (customerIds && customerIds.length) parts.push(`customer_id.in.(${customerIds.join(",")})`);
-    if (membershipIds && membershipIds.length) parts.push(`membership_id.in.(${membershipIds.join(",")})`);
-    query = query.or(parts.join(","));
+    const safe = sanitizePostgrestLike(n.q);
+    if (safe) {
+      const like = `%${safe}%`;
+      const parts = [
+        `provider_order_id.ilike.${like}`,
+        `provider_payment_id.ilike.${like}`,
+      ];
+      if (customerIds && customerIds.length) parts.push(`customer_id.in.(${customerIds.join(",")})`);
+      if (membershipIds && membershipIds.length) parts.push(`membership_id.in.(${membershipIds.join(",")})`);
+      query = query.or(parts.join(","));
+    }
   }
 
 
