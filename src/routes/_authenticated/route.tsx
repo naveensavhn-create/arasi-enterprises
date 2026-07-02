@@ -133,6 +133,8 @@ function AuthenticatedShell() {
             <Outlet />
           </main>
           <ImpersonationExitFab />
+          <ImpersonationSessionGuard />
+
 
         </div>
       </div>
