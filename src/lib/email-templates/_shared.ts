@@ -1,6 +1,13 @@
 // Shared brand tokens for Arasi Enterprises transactional email templates.
 // Kept as plain constants so React Email inlines them into the final HTML
 // (no external CSS, no <style> tags).
+//
+// Every template must render the header via `<BrandHeader />` after resolving
+// overrides through `resolveBrand()` so the Site Settings logo URL, brand
+// name, and colours are applied consistently across email + PDF surfaces.
+
+import * as React from "react";
+import { Img, Section, Text } from "@react-email/components";
 
 export const brand = {
   name: "Arasi Enterprises",
