@@ -123,9 +123,23 @@ export type AdminPaymentsResult = {
 
 type Filters = z.infer<typeof baseFilterSchema>;
 
+// Sanitize user input before it is spliced into PostgREST `.or()` / `.ilike()`
+// filter strings. PostgREST parses `,` and `()` as filter separators/grouping,
+// so an unescaped user value can inject additional filters or leak data.
+// We also strip the `%` and `_` wildcards so a `%%` payload can't turn an
+// operator like `email.ilike.` into a full-column scan of unrelated fields.
+function sanitizePostgrestLike(input: string): string {
+  return input
+    .replace(/[\\%,_()*:]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function resolveSearchIds(sb: any, q: string | undefined) {
   if (!q) return { customerIds: undefined as string[] | undefined, membershipIds: undefined as string[] | undefined };
-  const like = `%${q}%`;
+  const safe = sanitizePostgrestLike(q);
+  if (!safe) return { customerIds: [], membershipIds: [] };
+  const like = `%${safe}%`;
   const [profRes, memRes] = await Promise.all([
     sb.from("profiles").select("id").or(`full_name.ilike.${like},email.ilike.${like}`).limit(500),
     sb.from("memberships").select("id").ilike("membership_number", like).limit(500),
@@ -140,7 +154,9 @@ async function resolveSearchIds(sb: any, q: string | undefined) {
 
 async function resolveCustomerIdsExact(sb: any, customer: string | undefined) {
   if (!customer) return undefined;
-  const like = `%${customer}%`;
+  const safe = sanitizePostgrestLike(customer);
+  if (!safe) return [];
+  const like = `%${safe}%`;
   const { data, error } = await sb
     .from("profiles")
     .select("id")
@@ -250,8 +266,14 @@ async function fetchPaymentRows(
     if (n.fromISO) query = query.gte("created_at", n.fromISO);
     if (n.toISO) query = query.lt("created_at", n.toISO);
   }
-  if (n.orderId) query = query.ilike("provider_order_id", `%${n.orderId}%`);
-  if (n.paymentId) query = query.ilike("provider_payment_id", `%${n.paymentId}%`);
+  if (n.orderId) {
+    const s = sanitizePostgrestLike(n.orderId);
+    if (s) query = query.ilike("provider_order_id", `%${s}%`);
+  }
+  if (n.paymentId) {
+    const s = sanitizePostgrestLike(n.paymentId);
+    if (s) query = query.ilike("provider_payment_id", `%${s}%`);
+  }
   if (n.customer) {
     if (!customerIdsExact || customerIdsExact.length === 0) {
       // No matching customer — return empty result set.
@@ -261,14 +283,17 @@ async function fetchPaymentRows(
     }
   }
   if (n.q) {
-    const like = `%${n.q}%`;
-    const parts = [
-      `provider_order_id.ilike.${like}`,
-      `provider_payment_id.ilike.${like}`,
-    ];
-    if (customerIds && customerIds.length) parts.push(`customer_id.in.(${customerIds.join(",")})`);
-    if (membershipIds && membershipIds.length) parts.push(`membership_id.in.(${membershipIds.join(",")})`);
-    query = query.or(parts.join(","));
+    const safe = sanitizePostgrestLike(n.q);
+    if (safe) {
+      const like = `%${safe}%`;
+      const parts = [
+        `provider_order_id.ilike.${like}`,
+        `provider_payment_id.ilike.${like}`,
+      ];
+      if (customerIds && customerIds.length) parts.push(`customer_id.in.(${customerIds.join(",")})`);
+      if (membershipIds && membershipIds.length) parts.push(`membership_id.in.(${membershipIds.join(",")})`);
+      query = query.or(parts.join(","));
+    }
   }
 
 
@@ -377,8 +402,8 @@ export const listAdminPayments = createServerFn({ method: "GET" })
             let tq = sb.from("payments").select("amount, status", { count: "exact" });
             tq = tq.in("id", webhookPaymentIds);
             tq = applyPaymentStatusEq(tq, n.status);
-            if (n.orderId) tq = tq.ilike("provider_order_id", `%${n.orderId}%`);
-            if (n.paymentId) tq = tq.ilike("provider_payment_id", `%${n.paymentId}%`);
+            if (n.orderId) { const s = sanitizePostgrestLike(n.orderId); if (s) tq = tq.ilike("provider_order_id", `%${s}%`); }
+            if (n.paymentId) { const s = sanitizePostgrestLike(n.paymentId); if (s) tq = tq.ilike("provider_payment_id", `%${s}%`); }
             if (customerIdsExact && customerIdsExact.length) tq = tq.in("customer_id", customerIdsExact);
             const { data: agg, error, count } = await tq.limit(50_000);
             if (error) throw new Error(error.message);

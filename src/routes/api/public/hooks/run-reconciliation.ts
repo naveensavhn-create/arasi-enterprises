@@ -4,15 +4,9 @@ export const Route = createFileRoute("/api/public/hooks/run-reconciliation")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const anon = process.env.SUPABASE_PUBLISHABLE_KEY;
-        const provided =
-          request.headers.get("apikey") ??
-          request.headers.get("x-api-key") ??
-          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-          "";
-        if (!anon || provided !== anon) {
-          return new Response("Unauthorized", { status: 401 });
-        }
+        const { verifyCronRequest } = await import("@/lib/cron-auth.server");
+        const denied = await verifyCronRequest(request);
+        if (denied) return denied;
 
         const { supabaseAdmin } = await import(
           "@/integrations/supabase/client.server"
