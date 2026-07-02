@@ -285,8 +285,8 @@ describe("PaymentDetailDrawer — end-to-end remediation flow per required field
 
       // 5. Close the drawer; the Alert must unmount.
       await user.click(screen.getByRole("button", { name: /close/i }));
-      await waitForElementToBeRemoved(() =>
-        screen.queryByText("Incomplete payment record"),
+      await waitFor(() =>
+        expect(screen.queryByText("Incomplete payment record")).toBeNull(),
       );
     });
   }
@@ -315,8 +315,8 @@ describe("PaymentDetailDrawer — end-to-end remediation flow per required field
       );
 
       await user.click(screen.getByRole("button", { name: /close/i }));
-      await waitForElementToBeRemoved(() =>
-        screen.queryByText("Incomplete payment record"),
+      await waitFor(() =>
+        expect(screen.queryByText("Incomplete payment record")).toBeNull(),
       );
     }
 
