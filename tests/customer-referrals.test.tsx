@@ -78,10 +78,10 @@ describe("Customer referrals page", () => {
       .filter((b) => b.querySelector("svg.lucide-copy") !== null);
     // First = code, second = URL (in DOM order).
     await user.click(copyButtons[0]);
-    expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(EXPECTED_CODE);
+    expect(writeText).toHaveBeenLastCalledWith(EXPECTED_CODE);
 
     await user.click(copyButtons[1]);
-    expect(navigator.clipboard.writeText).toHaveBeenLastCalledWith(
+    expect(writeText).toHaveBeenLastCalledWith(
       `${window.location.origin}/?ref=${EXPECTED_CODE}`,
     );
 
