@@ -265,7 +265,59 @@ function SiteSettingsPage() {
               </Field>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Clock className="h-4 w-4" /> Payment reminder schedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Cron schedule">
+                  <Input
+                    value={form.reminder_cron_schedule}
+                    onChange={(e) => set("reminder_cron_schedule", e.target.value)}
+                    placeholder={DEFAULT_REMINDER_CRON_SCHEDULE}
+                    className="font-mono"
+                    spellCheck={false}
+                  />
+                </Field>
+                <Field label="Timezone (IANA)">
+                  <Input
+                    value={form.reminder_cron_timezone}
+                    onChange={(e) => set("reminder_cron_timezone", e.target.value)}
+                    placeholder={DEFAULT_REMINDER_CRON_TIMEZONE}
+                    spellCheck={false}
+                  />
+                </Field>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>
+                  Controls how often the background worker sends queued payment
+                  reminders. Use a standard 5-field cron expression (e.g.{" "}
+                  <code>*/5 * * * *</code> every 5 minutes,{" "}
+                  <code>0 9 * * *</code> daily at 09:00). Timezone must be an
+                  IANA name such as <code>Asia/Kolkata</code> or{" "}
+                  <code>UTC</code>.
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => {
+                    set("reminder_cron_schedule", DEFAULT_REMINDER_CRON_SCHEDULE);
+                    set("reminder_cron_timezone", DEFAULT_REMINDER_CRON_TIMEZONE);
+                  }}
+                >
+                  Reset to defaults
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+
 
         <div className="space-y-4">
           <Card>
