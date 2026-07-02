@@ -1,5 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Users, Briefcase, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Users,
+  Briefcase,
+  ShieldCheck,
+  CalendarClock,
+  Wallet,
+  FileCheck2,
+  BellRing,
+  Gift,
+  Landmark,
+} from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 
 export const Route = createFileRoute("/")({
