@@ -10,7 +10,15 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { brand, colors, styles, formatTimestamp } from "./_shared";
+import {
+  brand as defaultBrand,
+  colors,
+  styles,
+  formatTimestamp,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
 export interface RewardUnlockedProps {
   recipientName?: string;
@@ -21,6 +29,7 @@ export interface RewardUnlockedProps {
   membershipNumber?: string | null;
   unlockedAt: string;
   actionUrl?: string;
+  brand?: BrandOverrides;
 }
 
 const RewardUnlocked: React.FC<RewardUnlockedProps> = ({
