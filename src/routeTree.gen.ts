@@ -21,6 +21,7 @@ import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authen
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedReceiptsReceiptNumberRouteImport } from './routes/_authenticated/receipts.$receiptNumber'
+import { Route as AuthenticatedPromoterRankRouteImport } from './routes/_authenticated/promoter/rank'
 import { Route as AuthenticatedPromoterPortfolioRouteImport } from './routes/_authenticated/promoter/portfolio'
 import { Route as AuthenticatedPromoterLuckyDrawRouteImport } from './routes/_authenticated/promoter/lucky-draw'
 import { Route as AuthenticatedPromoterCustomersRouteImport } from './routes/_authenticated/promoter/customers'
@@ -131,6 +132,12 @@ const AuthenticatedReceiptsReceiptNumberRoute =
     id: '/receipts/$receiptNumber',
     path: '/receipts/$receiptNumber',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPromoterRankRoute =
+  AuthenticatedPromoterRankRouteImport.update({
+    id: '/rank',
+    path: '/rank',
+    getParentRoute: () => AuthenticatedPromoterRouteRoute,
   } as any)
 const AuthenticatedPromoterPortfolioRoute =
   AuthenticatedPromoterPortfolioRouteImport.update({
@@ -467,6 +474,7 @@ export interface FileRoutesByFullPath {
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
@@ -527,6 +535,7 @@ export interface FileRoutesByTo {
   '/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
@@ -590,6 +599,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/customers': typeof AuthenticatedPromoterCustomersRoute
   '/_authenticated/promoter/lucky-draw': typeof AuthenticatedPromoterLuckyDrawRoute
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
+  '/_authenticated/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/_authenticated/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/promoter/customers'
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
+    | '/promoter/rank'
     | '/receipts/$receiptNumber'
     | '/admin/'
     | '/api/public/hooks/enqueue-payment-reminders'
@@ -713,6 +724,7 @@ export interface FileRouteTypes {
     | '/promoter/customers'
     | '/promoter/lucky-draw'
     | '/promoter/portfolio'
+    | '/promoter/rank'
     | '/receipts/$receiptNumber'
     | '/admin'
     | '/api/public/hooks/enqueue-payment-reminders'
@@ -775,6 +787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/customers'
     | '/_authenticated/promoter/lucky-draw'
     | '/_authenticated/promoter/portfolio'
+    | '/_authenticated/promoter/rank'
     | '/_authenticated/receipts/$receiptNumber'
     | '/_authenticated/admin/'
     | '/api/public/hooks/enqueue-payment-reminders'
@@ -883,6 +896,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/receipts/$receiptNumber'
       preLoaderRoute: typeof AuthenticatedReceiptsReceiptNumberRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/promoter/rank': {
+      id: '/_authenticated/promoter/rank'
+      path: '/rank'
+      fullPath: '/promoter/rank'
+      preLoaderRoute: typeof AuthenticatedPromoterRankRouteImport
+      parentRoute: typeof AuthenticatedPromoterRouteRoute
     }
     '/_authenticated/promoter/portfolio': {
       id: '/_authenticated/promoter/portfolio'
@@ -1333,6 +1353,7 @@ interface AuthenticatedPromoterRouteRouteChildren {
   AuthenticatedPromoterCustomersRoute: typeof AuthenticatedPromoterCustomersRoute
   AuthenticatedPromoterLuckyDrawRoute: typeof AuthenticatedPromoterLuckyDrawRoute
   AuthenticatedPromoterPortfolioRoute: typeof AuthenticatedPromoterPortfolioRoute
+  AuthenticatedPromoterRankRoute: typeof AuthenticatedPromoterRankRoute
 }
 
 const AuthenticatedPromoterRouteRouteChildren: AuthenticatedPromoterRouteRouteChildren =
@@ -1344,6 +1365,7 @@ const AuthenticatedPromoterRouteRouteChildren: AuthenticatedPromoterRouteRouteCh
     AuthenticatedPromoterCustomersRoute: AuthenticatedPromoterCustomersRoute,
     AuthenticatedPromoterLuckyDrawRoute: AuthenticatedPromoterLuckyDrawRoute,
     AuthenticatedPromoterPortfolioRoute: AuthenticatedPromoterPortfolioRoute,
+    AuthenticatedPromoterRankRoute: AuthenticatedPromoterRankRoute,
   }
 
 const AuthenticatedPromoterRouteRouteWithChildren =
