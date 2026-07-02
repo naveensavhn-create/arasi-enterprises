@@ -21,8 +21,8 @@ export type ReconciliationFinding = {
   entity_id: string | null;
   entity_ref: string | null;
   description: string;
-  expected: Record<string, unknown>;
-  actual: Record<string, unknown>;
+  expected: any;
+  actual: any;
   status: "open" | "resolved" | "ignored";
   resolution_note: string | null;
   resolved_by: string | null;
