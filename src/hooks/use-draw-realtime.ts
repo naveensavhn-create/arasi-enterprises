@@ -10,7 +10,8 @@ export type RealtimeStatus =
   | "connected"
   | "reconnecting"
   | "error"
-  | "closed";
+  | "closed"
+  | "failed";
 
 /**
  * Subscribes to realtime updates on `draws` and `draw_winners` and invalidates
