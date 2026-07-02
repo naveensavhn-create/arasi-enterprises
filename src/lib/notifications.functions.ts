@@ -1,13 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
+
 export type NotificationRow = {
   id: string;
   type: string;
   title: string;
   body: string | null;
   link: string | null;
-  metadata: unknown;
+  metadata: JsonValue;
   read_at: string | null;
   created_at: string;
 };
