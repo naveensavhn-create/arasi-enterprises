@@ -151,6 +151,129 @@ function Landing() {
           ))}
         </div>
 
+        {/* Programme benefits */}
+        <section
+          id="how-it-works"
+          aria-labelledby="benefits-heading"
+          className="mt-24 w-full sm:mt-32"
+        >
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]">
+              How the Programme Works
+            </p>
+            <h2
+              id="benefits-heading"
+              className="mt-4 text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl"
+              style={serif}
+            >
+              Advance booking, paid on a{" "}
+              <span className="italic text-[#C5A059]">monthly plan</span>
+            </h2>
+            <p className="mx-auto mt-5 max-w-xl text-sm font-light leading-relaxed text-white/60 sm:text-base">
+              Reserve your entitlement today with a modest advance, then settle
+              the balance in fixed monthly installments. Every payment is
+              receipted, every schedule is transparent, and the plan is
+              designed around predictable household budgeting — not speculation.
+            </p>
+          </div>
+
+          {/* Two-column: booking & installments */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
+            {[
+              {
+                tag: "Step 01",
+                title: "Reserve with an advance booking",
+                icon: CalendarClock,
+                body:
+                  "A one-time advance secures your membership number and locks in the plan terms on the day of enrolment. Your position, entitlement and price are recorded up front, in writing.",
+              },
+              {
+                tag: "Step 02",
+                title: "Settle in fixed monthly installments",
+                icon: Wallet,
+                body:
+                  "The remaining amount is divided into equal monthly installments over the plan tenure. Amounts, due dates and the closing month are printed on your schedule from day one — no revisions, no surprises.",
+              },
+            ].map((s) => (
+              <div
+                key={s.tag}
+                className="relative flex h-full flex-col border border-[#C5A059]/20 bg-[#0F172A]/40 p-8 backdrop-blur-sm md:p-10"
+              >
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]/80"
+                >
+                  {s.tag}
+                </span>
+                <div className="mt-5 text-[#C5A059]">
+                  <s.icon className="h-7 w-7" strokeWidth={1.25} />
+                </div>
+                <h3
+                  className="mt-5 text-xl font-semibold text-white sm:text-2xl"
+                  style={serif}
+                >
+                  {s.title}
+                </h3>
+                <p className="mt-4 text-sm leading-relaxed text-white/60">
+                  {s.body}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Benefits grid */}
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 md:mt-10 md:grid-cols-4">
+            {[
+              {
+                icon: FileCheck2,
+                title: "Written schedule",
+                body: "Every plan comes with a printable installment schedule and a serially numbered receipt for each payment.",
+              },
+              {
+                icon: BellRing,
+                title: "Timely reminders",
+                body: "Automated email and SMS reminders help you stay on schedule without penalties or awkward follow-ups.",
+              },
+              {
+                icon: Landmark,
+                title: "Secure payments",
+                body: "Payments are processed through regulated payment gateways and reconciled to your account in real time.",
+              },
+              {
+                icon: Gift,
+                title: "Member entitlements",
+                body: "On completion of the plan tenure you receive the entitlement recorded at booking, along with any published member benefits.",
+              },
+            ].map((b) => (
+              <div
+                key={b.title}
+                className="flex h-full flex-col border border-[#C5A059]/15 bg-[#0F172A]/30 p-6 backdrop-blur-sm"
+              >
+                <div className="text-[#C5A059]">
+                  <b.icon className="h-6 w-6" strokeWidth={1.25} />
+                </div>
+                <h4
+                  className="mt-4 text-base font-semibold text-white"
+                  style={serif}
+                >
+                  {b.title}
+                </h4>
+                <p className="mt-3 text-[13px] leading-relaxed text-white/55">
+                  {b.body}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Assurance note */}
+          <p className="mx-auto mt-10 max-w-3xl text-center text-xs leading-relaxed text-white/45">
+            Arasi Enterprises is a membership-based advance booking programme.
+            It is not an investment scheme and does not promise returns, profit
+            sharing or guaranteed income of any kind. Entitlements and member
+            benefits are governed by the plan document issued at the time of
+            enrolment.
+          </p>
+        </section>
+
         {/* Footer accent */}
         <div className="mt-20 flex flex-col items-center gap-3">
           <div className="h-px w-24 bg-[#C5A059]/40" />
