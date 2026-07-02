@@ -352,6 +352,110 @@ export type Database = {
           },
         ]
       }
+      kyc_email_notifications: {
+        Row: {
+          assigned_role: string | null
+          attempts: number
+          attempts_log: Json
+          audit_id: string | null
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          decision: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          is_test: boolean
+          last_attempt_at: string | null
+          max_attempts: number
+          message_id: string | null
+          metadata: Json
+          next_attempt_at: string | null
+          provider: string | null
+          recipient_email: string
+          review_notes: string | null
+          reviewer_email: string | null
+          reviewer_name: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          target_user_id: string | null
+          template_name: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_role?: string | null
+          attempts?: number
+          attempts_log?: Json
+          audit_id?: string | null
+          created_at?: string
+          dead_letter_at?: string | null
+          dead_letter_reason?: string | null
+          decision: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          is_test?: boolean
+          last_attempt_at?: string | null
+          max_attempts?: number
+          message_id?: string | null
+          metadata?: Json
+          next_attempt_at?: string | null
+          provider?: string | null
+          recipient_email: string
+          review_notes?: string | null
+          reviewer_email?: string | null
+          reviewer_name?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          target_user_id?: string | null
+          template_name?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_role?: string | null
+          attempts?: number
+          attempts_log?: Json
+          audit_id?: string | null
+          created_at?: string
+          dead_letter_at?: string | null
+          dead_letter_reason?: string | null
+          decision?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          is_test?: boolean
+          last_attempt_at?: string | null
+          max_attempts?: number
+          message_id?: string | null
+          metadata?: Json
+          next_attempt_at?: string | null
+          provider?: string | null
+          recipient_email?: string
+          review_notes?: string | null
+          reviewer_email?: string | null
+          reviewer_name?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          target_user_id?: string | null
+          template_name?: string
+          triggered_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_email_notifications_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "admin_audit_log"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       membership_email_notifications: {
         Row: {
           created_at: string
@@ -1275,6 +1379,46 @@ export type Database = {
         Returns: string
       }
       auto_pick_due_draws: { Args: never; Returns: number }
+      claim_due_kyc_email_jobs: {
+        Args: { _limit?: number }
+        Returns: {
+          assigned_role: string | null
+          attempts: number
+          attempts_log: Json
+          audit_id: string | null
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          decision: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          is_test: boolean
+          last_attempt_at: string | null
+          max_attempts: number
+          message_id: string | null
+          metadata: Json
+          next_attempt_at: string | null
+          provider: string | null
+          recipient_email: string
+          review_notes: string | null
+          reviewer_email: string | null
+          reviewer_name: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          target_user_id: string | null
+          template_name: string
+          triggered_by: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "kyc_email_notifications"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_due_reminder_jobs: {
         Args: { _limit?: number }
         Returns: {
@@ -1335,6 +1479,55 @@ export type Database = {
           to: "draw_entries"
           isOneToOne: false
           isSetofReturn: true
+        }
+      }
+      finalize_kyc_email_job: {
+        Args: {
+          _error_code?: string
+          _error_message?: string
+          _job_id: string
+          _message_id?: string
+          _metadata?: Json
+          _provider?: string
+          _retry_in_seconds?: number
+          _status: string
+        }
+        Returns: {
+          assigned_role: string | null
+          attempts: number
+          attempts_log: Json
+          audit_id: string | null
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          decision: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          is_test: boolean
+          last_attempt_at: string | null
+          max_attempts: number
+          message_id: string | null
+          metadata: Json
+          next_attempt_at: string | null
+          provider: string | null
+          recipient_email: string
+          review_notes: string | null
+          reviewer_email: string | null
+          reviewer_name: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          target_user_id: string | null
+          template_name: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "kyc_email_notifications"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       finalize_reminder_job: {
@@ -1496,6 +1689,46 @@ export type Database = {
       promoter_submit_referral_for_review: {
         Args: { _note?: string; _user_id: string }
         Returns: Database["public"]["Enums"]["kyc_status"]
+      }
+      requeue_kyc_email_job: {
+        Args: { _job_id: string }
+        Returns: {
+          assigned_role: string | null
+          attempts: number
+          attempts_log: Json
+          audit_id: string | null
+          created_at: string
+          dead_letter_at: string | null
+          dead_letter_reason: string | null
+          decision: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          is_test: boolean
+          last_attempt_at: string | null
+          max_attempts: number
+          message_id: string | null
+          metadata: Json
+          next_attempt_at: string | null
+          provider: string | null
+          recipient_email: string
+          review_notes: string | null
+          reviewer_email: string | null
+          reviewer_name: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          target_user_id: string | null
+          template_name: string
+          triggered_by: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "kyc_email_notifications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
     }
     Enums: {
