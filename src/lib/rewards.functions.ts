@@ -406,7 +406,7 @@ export const getCustomerRewardTimeline = createServerFn({ method: "GET" })
         actor_name: actor?.full_name ?? actor?.email ?? null,
         actor_email: actor?.email ?? null,
         note: e.note,
-        metadata: e.metadata ?? {},
+        metadata: (e.metadata ?? {}) as RewardEventMetadata,
         created_at: e.created_at,
         source: "reward_event",
       };
