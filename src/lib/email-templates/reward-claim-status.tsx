@@ -92,7 +92,9 @@ const RewardClaimStatusEmail: React.FC<RewardClaimStatusProps> = ({
   adminNote,
   changedAt,
   actionUrl,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   const accent = ACCENT[toStatus] ?? colors.gold;
 
@@ -105,10 +107,8 @@ const RewardClaimStatusEmail: React.FC<RewardClaimStatusProps> = ({
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
+
 
             <Text
               style={{
