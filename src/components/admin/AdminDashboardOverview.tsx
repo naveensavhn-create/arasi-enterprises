@@ -162,6 +162,23 @@ export function AdminDashboardOverview() {
           tone="default"
           to="/admin/commissions"
         />
+        <StatCard
+          title="One-time rank incentives"
+          value={INR.format(data.oneTimeIncentives.total)}
+          hint={
+            <span>
+              {data.oneTimeIncentives.count} award{data.oneTimeIncentives.count === 1 ? "" : "s"} · Paid{" "}
+              {INR.format(data.oneTimeIncentives.paid)} · Pending{" "}
+              <span className="text-amber-600 dark:text-amber-400">
+                {INR.format(data.oneTimeIncentives.pending + data.oneTimeIncentives.approved)}
+              </span>
+            </span>
+          }
+          icon={Trophy}
+          tone="default"
+          to="/admin/incentives"
+        />
+
 
         <StatCard
           title="Pending from customers"

@@ -1,11 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { aggregateOneTimeIncentives, type IncentiveTotals } from "@/lib/incentives-aggregate";
 
 export type AdminDashboardStats = {
   promoters: number;
   customers: number;
   totalRevenue: number;
   commissions: { total: number; paid: number; pending: number };
+  /**
+   * Rank incentives are one-time awards (unique per promoter+rank). The
+   * dashboard reports them as awarded totals — never as a monthly average.
+   */
+  oneTimeIncentives: IncentiveTotals;
   pendingAmount: number;
   overdueAmount: number;
   kycPending: number;
@@ -51,6 +57,7 @@ export const getAdminDashboardStats = createServerFn({ method: "GET" })
       kycNotSubmittedQ,
       nextDrawQ,
       latestDrawQ,
+      incentivesQ,
     ] = await Promise.all([
       db.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "promoter"),
       db.from("user_roles").select("user_id", { count: "exact", head: true }).eq("role", "customer"),
@@ -74,6 +81,8 @@ export const getAdminDashboardStats = createServerFn({ method: "GET" })
         .order("drawn_at", { ascending: false, nullsFirst: false })
         .limit(1)
         .maybeSingle(),
+      // One-time rank incentives: aggregate as awarded totals, not monthly.
+      db.from("promoter_incentives").select("amount,status"),
     ]);
 
     const num = (x: unknown) => (typeof x === "number" ? x : x == null ? 0 : Number(x) || 0);
@@ -106,6 +115,7 @@ export const getAdminDashboardStats = createServerFn({ method: "GET" })
       customers: customersQ.count ?? 0,
       totalRevenue,
       commissions,
+      oneTimeIncentives: aggregateOneTimeIncentives((incentivesQ.data ?? []) as any),
       pendingAmount: sumRemaining(pendingQ.data as any),
       overdueAmount: sumRemaining(overdueQ.data as any),
       kycPending: kycPendingQ.count ?? 0,

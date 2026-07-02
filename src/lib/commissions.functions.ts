@@ -39,7 +39,7 @@ export type CommissionRow = {
 };
 
 // ============ Admin: Ranks CRUD ============
-const rankSchema = z.object({
+export const rankSchema = z.object({
   id: z.string().uuid().optional(),
   code: z.string().min(1).max(40),
   name: z.string().min(1).max(120),

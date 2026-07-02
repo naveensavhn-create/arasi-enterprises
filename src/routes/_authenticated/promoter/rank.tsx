@@ -49,7 +49,12 @@ function Page() {
       <div className="grid gap-4 md:grid-cols-4">
         <Stat icon={<Award className="h-5 w-5" />} label="Current Rank" value={data.currentRank?.name ?? "Unranked"} sub={`Commission ${data.commissionPercent}%`} />
         <Stat icon={<Users className="h-5 w-5" />} label="Active Customers" value={String(data.activeCustomers)} sub={`Pending: ${data.pendingCustomers}`} />
-        <Stat icon={<TrendingUp className="h-5 w-5" />} label="Month Earnings" value={inr(data.monthEarnings)} sub={`Today ${inr(data.todayEarnings)}`} />
+        <Stat
+          icon={<Gift className="h-5 w-5" />}
+          label="One-time Incentive"
+          value={data.oneTimeIncentive > 0 ? inr(data.oneTimeIncentive) : "—"}
+          sub={data.currentRank ? "Awarded once at this rank" : "Unlocks with your first rank"}
+        />
         <Stat icon={<TrendingUp className="h-5 w-5" />} label="Lifetime Paid" value={inr(data.lifetimeEarnings)} sub={`Pending payout ${inr(data.pendingPayoutAmount)}`} />
       </div>
 
