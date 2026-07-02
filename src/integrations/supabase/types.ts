@@ -1216,6 +1216,32 @@ export type Database = {
           total_count: number
         }[]
       }
+      admin_pick_draw_winners_manual: {
+        Args: {
+          _count?: number
+          _draw_id: string
+          _entry_ids?: string[]
+          _seed?: string
+        }
+        Returns: {
+          customer_id: string
+          draw_id: string
+          drawn_at: string
+          drawn_by: string | null
+          entry_id: string
+          id: string
+          notified_at: string | null
+          position: number
+          prize: string | null
+          seed: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "draw_winners"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_set_customer_promoter: {
         Args: { _promoter_id: string; _user_id: string }
         Returns: undefined
