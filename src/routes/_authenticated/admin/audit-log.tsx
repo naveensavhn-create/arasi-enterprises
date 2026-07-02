@@ -53,6 +53,9 @@ function AuditLogPage() {
   const [actor, setActor] = useState("");
   const [action, setAction] = useState<string>("all");
   const [reviewedField, setReviewedField] = useState<string>("all");
+  const [paymentId, setPaymentId] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [promoterId, setPromoterId] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
@@ -66,12 +69,15 @@ function AuditLogPage() {
       actor,
       actions: action === "all" ? [] : [action],
       reviewedField: reviewedField === "all" ? "" : reviewedField,
+      paymentId,
+      customerId,
+      promoterId,
       from,
       to,
       page,
       pageSize,
     }),
-    [q, actor, action, reviewedField, from, to, page],
+    [q, actor, action, reviewedField, paymentId, customerId, promoterId, from, to, page],
   );
 
   const refetchInterval = useListRefetchInterval();
