@@ -754,7 +754,74 @@ function AdminPlansPage() {
         </div>
       )}
 
+      {/* Bulk actions toolbar */}
+      {!isLoading && filteredPlans.length > 0 && (
+        (() => {
+          const visibleIds = filteredPlans.map((p) => p.id);
+          const selectedVisible = visibleIds.filter((id) => selected.has(id));
+          const allSelected = selectedVisible.length === visibleIds.length;
+          const someSelected = selectedVisible.length > 0 && !allSelected;
+          const count = selected.size;
+          return (
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3 shadow-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={(v) => {
+                    if (v) setSelected((s) => new Set([...s, ...visibleIds]));
+                    else
+                      setSelected((s) => {
+                        const n = new Set(s);
+                        for (const id of visibleIds) n.delete(id);
+                        return n;
+                      });
+                  }}
+                  aria-label="Select all visible plans"
+                />
+                <span className="text-muted-foreground">
+                  {count === 0
+                    ? "Select plans for bulk actions"
+                    : `${count} selected`}
+                </span>
+              </label>
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <Button
+                  variant="success"
+                  size="sm"
+                  disabled={count === 0}
+                  onClick={() => setBulkConfirm("activate")}
+                >
+                  <Power className="mr-1.5 h-4 w-4" /> Activate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={count === 0}
+                  onClick={() => setBulkConfirm("deactivate")}
+                >
+                  <PowerOff className="mr-1.5 h-4 w-4" /> Deactivate
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={count === 0}
+                  onClick={() => setBulkConfirm("delete")}
+                >
+                  <Trash2 className="mr-1.5 h-4 w-4" /> Delete
+                </Button>
+                {count > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearSelection}>
+                    <X className="mr-1 h-3.5 w-3.5" /> Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })()
+      )}
+
       {/* Cards grid */}
+
       {isLoading ? (
         <Card>
           <CardContent className="flex items-center py-12 text-muted-foreground">
