@@ -143,6 +143,21 @@ export const createMembershipAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const sb: any = context.supabase;
+
+    // Guard: refuse to create a membership on an inactive/missing plan.
+    const { data: plan, error: planErr } = await sb
+      .from("membership_plans")
+      .select("id, name, is_active")
+      .eq("id", data.plan_id)
+      .maybeSingle();
+    if (planErr) throw new Error(planErr.message);
+    if (!plan) throw new Error("Selected plan does not exist");
+    if (!plan.is_active) {
+      throw new Error(
+        `Plan "${plan.name}" is inactive and cannot be assigned to new memberships. Reactivate the plan first.`,
+      );
+    }
+
     const { data: row, error } = await sb
       .from("memberships")
       .insert({
