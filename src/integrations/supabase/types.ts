@@ -58,31 +58,37 @@ export type Database = {
       }
       draw_entries: {
         Row: {
+          coupon_code: string | null
           created_at: string
           customer_id: string
           disqualified_reason: string | null
           draw_id: string
           eligible: boolean
+          entry_code: string | null
           entry_number: number
           id: string
           membership_id: string | null
         }
         Insert: {
+          coupon_code?: string | null
           created_at?: string
           customer_id: string
           disqualified_reason?: string | null
           draw_id: string
           eligible?: boolean
+          entry_code?: string | null
           entry_number?: number
           id?: string
           membership_id?: string | null
         }
         Update: {
+          coupon_code?: string | null
           created_at?: string
           customer_id?: string
           disqualified_reason?: string | null
           draw_id?: string
           eligible?: boolean
+          entry_code?: string | null
           entry_number?: number
           id?: string
           membership_id?: string | null
@@ -1228,6 +1234,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      auto_enroll_customer_in_draw: {
+        Args: { _customer_id: string; _draw_id: string }
+        Returns: string
+      }
       auto_pick_due_draws: { Args: never; Returns: number }
       claim_due_reminder_jobs: {
         Args: { _limit?: number }

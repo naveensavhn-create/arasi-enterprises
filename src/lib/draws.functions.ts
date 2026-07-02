@@ -294,7 +294,7 @@ export const listOpenDrawsForCustomer = createServerFn({ method: "GET" })
       ids.length
         ? context.supabase
             .from("draw_entries")
-            .select("id, draw_id, entry_number, eligible, disqualified_reason, created_at, membership_id")
+            .select("id, draw_id, entry_number, entry_code, coupon_code, eligible, disqualified_reason, created_at, membership_id")
             .eq("customer_id", context.userId)
             .in("draw_id", ids)
         : Promise.resolve({ data: [], error: null }),
@@ -306,9 +306,10 @@ export const listOpenDrawsForCustomer = createServerFn({ method: "GET" })
             .in("draw_id", ids)
         : Promise.resolve({ data: [], error: null }),
     ]);
-    type EntryRow = { id: string; draw_id: string; entry_number: number; eligible: boolean; disqualified_reason: string | null; created_at: string; membership_id: string | null };
+    type EntryRow = { id: string; draw_id: string; entry_number: number; entry_code: string | null; coupon_code: string | null; eligible: boolean; disqualified_reason: string | null; created_at: string; membership_id: string | null };
     type WinRow = { id: string; draw_id: string; position: number; prize: string; drawn_at: string };
     const entryByDraw = new Map<string, EntryRow>(((entriesRes.data ?? []) as EntryRow[]).map((e) => [e.draw_id, e]));
+
     const winByDraw = new Map<string, WinRow>(((winsRes.data ?? []) as WinRow[]).map((w) => [w.draw_id, w]));
     return list.map((d) => ({
       ...d,
