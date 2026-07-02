@@ -308,22 +308,19 @@ describe("UserProfileDrawer — validation blocks the save mutation", () => {
     renderDrawer();
     await screen.findByLabelText(/full name/i);
 
-    // Switch to Aadhaar tab
+    // Switch to Aadhaar tab and wait for its inputs to mount
     fireEvent.click(screen.getByRole("tab", { name: /aadhaar \/ kyc/i }));
-
-    const kycPanel = await screen.findByRole("tabpanel");
-
+    const aadhaarInput = await screen.findByLabelText(/aadhaar number/i);
 
     // Break the Aadhaar number then submit via the tab's Save button
-    fireEvent.change(within(kycPanel).getByLabelText(/aadhaar number/i), {
-      target: { value: "12345" },
-    });
-    fireEvent.change(within(kycPanel).getByLabelText(/reason for change/i), {
+    fireEvent.change(aadhaarInput, { target: { value: "12345" } });
+    // The Aadhaar tab has its own reason textarea (labelled "Reason for change")
+    const reasons = screen.getAllByLabelText(/reason for change/i);
+    fireEvent.change(reasons[reasons.length - 1], {
       target: { value: "Fixing Aadhaar typo." },
     });
-    fireEvent.click(
-      within(kycPanel).getByRole("button", { name: /save aadhaar/i }),
-    );
+    fireEvent.click(screen.getByRole("button", { name: /save aadhaar/i }));
+
 
     await waitFor(() =>
       expect(errorToast).toHaveBeenCalledWith("Aadhaar must be 12 digits."),
