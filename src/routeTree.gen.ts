@@ -39,6 +39,7 @@ import { Route as AuthenticatedCustomerLuckyDrawRouteImport } from './routes/_au
 import { Route as AuthenticatedCustomerInstallmentsRouteImport } from './routes/_authenticated/customer/installments'
 import { Route as AuthenticatedCustomerEnrollRouteImport } from './routes/_authenticated/customer/enroll'
 import { Route as AuthenticatedCustomerDrawResultsRouteImport } from './routes/_authenticated/customer/draw-results'
+import { Route as AuthenticatedAdminVerificationSettingsRouteImport } from './routes/_authenticated/admin/verification-settings'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as AuthenticatedAdminSiteSettingsRouteImport } from './routes/_authenticated/admin/site-settings'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin/settings'
@@ -250,6 +251,12 @@ const AuthenticatedCustomerDrawResultsRoute =
     id: '/draw-results',
     path: '/draw-results',
     getParentRoute: () => AuthenticatedCustomerRouteRoute,
+  } as any)
+const AuthenticatedAdminVerificationSettingsRoute =
+  AuthenticatedAdminVerificationSettingsRouteImport.update({
+    id: '/verification-settings',
+    path: '/verification-settings',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
@@ -533,6 +540,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/verification-settings': typeof AuthenticatedAdminVerificationSettingsRoute
   '/customer/draw-results': typeof AuthenticatedCustomerDrawResultsRoute
   '/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
@@ -604,6 +612,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/verification-settings': typeof AuthenticatedAdminVerificationSettingsRoute
   '/customer/draw-results': typeof AuthenticatedCustomerDrawResultsRoute
   '/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
@@ -678,6 +687,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/site-settings': typeof AuthenticatedAdminSiteSettingsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/admin/verification-settings': typeof AuthenticatedAdminVerificationSettingsRoute
   '/_authenticated/customer/draw-results': typeof AuthenticatedCustomerDrawResultsRoute
   '/_authenticated/customer/enroll': typeof AuthenticatedCustomerEnrollRoute
   '/_authenticated/customer/installments': typeof AuthenticatedCustomerInstallmentsRoute
@@ -752,6 +762,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/site-settings'
     | '/admin/users'
+    | '/admin/verification-settings'
     | '/customer/draw-results'
     | '/customer/enroll'
     | '/customer/installments'
@@ -823,6 +834,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/site-settings'
     | '/admin/users'
+    | '/admin/verification-settings'
     | '/customer/draw-results'
     | '/customer/enroll'
     | '/customer/installments'
@@ -896,6 +908,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/site-settings'
     | '/_authenticated/admin/users'
+    | '/_authenticated/admin/verification-settings'
     | '/_authenticated/customer/draw-results'
     | '/_authenticated/customer/enroll'
     | '/_authenticated/customer/installments'
@@ -1154,6 +1167,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/customer/draw-results'
       preLoaderRoute: typeof AuthenticatedCustomerDrawResultsRouteImport
       parentRoute: typeof AuthenticatedCustomerRouteRoute
+    }
+    '/_authenticated/admin/verification-settings': {
+      id: '/_authenticated/admin/verification-settings'
+      path: '/verification-settings'
+      fullPath: '/admin/verification-settings'
+      preLoaderRoute: typeof AuthenticatedAdminVerificationSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
     }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
@@ -1476,6 +1496,7 @@ interface AuthenticatedAdminRouteRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminSiteSettingsRoute: typeof AuthenticatedAdminSiteSettingsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminVerificationSettingsRoute: typeof AuthenticatedAdminVerificationSettingsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminDocsImpersonationRoute: typeof AuthenticatedAdminDocsImpersonationRoute
   AuthenticatedAdminRewardTimelineUserIdRoute: typeof AuthenticatedAdminRewardTimelineUserIdRoute
@@ -1517,6 +1538,8 @@ const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren
     AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
     AuthenticatedAdminSiteSettingsRoute: AuthenticatedAdminSiteSettingsRoute,
     AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+    AuthenticatedAdminVerificationSettingsRoute:
+      AuthenticatedAdminVerificationSettingsRoute,
     AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
     AuthenticatedAdminDocsImpersonationRoute:
       AuthenticatedAdminDocsImpersonationRoute,

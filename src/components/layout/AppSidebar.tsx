@@ -88,6 +88,7 @@ const NAV: Record<AppRole, NavGroup[]> = {
       items: [
         { title: "Users", url: "/admin/users", icon: Users },
         { title: "Site Settings", url: "/admin/site-settings", icon: SlidersHorizontal },
+        { title: "Verification Settings", url: "/admin/verification-settings", icon: ShieldCheck },
         { title: "Admin Settings", url: "/admin/settings", icon: Settings },
         { title: "Email Preview", url: "/admin/email-preview", icon: Send },
         { title: "Membership Emails", url: "/admin/membership-emails", icon: Mail },
