@@ -10,7 +10,14 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { brand, styles, formatTimestamp } from "./_shared";
+import {
+  brand as defaultBrand,
+  styles,
+  formatTimestamp,
+  resolveBrand,
+  BrandHeader,
+  type BrandOverrides,
+} from "./_shared";
 
 export interface AdminRoleRevokedProps {
   /** Name or email of the person whose admin access was revoked. */
@@ -26,6 +33,8 @@ export interface AdminRoleRevokedProps {
   changedAt: string;
   /** Reason recorded by the acting admin (required upstream). */
   reason: string;
+  /** Site Settings brand overrides (logo URL, colours, support email). */
+  brand?: BrandOverrides;
 }
 
 const AdminRoleRevoked: React.FC<AdminRoleRevokedProps> = ({
@@ -36,30 +45,29 @@ const AdminRoleRevoked: React.FC<AdminRoleRevokedProps> = ({
   newRole,
   changedAt,
   reason,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   return (
     <Html lang="en" dir="ltr">
       <Head />
       <Preview>
-        Your {previousRole} access at {brand.name} has been revoked.
+        Your {previousRole} access at {b.name} has been revoked.
       </Preview>
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
 
             <Heading as="h1" style={styles.h1}>
               Your {previousRole} access has been revoked
             </Heading>
             <Text style={styles.p}>{greeting}</Text>
             <Text style={styles.p}>
-              An administrator has changed your account role on {brand.name}.
+              An administrator has changed your account role on {b.name}.
               You will no longer have{" "}
-              <strong style={{ color: "#f5d97a" }}>{previousRole}</strong>{" "}
+              <strong style={{ color: b.accent }}>{previousRole}</strong>{" "}
               privileges. Your account remains active with{" "}
               <strong>{newRole}</strong> access.
             </Text>
@@ -93,12 +101,12 @@ const AdminRoleRevoked: React.FC<AdminRoleRevokedProps> = ({
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
               Believe this was a mistake? Reply to this email or contact{" "}
-              {brand.supportEmail} so an administrator can review the change.
+              {b.supportEmail} so an administrator can review the change.
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             security notification.
           </Text>
         </Container>
@@ -111,7 +119,7 @@ export default AdminRoleRevoked;
 
 export const template = {
   component: AdminRoleRevoked,
-  subject: `[${brand.name}] Your admin access has been revoked`,
+  subject: `[${defaultBrand.name}] Your admin access has been revoked`,
   displayName: "Admin role revoked",
   previewData: {
     recipientName: "Priya Sharma",
