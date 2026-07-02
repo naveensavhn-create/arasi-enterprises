@@ -21,12 +21,14 @@ export type Database = {
           actor_id: string | null
           created_at: string
           id: string
+          ip_address: unknown
           metadata: Json
           reason: string | null
           role_after: Database["public"]["Enums"]["app_role"] | null
           role_before: Database["public"]["Enums"]["app_role"] | null
           target_email: string | null
           target_user_id: string | null
+          user_agent: string | null
         }
         Insert: {
           action: string
@@ -34,12 +36,14 @@ export type Database = {
           actor_id?: string | null
           created_at?: string
           id?: string
+          ip_address?: unknown
           metadata?: Json
           reason?: string | null
           role_after?: Database["public"]["Enums"]["app_role"] | null
           role_before?: Database["public"]["Enums"]["app_role"] | null
           target_email?: string | null
           target_user_id?: string | null
+          user_agent?: string | null
         }
         Update: {
           action?: string
@@ -47,12 +51,14 @@ export type Database = {
           actor_id?: string | null
           created_at?: string
           id?: string
+          ip_address?: unknown
           metadata?: Json
           reason?: string | null
           role_after?: Database["public"]["Enums"]["app_role"] | null
           role_before?: Database["public"]["Enums"]["app_role"] | null
           target_email?: string | null
           target_user_id?: string | null
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -1114,9 +1120,11 @@ export type Database = {
       profiles: {
         Row: {
           aadhaar_address: string | null
+          aadhaar_address_enc: string | null
           aadhaar_back_url: string | null
           aadhaar_front_url: string | null
           aadhaar_number: string | null
+          aadhaar_number_enc: string | null
           address_line1: string | null
           address_line2: string | null
           avatar_url: string | null
@@ -1142,9 +1150,11 @@ export type Database = {
         }
         Insert: {
           aadhaar_address?: string | null
+          aadhaar_address_enc?: string | null
           aadhaar_back_url?: string | null
           aadhaar_front_url?: string | null
           aadhaar_number?: string | null
+          aadhaar_number_enc?: string | null
           address_line1?: string | null
           address_line2?: string | null
           avatar_url?: string | null
@@ -1170,9 +1180,11 @@ export type Database = {
         }
         Update: {
           aadhaar_address?: string | null
+          aadhaar_address_enc?: string | null
           aadhaar_back_url?: string | null
           aadhaar_front_url?: string | null
           aadhaar_number?: string | null
+          aadhaar_number_enc?: string | null
           address_line1?: string | null
           address_line2?: string | null
           avatar_url?: string | null
@@ -1567,6 +1579,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_buckets: {
+        Row: {
+          count: number
+          key: string
+          updated_at: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          updated_at?: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          updated_at?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       razorpay_webhook_events: {
         Row: {
           event_id: string
@@ -1864,6 +1897,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          created_at: string
+          id: string
+          ip_address: unknown
+          kind: string
+          meta: Json
+          severity: string
+          subject_user_id: string | null
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          kind: string
+          meta?: Json
+          severity: string
+          subject_user_id?: string | null
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          kind?: string
+          meta?: Json
+          severity?: string
+          subject_user_id?: string | null
+        }
+        Relationships: []
       }
       site_settings: {
         Row: {
@@ -2375,6 +2444,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      cleanup_rate_limit_buckets: { Args: never; Returns: number }
       count_active_admins: { Args: never; Returns: number }
       current_user_role: {
         Args: never
@@ -2786,6 +2856,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      try_consume_rate_limit: {
+        Args: { _key: string; _limit: number; _window_seconds: number }
+        Returns: boolean
       }
     }
     Enums: {
