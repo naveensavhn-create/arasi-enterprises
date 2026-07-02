@@ -106,3 +106,5 @@
     "vitest": "^4.1.9"
   }
 }
+"scripts"
+"dependencies"
