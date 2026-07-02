@@ -39,7 +39,7 @@ export type AuditLogListResult = {
   reviewedFieldOptions: string[];
 };
 
-async function assertAdmin(context: { supabase: { rpc: (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown }> }; userId: string }) {
+async function assertAdmin(context: { supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" }) => Promise<{ data: unknown }> }; userId: string }) {
   const { data: isAdmin } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
@@ -58,7 +58,7 @@ function mapRow(r: {
   role_before: string | null;
   role_after: string | null;
   reason: string | null;
-  metadata: JsonValue;
+  metadata: unknown;
 }): AuditLogRow {
   const m = (r.metadata ?? {}) as Record<string, JsonValue>;
   const rf = Array.isArray(m.reviewed_fields) ? (m.reviewed_fields as JsonValue[]).filter((x): x is string => typeof x === "string") : [];
