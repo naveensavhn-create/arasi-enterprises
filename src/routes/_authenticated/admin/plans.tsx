@@ -316,6 +316,7 @@ function AdminPlansPage() {
   function startCreate() {
     setEditing(null);
     setForm(empty);
+    setShowErrors(false);
     setOpen(true);
   }
 
@@ -332,6 +333,7 @@ function AdminPlansPage() {
       is_active: p.is_active,
       display_order: String(p.display_order),
     });
+    setShowErrors(false);
     setOpen(true);
   }
 
