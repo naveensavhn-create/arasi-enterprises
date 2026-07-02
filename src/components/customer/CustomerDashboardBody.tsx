@@ -20,6 +20,7 @@ import {
   Sparkles,
   ArrowRight,
   Inbox,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
