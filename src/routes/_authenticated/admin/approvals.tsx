@@ -129,6 +129,7 @@ function AdminApprovalsPage() {
   }, [rows, q, onlyReferred]);
 
   const ALLOWED_ROLES = ["promoter", "customer"] as const;
+  const TOAST_ID = "kyc-decision";
   const decideMut = useMutation({
     mutationFn: (v: {
       userId: string;
@@ -136,8 +137,6 @@ function AdminApprovalsPage() {
       notes: string | null;
       assignRole?: "promoter" | "customer" | null;
     }) => {
-      // Client-side guard so the user gets an immediate, clear error
-      // before we ever hit the network. The server enforces the same rule.
       if (v.approve) {
         if (!v.assignRole) {
           throw new Error("Select a membership role (Customer or Promoter) before approving.");
@@ -154,16 +153,21 @@ function AdminApprovalsPage() {
       } else if (v.assignRole) {
         throw new Error("A role can only be assigned when approving KYC.");
       }
+      toast.loading(v.approve ? "Approving KYC…" : "Rejecting KYC…", { id: TOAST_ID });
       return decideFn({ data: v });
     },
     onSuccess: async (_r, v) => {
-      toast.success(
-        v.approve
-          ? v.assignRole
-            ? `Approved as ${v.assignRole}`
-            : "Approved"
-          : "Rejected",
-      );
+      const label = v.approve
+        ? v.assignRole
+          ? `Approved as ${v.assignRole}`
+          : "KYC approved"
+        : "KYC rejected";
+      toast.success(label, {
+        id: TOAST_ID,
+        description: v.notes
+          ? `Saved review notes: “${v.notes.length > 140 ? v.notes.slice(0, 140) + "…" : v.notes}”`
+          : "No review notes were saved.",
+      });
       try {
         await supabase.auth.refreshSession();
       } catch {
@@ -173,13 +177,16 @@ function AdminApprovalsPage() {
         qc.invalidateQueries({ queryKey: ["kyc"] }),
         qc.invalidateQueries({ queryKey: ["current-role"] }),
       ]);
-      setSelected(null);
+      // Keep drawer open so the refetched row shows the updated status
+      // and the saved review note in the "Previous review note" section.
     },
     onError: (e: Error) =>
       toast.error(e.message || "Could not update KYC decision", {
+        id: TOAST_ID,
         description: "Fix the issue above and try again.",
       }),
   });
+
 
   return (
     <div className="space-y-4">
