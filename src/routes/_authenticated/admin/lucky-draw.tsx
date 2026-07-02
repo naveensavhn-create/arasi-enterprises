@@ -646,7 +646,7 @@ function CreateDrawDialog({
 }
 
 
-function DrawDetailDialog({ draw, onClose }: { draw: Draw | null; onClose: () => void }) {
+function DrawDetailDialog({ draw, onClose, focusManual = false }: { draw: Draw | null; onClose: () => void; focusManual?: boolean }) {
   const qc = useQueryClient();
   const entriesFn = useServerFn(listDrawEntries);
   const winnersFn = useServerFn(listDrawWinners);
