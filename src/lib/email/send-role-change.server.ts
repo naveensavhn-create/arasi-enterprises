@@ -17,6 +17,7 @@ import AdminRoleRevoked, {
 } from "@/lib/email-templates/admin-role-revoked";
 import { brand } from "@/lib/email-templates/_shared";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { loadBrandOverrides } from "@/lib/email/load-brand.server";
 import * as React from "react";
 
 export type RoleEmailKind = "promote" | "revoke";
