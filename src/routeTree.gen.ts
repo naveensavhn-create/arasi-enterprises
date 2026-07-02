@@ -21,6 +21,7 @@ import { Route as AuthenticatedPromoterRouteRouteImport } from './routes/_authen
 import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/customer/route'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
+import { Route as AuthenticatedRewardCertificateRewardIdRouteImport } from './routes/_authenticated/reward-certificate.$rewardId'
 import { Route as AuthenticatedReceiptsReceiptNumberRouteImport } from './routes/_authenticated/receipts.$receiptNumber'
 import { Route as AuthenticatedPromoterRankRouteImport } from './routes/_authenticated/promoter/rank'
 import { Route as AuthenticatedPromoterPortfolioRouteImport } from './routes/_authenticated/promoter/portfolio'
@@ -134,6 +135,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRouteRoute,
 } as any)
+const AuthenticatedRewardCertificateRewardIdRoute =
+  AuthenticatedRewardCertificateRewardIdRouteImport.update({
+    id: '/reward-certificate/$rewardId',
+    path: '/reward-certificate/$rewardId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReceiptsReceiptNumberRoute =
   AuthenticatedReceiptsReceiptNumberRouteImport.update({
     id: '/receipts/$receiptNumber',
@@ -484,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
+  '/reward-certificate/$rewardId': typeof AuthenticatedRewardCertificateRewardIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
@@ -546,6 +554,7 @@ export interface FileRoutesByTo {
   '/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
+  '/reward-certificate/$rewardId': typeof AuthenticatedRewardCertificateRewardIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
@@ -611,6 +620,7 @@ export interface FileRoutesById {
   '/_authenticated/promoter/portfolio': typeof AuthenticatedPromoterPortfolioRoute
   '/_authenticated/promoter/rank': typeof AuthenticatedPromoterRankRoute
   '/_authenticated/receipts/$receiptNumber': typeof AuthenticatedReceiptsReceiptNumberRoute
+  '/_authenticated/reward-certificate/$rewardId': typeof AuthenticatedRewardCertificateRewardIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/public/hooks/enqueue-payment-reminders': typeof ApiPublicHooksEnqueuePaymentRemindersRoute
   '/api/public/hooks/process-export-jobs': typeof ApiPublicHooksProcessExportJobsRoute
@@ -676,6 +686,7 @@ export interface FileRouteTypes {
     | '/promoter/portfolio'
     | '/promoter/rank'
     | '/receipts/$receiptNumber'
+    | '/reward-certificate/$rewardId'
     | '/admin/'
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
@@ -738,6 +749,7 @@ export interface FileRouteTypes {
     | '/promoter/portfolio'
     | '/promoter/rank'
     | '/receipts/$receiptNumber'
+    | '/reward-certificate/$rewardId'
     | '/admin'
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
@@ -802,6 +814,7 @@ export interface FileRouteTypes {
     | '/_authenticated/promoter/portfolio'
     | '/_authenticated/promoter/rank'
     | '/_authenticated/receipts/$receiptNumber'
+    | '/_authenticated/reward-certificate/$rewardId'
     | '/_authenticated/admin/'
     | '/api/public/hooks/enqueue-payment-reminders'
     | '/api/public/hooks/process-export-jobs'
@@ -909,6 +922,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
+    '/_authenticated/reward-certificate/$rewardId': {
+      id: '/_authenticated/reward-certificate/$rewardId'
+      path: '/reward-certificate/$rewardId'
+      fullPath: '/reward-certificate/$rewardId'
+      preLoaderRoute: typeof AuthenticatedRewardCertificateRewardIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/receipts/$receiptNumber': {
       id: '/_authenticated/receipts/$receiptNumber'
@@ -1402,6 +1422,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedReceiptsReceiptNumberRoute: typeof AuthenticatedReceiptsReceiptNumberRoute
+  AuthenticatedRewardCertificateRewardIdRoute: typeof AuthenticatedRewardCertificateRewardIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1414,6 +1435,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedReceiptsReceiptNumberRoute:
     AuthenticatedReceiptsReceiptNumberRoute,
+  AuthenticatedRewardCertificateRewardIdRoute:
+    AuthenticatedRewardCertificateRewardIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
