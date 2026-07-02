@@ -1130,3 +1130,23 @@ export const getWebhookEventPayload = createServerFn({ method: "GET" })
       json: pretty,
     };
   });
+
+/**
+ * Admin-only server endpoint that validates an untrusted `AdminPaymentRow`
+ * payload and returns a consistent remediation response. Shape source of
+ * truth: `@/lib/payments/validate-row-response.ts`.
+ */
+export const validateAdminPaymentRowFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { row: unknown }) => input)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
+    const { validateAdminPaymentRowResponse } = await import(
+      "@/lib/payments/validate-row-response"
+    );
+    return validateAdminPaymentRowResponse(data.row);
+  });
