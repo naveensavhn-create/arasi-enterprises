@@ -192,12 +192,12 @@ const RewardClaimStatusEmail: React.FC<RewardClaimStatusProps> = ({
 
             <Hr style={styles.divider} />
             <Text style={styles.muted}>
-              Need help? Reply to this email or write to {brand.supportEmail}.
+              Need help? Reply to this email or write to {b.supportEmail}.
             </Text>
           </Section>
 
           <Text style={styles.footer}>
-            © {new Date().getFullYear()} {brand.name}. This is an automated
+            © {new Date().getFullYear()} {b.name}. This is an automated
             account notification.
           </Text>
         </Container>
@@ -210,7 +210,7 @@ export default RewardClaimStatusEmail;
 
 export const template = {
   component: RewardClaimStatusEmail,
-  subject: `[${brand.name}] Reward claim update`,
+  subject: `[${defaultBrand.name}] Reward claim update`,
   displayName: "Reward claim status",
   previewData: {
     recipientName: "Priya Sharma",
