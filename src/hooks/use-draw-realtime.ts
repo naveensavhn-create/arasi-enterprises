@@ -35,6 +35,8 @@ export function useDrawRealtime(opts: {
   fallbackPollMs?: number;
   /** Max backoff between resubscribe attempts (ms). Default 30s. */
   maxBackoffMs?: number;
+  /** Max consecutive failed attempts before entering `failed` state. Default 6. */
+  maxAttempts?: number;
 }) {
   const {
     queryKeys,
