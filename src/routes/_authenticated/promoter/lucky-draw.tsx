@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { listDrawsForPromoter } from "@/lib/draws.functions";
+import { useDrawRealtime } from "@/hooks/use-draw-realtime";
 
 export const Route = createFileRoute("/_authenticated/promoter/lucky-draw")({
   head: () => ({
