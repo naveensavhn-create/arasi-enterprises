@@ -33,6 +33,67 @@ import { PlanAuditDrawer } from "@/components/admin/PlanAuditDrawer";
 import { deletePlanAudited } from "@/lib/plans.functions";
 import { BLOCKING_STATUSES, computePlanUsage, usageFor } from "@/lib/plans-precheck";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+
+const planFormSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(1, "Plan name is required")
+      .max(100, "Plan name must be 100 characters or fewer"),
+    description: z
+      .string()
+      .trim()
+      .max(500, "Description must be 500 characters or fewer")
+      .optional()
+      .or(z.literal("")),
+    has_advance: z.boolean(),
+    advance_amount: z.string(),
+    monthly_installment: z
+      .string()
+      .refine((v) => v.trim() !== "" && !Number.isNaN(Number(v)), "Enter a valid amount")
+      .refine((v) => Number(v) >= 0, "Monthly installment cannot be negative"),
+    duration_months: z
+      .string()
+      .refine((v) => v.trim() !== "" && Number.isInteger(Number(v)), "Enter a whole number of months")
+      .refine((v) => Number(v) >= 1, "Duration must be at least 1 month")
+      .refine((v) => Number(v) <= 120, "Duration cannot exceed 120 months"),
+    benefits: z.string().max(2000, "Benefits text is too long").optional().or(z.literal("")),
+    is_active: z.boolean(),
+    display_order: z
+      .string()
+      .refine((v) => v.trim() !== "" && Number.isInteger(Number(v)), "Display order must be a whole number")
+      .refine((v) => Number(v) >= 0, "Display order cannot be negative"),
+  })
+  .superRefine((data, ctx) => {
+    if (data.has_advance) {
+      const n = Number(data.advance_amount);
+      if (data.advance_amount.trim() === "" || Number.isNaN(n)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["advance_amount"],
+          message: "Enter a valid advance amount",
+        });
+      } else if (n <= 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["advance_amount"],
+          message: "Advance must be greater than 0 (or turn off the advance requirement)",
+        });
+      }
+    }
+    const advance = data.has_advance ? Number(data.advance_amount || 0) : 0;
+    const monthly = Number(data.monthly_installment || 0);
+    const months = Number(data.duration_months || 0);
+    if (advance + monthly * months <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["monthly_installment"],
+        message: "Plan total must be greater than 0",
+      });
+    }
+  });
 
 export const Route = createFileRoute("/_authenticated/admin/plans")({
   head: () => ({ meta: [{ title: "Plans — Admin" }] }),
@@ -86,6 +147,20 @@ function AdminPlansPage() {
   const [form, setForm] = useState<FormState>(empty);
   const [confirmDelete, setConfirmDelete] = useState<Plan | null>(null);
   const [historyPlan, setHistoryPlan] = useState<Plan | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
+
+  const validation = useMemo(() => planFormSchema.safeParse(form), [form]);
+  const errors = useMemo(() => {
+    const map: Partial<Record<keyof FormState, string>> = {};
+    if (!validation.success) {
+      for (const issue of validation.error.issues) {
+        const key = issue.path[0] as keyof FormState | undefined;
+        if (key && !map[key]) map[key] = issue.message;
+      }
+    }
+    return map;
+  }, [validation]);
+  const showErr = (k: keyof FormState) => (showErrors ? errors[k] : undefined);
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-plans"],
@@ -114,19 +189,24 @@ function AdminPlansPage() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const advance = form.has_advance ? Number(form.advance_amount || 0) : 0;
+      const parsed = planFormSchema.safeParse(form);
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Please fix the highlighted fields");
+      }
+      const d = parsed.data;
+      const advance = d.has_advance ? Number(d.advance_amount || 0) : 0;
       const payload = {
-        name: form.name.trim(),
-        description: form.description.trim() || null,
+        name: d.name.trim(),
+        description: (d.description ?? "").trim() || null,
         advance_amount: advance,
-        monthly_installment: Number(form.monthly_installment || 0),
-        duration_months: Number(form.duration_months || 0),
-        benefits: form.benefits
+        monthly_installment: Number(d.monthly_installment),
+        duration_months: Number(d.duration_months),
+        benefits: (d.benefits ?? "")
           .split("\n")
           .map((s) => s.trim())
           .filter(Boolean),
-        is_active: form.is_active,
-        display_order: Number(form.display_order) || 0,
+        is_active: d.is_active,
+        display_order: Number(d.display_order),
       };
       if (editing) {
         const { error } = await supabase.from("membership_plans").update(payload).eq("id", editing.id);
@@ -141,10 +221,21 @@ function AdminPlansPage() {
       setOpen(false);
       setEditing(null);
       setForm(empty);
+      setShowErrors(false);
       toast.success(editing ? "Plan updated" : "Plan created");
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Save failed"),
   });
+
+  const handleSave = () => {
+    if (save.isPending) return;
+    if (!validation.success) {
+      setShowErrors(true);
+      toast.error(validation.error.issues[0]?.message ?? "Please fix the highlighted fields");
+      return;
+    }
+    save.mutate();
+  };
 
   const toggleActive = useMutation({
     mutationFn: async (p: Plan) => {
@@ -225,6 +316,7 @@ function AdminPlansPage() {
   function startCreate() {
     setEditing(null);
     setForm(empty);
+    setShowErrors(false);
     setOpen(true);
   }
 
@@ -241,6 +333,7 @@ function AdminPlansPage() {
       is_active: p.is_active,
       display_order: String(p.display_order),
     });
+    setShowErrors(false);
     setOpen(true);
   }
 
@@ -303,16 +396,24 @@ function AdminPlansPage() {
                       <Input
                         placeholder="e.g. Gold"
                         value={form.name}
+                        aria-invalid={!!showErr("name")}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                       />
+                      {showErr("name") && (
+                        <p className="text-xs text-destructive">{showErr("name")}</p>
+                      )}
                     </div>
                     <div className="grid gap-1.5">
                       <Label className="text-xs">Display order</Label>
                       <Input
                         type="number"
                         value={form.display_order}
+                        aria-invalid={!!showErr("display_order")}
                         onChange={(e) => setForm({ ...form, display_order: e.target.value })}
                       />
+                      {showErr("display_order") && (
+                        <p className="text-xs text-destructive">{showErr("display_order")}</p>
+                      )}
                     </div>
                   </div>
 
@@ -322,8 +423,12 @@ function AdminPlansPage() {
                       rows={2}
                       placeholder="Short pitch shown to customers"
                       value={form.description}
+                      aria-invalid={!!showErr("description")}
                       onChange={(e) => setForm({ ...form, description: e.target.value })}
                     />
+                    {showErr("description") && (
+                      <p className="text-xs text-destructive">{showErr("description")}</p>
+                    )}
                   </div>
 
                   {/* Advance toggle */}
@@ -356,8 +461,12 @@ function AdminPlansPage() {
                           min={0}
                           placeholder="0"
                           value={form.advance_amount}
+                          aria-invalid={!!showErr("advance_amount")}
                           onChange={(e) => setForm({ ...form, advance_amount: e.target.value })}
                         />
+                        {showErr("advance_amount") && (
+                          <p className="text-xs text-destructive">{showErr("advance_amount")}</p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -372,8 +481,12 @@ function AdminPlansPage() {
                         min={0}
                         placeholder="0"
                         value={form.monthly_installment}
+                        aria-invalid={!!showErr("monthly_installment")}
                         onChange={(e) => setForm({ ...form, monthly_installment: e.target.value })}
                       />
+                      {showErr("monthly_installment") && (
+                        <p className="text-xs text-destructive">{showErr("monthly_installment")}</p>
+                      )}
                     </div>
                     <div className="grid gap-1.5">
                       <Label className="text-xs flex items-center gap-1.5">
@@ -383,8 +496,12 @@ function AdminPlansPage() {
                         type="number"
                         min={0}
                         value={form.duration_months}
+                        aria-invalid={!!showErr("duration_months")}
                         onChange={(e) => setForm({ ...form, duration_months: e.target.value })}
                       />
+                      {showErr("duration_months") && (
+                        <p className="text-xs text-destructive">{showErr("duration_months")}</p>
+                      )}
                     </div>
                   </div>
 
@@ -439,9 +556,13 @@ function AdminPlansPage() {
 
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-                  <Button onClick={() => save.mutate()} disabled={save.isPending || !form.name}>
+                  <Button
+                    onClick={handleSave}
+                    disabled={save.isPending || !validation.success}
+                    aria-disabled={save.isPending || !validation.success}
+                  >
                     {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {editing ? "Save changes" : "Create plan"}
+                    {save.isPending ? "Saving…" : editing ? "Save changes" : "Create plan"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
