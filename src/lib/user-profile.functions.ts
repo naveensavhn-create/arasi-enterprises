@@ -115,12 +115,21 @@ const optStr = z
   .optional()
   .transform((v) => (v == null || v === "" ? null : v));
 
-const updateSchema = z.object({
+const phoneField = z
+  .union([z.string().trim(), z.null()])
+  .optional()
+  .transform((v) => (v == null || v === "" ? null : v))
+  .refine(
+    (v) => v === null || v === undefined || /^\+?[0-9]{10,15}$/.test(v.replace(/[\s-]/g, "")),
+    "Phone must be 10–15 digits (optional leading +)",
+  );
+
+export const adminUpdateProfileSchema = z.object({
   userId: z.string().uuid(),
   full_name: optStr,
-  email: z.union([z.string().trim().email(), z.literal(""), z.null()]).optional()
+  email: z.union([z.string().trim().email("Invalid email address"), z.literal(""), z.null()]).optional()
     .transform((v) => (v == null || v === "" ? null : v)),
-  phone: optStr,
+  phone: phoneField,
   address_line1: optStr,
   address_line2: optStr,
   city: optStr,
@@ -135,6 +144,9 @@ const updateSchema = z.object({
   clear_referrer: z.boolean().optional(),
   reason: z.string().trim().min(5, "Reason is required (min 5 characters)").max(500),
 });
+
+const updateSchema = adminUpdateProfileSchema;
+
 
 export const adminUpdateProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
