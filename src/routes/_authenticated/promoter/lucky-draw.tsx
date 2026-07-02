@@ -143,7 +143,7 @@ function PromoterLuckyDrawPage() {
                 <CardHeader className="pb-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <CardTitle className="text-base">{d.name}</CardTitle>
-                    <span className="text-xs text-muted-foreground">Drawn {fmt(d.drawn_at)}</span>
+                    <DrawTimeBadge kind="drawn" iso={d.drawn_at} />
                   </div>
                 </CardHeader>
                 <CardContent>
