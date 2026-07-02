@@ -26,7 +26,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Loader2, Package, Plus, Pencil, Trash2, History, Sparkles, Calendar, Wallet, TrendingUp, CheckCircle2, Users, Search, X, ArrowDownAZ, ArrowUpAZ } from "lucide-react";
+import { Loader2, Package, Plus, Pencil, Trash2, History, Sparkles, Calendar, Wallet, TrendingUp, CheckCircle2, Users, Search, X, ArrowDownAZ, ArrowUpAZ, Power, PowerOff, CheckSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -155,6 +156,17 @@ function AdminPlansPage() {
   const [advanceOnly, setAdvanceOnly] = useState(false);
   const [sortBy, setSortBy] = useState<"display_order" | "name" | "total_value" | "duration_months">("display_order");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkConfirm, setBulkConfirm] = useState<null | "activate" | "deactivate" | "delete">(null);
+
+  const toggleSelected = (id: string) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const clearSelection = () => setSelected(new Set());
 
   const validation = useMemo(() => planFormSchema.safeParse(form), [form]);
   const errors = useMemo(() => {
@@ -330,6 +342,67 @@ function AdminPlansPage() {
       }
     },
   });
+
+  const bulkSetActive = useMutation({
+    mutationFn: async ({ ids, active }: { ids: string[]; active: boolean }) => {
+      if (ids.length === 0) return { updated: 0 };
+      const { error, count } = await supabase
+        .from("membership_plans")
+        .update({ is_active: active }, { count: "exact" })
+        .in("id", ids);
+      if (error) throw error;
+      return { updated: count ?? ids.length };
+    },
+    onSuccess: (res, vars) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      toast.success(
+        `${res.updated} plan${res.updated === 1 ? "" : "s"} ${vars.active ? "activated" : "deactivated"}`,
+        {
+          description: vars.active
+            ? "New enrollments can now select these plans."
+            : "Existing memberships are unchanged; new enrollments are blocked.",
+        },
+      );
+      clearSelection();
+      setBulkConfirm(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Bulk update failed"),
+  });
+
+  const bulkDelete = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const results = await Promise.allSettled(
+        ids.map((id) => deletePlanAudited({ data: { planId: id } })),
+      );
+      let deleted = 0;
+      let blocked = 0;
+      let failed = 0;
+      for (const r of results) {
+        if (r.status === "rejected") failed++;
+        else if (r.value.success) deleted++;
+        else blocked++;
+      }
+      return { deleted, blocked, failed };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["admin-plans"] });
+      qc.invalidateQueries({ queryKey: ["admin-plans-usage"] });
+      qc.invalidateQueries({ queryKey: ["admin-audit"] });
+      const parts: string[] = [];
+      if (res.deleted) parts.push(`${res.deleted} deleted`);
+      if (res.blocked) parts.push(`${res.blocked} blocked (in use)`);
+      if (res.failed) parts.push(`${res.failed} failed`);
+      const msg = parts.join(", ") || "No changes";
+      if (res.deleted > 0 && res.blocked === 0 && res.failed === 0) toast.success(msg);
+      else if (res.deleted === 0) toast.error(msg, { description: "Deactivate in-use plans instead." });
+      else toast.warning(msg, { description: "In-use plans were not deleted." });
+      clearSelection();
+      setBulkConfirm(null);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Bulk delete failed"),
+  });
+
+
 
   function startCreate() {
     setEditing(null);
@@ -681,7 +754,74 @@ function AdminPlansPage() {
         </div>
       )}
 
+      {/* Bulk actions toolbar */}
+      {!isLoading && filteredPlans.length > 0 && (
+        (() => {
+          const visibleIds = filteredPlans.map((p) => p.id);
+          const selectedVisible = visibleIds.filter((id) => selected.has(id));
+          const allSelected = selectedVisible.length === visibleIds.length;
+          const someSelected = selectedVisible.length > 0 && !allSelected;
+          const count = selected.size;
+          return (
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border bg-card p-3 shadow-sm">
+              <label className="flex cursor-pointer items-center gap-2 text-sm">
+                <Checkbox
+                  checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                  onCheckedChange={(v) => {
+                    if (v) setSelected((s) => new Set([...s, ...visibleIds]));
+                    else
+                      setSelected((s) => {
+                        const n = new Set(s);
+                        for (const id of visibleIds) n.delete(id);
+                        return n;
+                      });
+                  }}
+                  aria-label="Select all visible plans"
+                />
+                <span className="text-muted-foreground">
+                  {count === 0
+                    ? "Select plans for bulk actions"
+                    : `${count} selected`}
+                </span>
+              </label>
+              <div className="ml-auto flex flex-wrap items-center gap-2">
+                <Button
+                  variant="success"
+                  size="sm"
+                  disabled={count === 0}
+                  onClick={() => setBulkConfirm("activate")}
+                >
+                  <Power className="mr-1.5 h-4 w-4" /> Activate
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={count === 0}
+                  onClick={() => setBulkConfirm("deactivate")}
+                >
+                  <PowerOff className="mr-1.5 h-4 w-4" /> Deactivate
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={count === 0}
+                  onClick={() => setBulkConfirm("delete")}
+                >
+                  <Trash2 className="mr-1.5 h-4 w-4" /> Delete
+                </Button>
+                {count > 0 && (
+                  <Button variant="ghost" size="sm" onClick={clearSelection}>
+                    <X className="mr-1 h-3.5 w-3.5" /> Clear
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })()
+      )}
+
       {/* Cards grid */}
+
       {isLoading ? (
         <Card>
           <CardContent className="flex items-center py-12 text-muted-foreground">
@@ -747,7 +887,14 @@ function AdminPlansPage() {
 
                 <div className="flex flex-col gap-4 p-5">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
+                    <div className="flex min-w-0 items-start gap-2">
+                      <Checkbox
+                        className="mt-1 shrink-0"
+                        checked={selected.has(p.id)}
+                        onCheckedChange={() => toggleSelected(p.id)}
+                        aria-label={`Select ${p.name}`}
+                      />
+                      <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate text-lg font-semibold">{p.name}</h3>
                         <Badge variant={p.is_active ? "default" : "secondary"} className="shrink-0">
@@ -762,6 +909,7 @@ function AdminPlansPage() {
                       {p.description && (
                         <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{p.description}</p>
                       )}
+                      </div>
                     </div>
                     <div className="flex shrink-0 gap-0.5 opacity-70 transition-opacity group-hover:opacity-100">
                       <Button size="icon" variant="ghost" onClick={() => startEdit(p)} title="Edit">
@@ -976,6 +1124,80 @@ function AdminPlansPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk actions confirm */}
+      <AlertDialog
+        open={!!bulkConfirm}
+        onOpenChange={(o) => !o && !bulkSetActive.isPending && !bulkDelete.isPending && setBulkConfirm(null)}
+      >
+        <AlertDialogContent>
+          {(() => {
+            const ids = Array.from(selected);
+            const count = ids.length;
+            const busy = bulkSetActive.isPending || bulkDelete.isPending;
+            const inUseCount = bulkConfirm === "delete" ? ids.filter((id) => usageForPlan(id) > 0).length : 0;
+            const title =
+              bulkConfirm === "activate"
+                ? `Activate ${count} plan${count === 1 ? "" : "s"}?`
+                : bulkConfirm === "deactivate"
+                  ? `Deactivate ${count} plan${count === 1 ? "" : "s"}?`
+                  : `Delete ${count} plan${count === 1 ? "" : "s"}?`;
+            return (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{title}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {bulkConfirm === "activate" &&
+                      "Selected plans will become available for new enrollments. Existing memberships are unchanged."}
+                    {bulkConfirm === "deactivate" &&
+                      "Selected plans will be hidden from new enrollments. Existing memberships and installments are not affected."}
+                    {bulkConfirm === "delete" && (
+                      <>
+                        This permanently deletes the selected plans. Plans with active enrollments
+                        cannot be deleted and will be skipped.
+                        {inUseCount > 0 && (
+                          <span className="mt-2 block font-medium text-destructive">
+                            {inUseCount} of {count} selected plan{inUseCount === 1 ? "" : "s"} {inUseCount === 1 ? "is" : "are"} in use and will be blocked.
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={busy}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (bulkConfirm === "activate") bulkSetActive.mutate({ ids, active: true });
+                      else if (bulkConfirm === "deactivate") bulkSetActive.mutate({ ids, active: false });
+                      else if (bulkConfirm === "delete") bulkDelete.mutate(ids);
+                    }}
+                    className={
+                      bulkConfirm === "delete" || bulkConfirm === "deactivate"
+                        ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        : ""
+                    }
+                  >
+                    {busy ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : bulkConfirm === "activate" ? (
+                      "Activate"
+                    ) : bulkConfirm === "deactivate" ? (
+                      "Deactivate"
+                    ) : (
+                      "Delete"
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </>
+            );
+          })()}
+        </AlertDialogContent>
+      </AlertDialog>
+
+
 
 
       <PlanAuditDrawer
