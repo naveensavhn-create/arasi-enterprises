@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate, useRouter, useRouterState, isRedirect } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -14,16 +14,36 @@ import { NotificationBell } from "@/components/layout/NotificationBell";
 import { ImpersonationBanner } from "@/components/impersonation/ImpersonationBanner";
 import { ImpersonationExitFab } from "@/components/impersonation/ImpersonationExitFab";
 import { ImpersonationSessionGuard } from "@/components/impersonation/ImpersonationSessionGuard";
+import { RouteLoading, RouteError } from "@/components/RouteLoading";
 
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) {
+        throw redirect({ to: "/auth", search: { portal: "customer" } });
+      }
+      return { user: data.user };
+    } catch (err) {
+      if (isRedirect(err)) throw err;
+      // Network or transient auth failure — send to sign-in rather than a blank screen.
       throw redirect({ to: "/auth", search: { portal: "customer" } });
     }
-    return { user: data.user };
+  },
+  pendingComponent: () => <RouteLoading label="Checking your session…" />,
+  errorComponent: ({ error, reset }) => {
+    const router = useRouter();
+    return (
+      <RouteError
+        error={error}
+        onRetry={() => {
+          router.invalidate();
+          reset();
+        }}
+      />
+    );
   },
   component: AuthenticatedShell,
 });
