@@ -1740,6 +1740,8 @@ export type Database = {
           email: string
           full_name: string
           has_aadhaar_docs: boolean
+          has_aadhaar_front: boolean
+          has_aadhaar_number: boolean
           id: string
           kyc_review_notes: string
           kyc_reviewed_at: string

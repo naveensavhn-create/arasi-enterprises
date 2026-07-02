@@ -16,7 +16,9 @@ import {
   Send,
   X,
   FilterX,
+  AlertCircle,
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Select,
   SelectContent,
@@ -94,6 +96,17 @@ function kycBadge(s: ReferredCustomer["kyc_status"]) {
       </Badge>
     );
   return <Badge variant="outline">Unsubmitted</Badge>;
+}
+
+/**
+ * Returns a list of human-readable reasons the "Submit for review" action
+ * is currently disabled for a given customer. Empty array means "ready".
+ */
+function submissionBlockers(c: ReferredCustomer): string[] {
+  const reasons: string[] = [];
+  if (!c.has_aadhaar_number) reasons.push("Aadhaar number not entered");
+  if (!c.has_aadhaar_front) reasons.push("Aadhaar front image not uploaded");
+  return reasons;
 }
 
 function PromoterCustomersPage() {
@@ -183,16 +196,39 @@ function PromoterCustomersPage() {
     onError: (e: any) => toast.error(e?.message ?? "Failed to register customer"),
   });
 
+  // Per-customer submission error surfaced inline (in addition to a toast).
+  const [submitErrors, setSubmitErrors] = useState<Record<string, string>>({});
+
   const submitMut = useMutation({
     mutationFn: (v: { userId: string; note: string | null }) =>
       submitFn({ data: v } as any),
+    onMutate: (v) => {
+      setSubmitErrors((prev) => {
+        if (!(v.userId in prev)) return prev;
+        const next = { ...prev };
+        delete next[v.userId];
+        return next;
+      });
+    },
     onSuccess: () => {
       toast.success("Submitted to admin for review");
       qc.invalidateQueries({ queryKey: ["promoter-referred-customers"] });
       setSelected(null);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't submit for review"),
+    onError: (e: any, v) => {
+      const msg = e?.message?.trim() || "Couldn't submit for review";
+      toast.error(msg);
+      setSubmitErrors((prev) => ({ ...prev, [v.userId]: msg }));
+    },
   });
+
+  const clearSubmitError = (userId: string) =>
+    setSubmitErrors((prev) => {
+      if (!(userId in prev)) return prev;
+      const next = { ...prev };
+      delete next[userId];
+      return next;
+    });
 
   const rows = filtered;
   const total = listQ.data?.length ?? 0;
@@ -381,27 +417,84 @@ function PromoterCustomersPage() {
                       </TableCell>
                       <TableCell>{kycBadge(r.kyc_status)}</TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {(r.kyc_status === "unsubmitted" || r.kyc_status === "rejected") && (
-                            <Button
-                              size="sm"
-                              disabled={!r.has_aadhaar_docs || submitMut.isPending}
-                              title={
-                                r.has_aadhaar_docs
-                                  ? "Submit this customer for admin KYC review"
-                                  : "Customer must upload Aadhaar number and front document first"
-                              }
-                              onClick={() =>
-                                submitMut.mutate({ userId: r.id, note: null })
-                              }
-                            >
-                              <Send className="mr-1 h-3.5 w-3.5" /> Submit
-                            </Button>
-                          )}
-                          <Button size="sm" variant="outline" onClick={() => setSelected(r)}>
-                            View
-                          </Button>
-                        </div>
+                        {(() => {
+                          const blockers = submissionBlockers(r);
+                          const rowError = submitErrors[r.id];
+                          const canSubmit =
+                            r.kyc_status === "unsubmitted" || r.kyc_status === "rejected";
+                          return (
+                            <div className="flex flex-col items-end gap-1.5">
+                              <div className="flex justify-end gap-2">
+                                {canSubmit && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span tabIndex={0}>
+                                          <Button
+                                            size="sm"
+                                            disabled={blockers.length > 0 || submitMut.isPending}
+                                            aria-describedby={
+                                              rowError ? `submit-err-${r.id}` : undefined
+                                            }
+                                            onClick={() =>
+                                              submitMut.mutate({ userId: r.id, note: null })
+                                            }
+                                          >
+                                            <Send className="mr-1 h-3.5 w-3.5" /> Submit
+                                          </Button>
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="left" className="max-w-xs">
+                                        {blockers.length === 0 ? (
+                                          "Submit this customer for admin KYC review"
+                                        ) : (
+                                          <div className="space-y-1 text-xs">
+                                            <p className="font-medium">
+                                              Can't submit yet — missing:
+                                            </p>
+                                            <ul className="ml-4 list-disc">
+                                              {blockers.map((b) => (
+                                                <li key={b}>{b}</li>
+                                              ))}
+                                            </ul>
+                                            <p className="pt-1 text-muted-foreground">
+                                              The customer completes these from their KYC page.
+                                            </p>
+                                          </div>
+                                        )}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setSelected(r)}
+                                >
+                                  View
+                                </Button>
+                              </div>
+                              {rowError && (
+                                <div
+                                  id={`submit-err-${r.id}`}
+                                  role="alert"
+                                  className="flex max-w-xs items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/5 px-2 py-1 text-left text-xs text-destructive"
+                                >
+                                  <AlertCircle className="mt-0.5 h-3 w-3 shrink-0" />
+                                  <div className="flex-1 break-words">{rowError}</div>
+                                  <button
+                                    type="button"
+                                    aria-label="Dismiss error"
+                                    onClick={() => clearSubmitError(r.id)}
+                                    className="ml-1 rounded p-0.5 hover:bg-destructive/10"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -423,10 +516,13 @@ function PromoterCustomersPage() {
         customer={selected}
         onClose={() => setSelected(null)}
         submitting={submitMut.isPending}
+        submitError={selected ? submitErrors[selected.id] ?? null : null}
+        onDismissError={() => selected && clearSubmitError(selected.id)}
         onSubmit={(note) =>
           selected && submitMut.mutate({ userId: selected.id, note: note || null })
         }
       />
+
 
       <Dialog open={!!issuedCreds} onOpenChange={(o) => !o && setIssuedCreds(null)}>
         <DialogContent>
@@ -662,11 +758,15 @@ function CustomerDetailSheet({
   onClose,
   onSubmit,
   submitting,
+  submitError,
+  onDismissError,
 }: {
   customer: ReferredCustomer | null;
   onClose: () => void;
   onSubmit: (note: string) => void;
   submitting: boolean;
+  submitError: string | null;
+  onDismissError: () => void;
 }) {
   const [note, setNote] = useState("");
   return (
@@ -733,36 +833,77 @@ function CustomerDetailSheet({
                     {customer.kyc_review_notes}
                   </p>
                 )}
-                {(customer.kyc_status === "unsubmitted" || customer.kyc_status === "rejected") && (
-                  <div className="mt-3 space-y-2">
-                    <Label className="text-xs">Optional note to admin</Label>
-                    <Input
-                      value={note}
-                      maxLength={1000}
-                      placeholder="e.g. Customer has re-uploaded a clearer Aadhaar front"
-                      onChange={(e) => setNote(e.target.value)}
-                    />
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {customer.has_aadhaar_docs
-                          ? "Ready to submit for admin review."
-                          : "Customer must upload their Aadhaar number and front document first."}
-                      </span>
-                      <Button
-                        size="sm"
-                        disabled={!customer.has_aadhaar_docs || submitting}
-                        onClick={() => onSubmit(note.trim())}
-                      >
-                        {submitting ? (
-                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Send className="mr-2 h-3.5 w-3.5" />
-                        )}
-                        Submit for review
-                      </Button>
+                {(customer.kyc_status === "unsubmitted" || customer.kyc_status === "rejected") && (() => {
+                  const blockers = submissionBlockers(customer);
+                  const disabled = blockers.length > 0 || submitting;
+                  return (
+                    <div className="mt-3 space-y-2">
+                      <Label className="text-xs">Optional note to admin</Label>
+                      <Input
+                        value={note}
+                        maxLength={1000}
+                        placeholder="e.g. Customer has re-uploaded a clearer Aadhaar front"
+                        onChange={(e) => setNote(e.target.value)}
+                      />
+
+                      {blockers.length > 0 ? (
+                        <div
+                          role="status"
+                          className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-xs"
+                        >
+                          <p className="mb-1 font-medium text-amber-700 dark:text-amber-400">
+                            Customer needs to complete the following before you can submit:
+                          </p>
+                          <ul className="ml-4 list-disc space-y-0.5 text-muted-foreground">
+                            {blockers.map((b) => (
+                              <li key={b}>{b}</li>
+                            ))}
+                          </ul>
+                          <p className="mt-1 text-muted-foreground">
+                            Ask the customer to open their KYC page and upload the missing items.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          All required KYC uploads are on file — ready to submit for admin review.
+                        </p>
+                      )}
+
+                      {submitError && (
+                        <Alert variant="destructive" className="py-2">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle className="text-xs">Submission failed</AlertTitle>
+                          <AlertDescription className="text-xs">
+                            <p className="break-words">{submitError}</p>
+                            <button
+                              type="button"
+                              onClick={onDismissError}
+                              className="mt-1 text-xs underline underline-offset-2"
+                            >
+                              Dismiss
+                            </button>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      <div className="flex items-center justify-end">
+                        <Button
+                          size="sm"
+                          disabled={disabled}
+                          aria-describedby={submitError ? "detail-submit-error" : undefined}
+                          onClick={() => onSubmit(note.trim())}
+                        >
+                          {submitting ? (
+                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Send className="mr-2 h-3.5 w-3.5" />
+                          )}
+                          Submit for review
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </Section>
               <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">

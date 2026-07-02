@@ -15,6 +15,8 @@ export type ReferredCustomer = {
   country: string | null;
   aadhaar_address: string | null;
   has_aadhaar_docs: boolean;
+  has_aadhaar_number: boolean;
+  has_aadhaar_front: boolean;
   kyc_status: "unsubmitted" | "pending" | "approved" | "rejected";
   kyc_submitted_at: string | null;
   kyc_reviewed_at: string | null;
