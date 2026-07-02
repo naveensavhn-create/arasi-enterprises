@@ -331,6 +331,13 @@ function SiteSettingsPage() {
                   className="space-y-3 rounded-lg border p-4"
                   style={{ fontFamily: `"${preview.body_font}", sans-serif` }}
                 >
+                  {preview.logo_url && (
+                    <img
+                      src={preview.logo_url}
+                      alt="Brand logo preview"
+                      className="max-h-16 w-auto rounded-sm bg-white/60 p-1 dark:bg-white/10"
+                    />
+                  )}
                   <div
                     className="text-2xl font-bold"
                     style={{
