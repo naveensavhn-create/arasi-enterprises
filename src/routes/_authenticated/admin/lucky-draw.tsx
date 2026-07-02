@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Trophy, Ticket, CalendarClock, Plus, Play, Ban, Trash2, Users } from "lucide-react";
+import { Trophy, Ticket, CalendarClock, Plus, Play, Ban, Trash2, Users, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -159,9 +159,45 @@ function AdminLuckyDrawPage() {
   });
 
 
+  const [statusFilter, setStatusFilter] = useState<Set<Draw["status"]>>(new Set());
+  const [dateField, setDateField] = useState<"opens_at" | "closes_at" | "draw_at" | "drawn_at">("opens_at");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+
   const openCount = draws.filter((d) => d.status === "open").length;
   const completedCount = draws.filter((d) => d.status === "completed").length;
   const upcoming = draws.find((d) => d.status === "scheduled" || d.status === "open");
+
+  const fromMs = dateFrom ? new Date(dateFrom).getTime() : null;
+  const toMs = dateTo ? new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1 : null;
+  const filtered = draws.filter((d) => {
+    if (statusFilter.size > 0 && !statusFilter.has(d.status)) return false;
+    if (fromMs !== null || toMs !== null) {
+      const raw = d[dateField];
+      if (!raw) return false;
+      const ms = new Date(raw).getTime();
+      if (fromMs !== null && ms < fromMs) return false;
+      if (toMs !== null && ms > toMs) return false;
+    }
+    return true;
+  });
+
+  const toggleStatus = (s: Draw["status"]) => {
+    setStatusFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
+  };
+  const clearFilters = () => {
+    setStatusFilter(new Set());
+    setDateFrom("");
+    setDateTo("");
+    setDateField("opens_at");
+  };
+  const hasFilters = statusFilter.size > 0 || dateFrom || dateTo;
+  const STATUSES: Draw["status"][] = ["scheduled", "open", "closed", "completed", "cancelled"];
 
   return (
     <div className="space-y-4">
@@ -219,8 +255,78 @@ function AdminLuckyDrawPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>All draws</CardTitle>
+        <CardHeader className="space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <CardTitle>All draws</CardTitle>
+            <div className="text-xs text-muted-foreground">
+              {filtered.length} of {draws.length}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Status</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {STATUSES.map((s) => {
+                  const active = statusFilter.has(s);
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => toggleStatus(s)}
+                      aria-pressed={active}
+                      className="focus:outline-none focus:ring-2 focus:ring-ring rounded-full"
+                    >
+                      <Badge
+                        variant={active ? statusVariant[s] : "outline"}
+                        className="cursor-pointer capitalize"
+                      >
+                        {s}
+                      </Badge>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground" htmlFor="f-field">Date field</Label>
+              <select
+                id="f-field"
+                value={dateField}
+                onChange={(e) => setDateField(e.target.value as typeof dateField)}
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              >
+                <option value="opens_at">Opens at</option>
+                <option value="closes_at">Closes at</option>
+                <option value="draw_at">Draw at</option>
+                <option value="drawn_at">Drawn at</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground" htmlFor="f-from">From</Label>
+              <Input
+                id="f-from"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 w-[10.5rem]"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground" htmlFor="f-to">To</Label>
+              <Input
+                id="f-to"
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 w-[10.5rem]"
+              />
+            </div>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-9">
+                <X className="mr-1 h-3.5 w-3.5" /> Clear
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -228,6 +334,10 @@ function AdminLuckyDrawPage() {
           ) : draws.length === 0 ? (
             <div className="text-sm text-muted-foreground">
               No draws yet. Click "New draw" to create one.
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-sm text-muted-foreground">
+              No draws match the current filters.
             </div>
           ) : (
             <Table>
@@ -246,7 +356,7 @@ function AdminLuckyDrawPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {draws.map((d) => (
+                {filtered.map((d) => (
                   <TableRow key={d.id}>
                     <TableCell className="font-medium">{d.name}</TableCell>
                     <TableCell>{d.prize}</TableCell>
