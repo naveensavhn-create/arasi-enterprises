@@ -251,11 +251,14 @@ function ClaimsPanel() {
                         {r.requested_at ? formatDateTime(r.requested_at) : "—"}
                       </TableCell>
                       <TableCell className="text-right">
-                        {next.length === 0 ? (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        ) : (
-                          <div className="flex gap-1 justify-end flex-wrap">
-                            {next.map((s) => (
+                        <div className="flex gap-1 justify-end flex-wrap items-center">
+                          <Button asChild size="sm" variant="ghost" title="Open timeline">
+                            <Link to="/admin/reward-timeline/$userId" params={{ userId: r.user_id }}>
+                              Timeline
+                            </Link>
+                          </Button>
+                          {next.length === 0 ? null : (
+                            next.map((s) => (
                               <Button
                                 key={s}
                                 size="sm"
@@ -272,9 +275,9 @@ function ClaimsPanel() {
                               >
                                 {s}
                               </Button>
-                            ))}
-                          </div>
-                        )}
+                            ))
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
