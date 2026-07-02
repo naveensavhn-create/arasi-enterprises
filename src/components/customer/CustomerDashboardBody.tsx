@@ -20,6 +20,7 @@ import {
   Sparkles,
   ArrowRight,
   Inbox,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { KycStatusCard } from "@/components/kyc/KycStatusCard";
@@ -133,6 +134,43 @@ export function CustomerDashboardBody() {
 
   if (membershipsQ.isLoading) {
     return <DashboardSkeleton />;
+  }
+
+  if (membershipsQ.isError) {
+    const err = membershipsQ.error as unknown;
+    const message =
+      (typeof err === "object" && err && "message" in err && typeof (err as { message: unknown }).message === "string"
+        ? (err as { message: string }).message
+        : null) ?? "We couldn't load your dashboard.";
+    return (
+      <div
+        role="alert"
+        aria-live="assertive"
+        className="mx-auto max-w-3xl px-6 py-10"
+        data-testid="dashboard-error"
+      >
+        <Card className="border-destructive/40">
+          <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+            <div className="rounded-full bg-destructive/10 p-3 text-destructive">
+              <AlertTriangle className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <h2 className="text-lg font-semibold">We couldn't load your dashboard</h2>
+            <p className="max-w-md text-sm text-muted-foreground">{message}</p>
+            <Button
+              onClick={() => {
+                void membershipsQ.refetch();
+              }}
+              disabled={membershipsQ.isFetching}
+            >
+              {membershipsQ.isFetching && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              )}
+              Try again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!membership) {
@@ -341,12 +379,52 @@ export function CustomerDashboardBody() {
       </div>
 
 
-      {/* Installments — loading / empty / summary */}
+      {/* Installments — loading / error / empty / summary */}
       {installmentsQ.isLoading ? (
         <Card>
           <CardContent className="flex items-center gap-3 p-5 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
             Loading your installment schedule…
+          </CardContent>
+        </Card>
+      ) : installmentsQ.isError ? (
+        <Card
+          role="alert"
+          aria-live="polite"
+          className="border-destructive/40"
+          data-testid="installments-error"
+        >
+          <CardContent className="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-destructive/10 p-2 text-destructive">
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Couldn't load installments</p>
+                <p className="text-xs text-muted-foreground">
+                  {(() => {
+                    const e = installmentsQ.error as unknown;
+                    if (typeof e === "object" && e && "message" in e && typeof (e as { message: unknown }).message === "string") {
+                      return (e as { message: string }).message;
+                    }
+                    return "Please try again.";
+                  })()}
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                void installmentsQ.refetch();
+              }}
+              disabled={installmentsQ.isFetching}
+            >
+              {installmentsQ.isFetching && (
+                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+              )}
+              Retry
+            </Button>
           </CardContent>
         </Card>
       ) : installments.length === 0 ? (
