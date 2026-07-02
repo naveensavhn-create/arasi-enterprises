@@ -123,9 +123,23 @@ export type AdminPaymentsResult = {
 
 type Filters = z.infer<typeof baseFilterSchema>;
 
+// Sanitize user input before it is spliced into PostgREST `.or()` / `.ilike()`
+// filter strings. PostgREST parses `,` and `()` as filter separators/grouping,
+// so an unescaped user value can inject additional filters or leak data.
+// We also strip the `%` and `_` wildcards so a `%%` payload can't turn an
+// operator like `email.ilike.` into a full-column scan of unrelated fields.
+function sanitizePostgrestLike(input: string): string {
+  return input
+    .replace(/[\\%,_()*:]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function resolveSearchIds(sb: any, q: string | undefined) {
   if (!q) return { customerIds: undefined as string[] | undefined, membershipIds: undefined as string[] | undefined };
-  const like = `%${q}%`;
+  const safe = sanitizePostgrestLike(q);
+  if (!safe) return { customerIds: [], membershipIds: [] };
+  const like = `%${safe}%`;
   const [profRes, memRes] = await Promise.all([
     sb.from("profiles").select("id").or(`full_name.ilike.${like},email.ilike.${like}`).limit(500),
     sb.from("memberships").select("id").ilike("membership_number", like).limit(500),
@@ -140,7 +154,9 @@ async function resolveSearchIds(sb: any, q: string | undefined) {
 
 async function resolveCustomerIdsExact(sb: any, customer: string | undefined) {
   if (!customer) return undefined;
-  const like = `%${customer}%`;
+  const safe = sanitizePostgrestLike(customer);
+  if (!safe) return [];
+  const like = `%${safe}%`;
   const { data, error } = await sb
     .from("profiles")
     .select("id")
