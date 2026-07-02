@@ -75,7 +75,8 @@ export const listAdminAuditLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => filtersSchema.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<AuditLogListResult> => {
-    await assertAdmin(context);
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Forbidden: admin role required.");
 
     // Distinct action + reviewed-field options for filter dropdowns.
     const { data: allActions } = await context.supabase
@@ -145,7 +146,8 @@ export const exportAdminAuditLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => exportSchema.parse(input ?? {}))
   .handler(async ({ data, context }): Promise<{ csv: string; count: number }> => {
-    await assertAdmin(context);
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Forbidden: admin role required.");
 
     let query = context.supabase
       .from("admin_audit_log")
