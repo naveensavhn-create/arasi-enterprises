@@ -309,7 +309,7 @@ export const getMyPromoterDashboard = createServerFn({ method: "GET" })
       progressPercent: Math.min(100, Math.max(0, progressPercent)),
       commissionPercent: Number(currentRank?.commission_percent ?? 0),
       monthlyIncentive: Number(currentRank?.monthly_incentive ?? 0),
-      giftName: currentRank?.gift_name ?? undefined,
+      giftName: currentRank?.gift_name ?? null,
       todayEarnings: today,
       monthEarnings: month,
       lifetimeEarnings: lifetime,
