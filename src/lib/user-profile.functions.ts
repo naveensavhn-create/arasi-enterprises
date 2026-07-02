@@ -124,6 +124,15 @@ const phoneField = z
     "Phone must be 10–15 digits (optional leading +)",
   );
 
+const imageUrlField = z
+  .union([z.string().trim().url("Must be a valid URL"), z.literal(""), z.null()])
+  .optional()
+  .transform((v) => (v == null || v === "" ? null : v))
+  .refine(
+    (v) => v === null || v === undefined || /^https?:\/\//i.test(v),
+    "Image URL must start with http(s)://",
+  );
+
 export const adminUpdateProfileSchema = z.object({
   userId: z.string().uuid(),
   full_name: optStr,
@@ -140,10 +149,44 @@ export const adminUpdateProfileSchema = z.object({
     .transform((v) => (v == null || v === "" ? null : v))
     .refine((v) => v === null || v === undefined || /^[0-9]{12}$/.test(v), "Aadhaar must be 12 digits"),
   aadhaar_address: optStr,
+  aadhaar_front_url: imageUrlField,
+  aadhaar_back_url: imageUrlField,
   referred_by_promoter_id: z.union([z.string().uuid(), z.null()]).optional(),
   clear_referrer: z.boolean().optional(),
   reason: z.string().trim().min(5, "Reason is required (min 5 characters)").max(500),
+}).superRefine((val, ctx) => {
+  const front = val.aadhaar_front_url ?? null;
+  const back = val.aadhaar_back_url ?? null;
+  // If one Aadhaar image is provided, both are required.
+  if (front && !back) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["aadhaar_back_url"],
+      message: "Back image is required when front image is provided",
+    });
+  }
+  if (back && !front) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["aadhaar_front_url"],
+      message: "Front image is required when back image is provided",
+    });
+  }
+  // If an Aadhaar number is being set, both images must be attached.
+  if (val.aadhaar_number && (!front || !back)) {
+    if (!front) ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["aadhaar_front_url"],
+      message: "Front Aadhaar image is required when saving an Aadhaar number",
+    });
+    if (!back) ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["aadhaar_back_url"],
+      message: "Back Aadhaar image is required when saving an Aadhaar number",
+    });
+  }
 });
+
 
 const updateSchema = adminUpdateProfileSchema;
 
