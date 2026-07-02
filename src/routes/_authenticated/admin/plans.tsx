@@ -857,9 +857,15 @@ function AdminPlansPage() {
                 Try clearing the search or toggling filters off.
               </p>
             </div>
-            <Button variant="outline" onClick={clearFilters}>
-              <X className="mr-1 h-4 w-4" /> Clear filters
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Button variant="outline" onClick={clearFilters}>
+                <X className="mr-1 h-4 w-4" /> Clear filters
+              </Button>
+              <Button variant="success" onClick={startCreate}>
+                <Plus className="mr-1 h-4 w-4" /> Add plan
+              </Button>
+            </div>
+
           </CardContent>
         </Card>
       ) : (
