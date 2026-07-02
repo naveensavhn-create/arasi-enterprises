@@ -341,12 +341,22 @@ function RemindersPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl">
+      <Dialog
+        open={previewOpen}
+        onOpenChange={(v) => {
+          setPreviewOpen(v);
+          if (v) {
+            setDialogTab("recipients");
+            setPreviewIndex(0);
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Send reminders</DialogTitle>
             <DialogDescription>
-              Review who will receive an email reminder, then send now or schedule for later.
+              Review recipients, preview the final email each will receive,
+              then send now or schedule for later.
             </DialogDescription>
           </DialogHeader>
 
@@ -365,40 +375,70 @@ function RemindersPage() {
             </div>
           </div>
 
-          <div className="max-h-56 overflow-auto rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Recipient</TableHead>
-                  <TableHead>Installment</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedRows.map((r) => (
-                  <TableRow key={r.installment_id}>
-                    <TableCell>
-                      <div className="text-sm">{r.customer_name ?? "—"}</div>
-                      <div className="text-xs text-muted-foreground">{r.customer_email ?? "no email"}</div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      #{r.sequence} · {format(new Date(r.due_date + "T00:00:00"), "dd MMM")}
-                    </TableCell>
-                    <TableCell className="text-right text-sm">{formatINR(r.amount)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <Tabs value={dialogTab} onValueChange={(v) => setDialogTab(v as typeof dialogTab)}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="recipients" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Recipients
+              </TabsTrigger>
+              <TabsTrigger
+                value="preview"
+                className="gap-1.5"
+                disabled={selectedWithEmail.length === 0}
+              >
+                <Eye className="h-3.5 w-3.5" /> Email preview
+              </TabsTrigger>
+            </TabsList>
 
-          {selectedMissingEmail > 0 && (
-            <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800">
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5" />
-              <span>
-                {selectedMissingEmail} selected {selectedMissingEmail === 1 ? "customer has" : "customers have"} no email on file — they will be skipped.
-              </span>
-            </div>
-          )}
+            <TabsContent value="recipients" className="space-y-3 mt-3">
+              <div className="max-h-64 overflow-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Recipient</TableHead>
+                      <TableHead>Installment</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedRows.map((r) => (
+                      <TableRow key={r.installment_id}>
+                        <TableCell>
+                          <div className="text-sm">{r.customer_name ?? "—"}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {r.customer_email ?? "no email"}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          #{r.sequence} · {format(new Date(r.due_date + "T00:00:00"), "dd MMM")}
+                        </TableCell>
+                        <TableCell className="text-right text-sm">
+                          {formatINR(r.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {selectedMissingEmail > 0 && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-800">
+                  <AlertCircle className="mt-0.5 h-3.5 w-3.5" />
+                  <span>
+                    {selectedMissingEmail} selected{" "}
+                    {selectedMissingEmail === 1 ? "customer has" : "customers have"} no
+                    email on file — they will be skipped.
+                  </span>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="preview" className="mt-3">
+              <EmailPreviewPane
+                recipients={selectedWithEmail}
+                index={previewIndex}
+                onIndexChange={setPreviewIndex}
+              />
+            </TabsContent>
+          </Tabs>
 
           <div className="space-y-3">
             <RadioGroup value={sendMode} onValueChange={(v) => setSendMode(v as "now" | "schedule")} className="grid grid-cols-2 gap-3">
@@ -432,6 +472,11 @@ function RemindersPage() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setPreviewOpen(false)}>Cancel</Button>
+            {dialogTab === "recipients" && selectedWithEmail.length > 0 ? (
+              <Button variant="outline" onClick={() => setDialogTab("preview")}>
+                <Eye className="mr-2 h-4 w-4" /> Preview email
+              </Button>
+            ) : null}
             <Button onClick={handleSend} disabled={enqueue.isPending || selectedWithEmail.length === 0}>
               {enqueue.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {sendMode === "now" ? "Send now" : "Schedule"}
