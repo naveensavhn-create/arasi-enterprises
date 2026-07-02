@@ -80,7 +80,14 @@ function Page() {
               <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
-          <div className="ml-auto"><Button size="sm" variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-1" />CSV</Button></div>
+          <div className="ml-auto flex gap-2">
+            <Button size="sm" variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-1" />CSV</Button>
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/commission-statement" search={{ status, autoprint: false }} target="_blank">
+                <Printer className="h-4 w-4 mr-1" />Statement PDF
+              </Link>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
