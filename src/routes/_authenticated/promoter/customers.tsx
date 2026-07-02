@@ -833,36 +833,77 @@ function CustomerDetailSheet({
                     {customer.kyc_review_notes}
                   </p>
                 )}
-                {(customer.kyc_status === "unsubmitted" || customer.kyc_status === "rejected") && (
-                  <div className="mt-3 space-y-2">
-                    <Label className="text-xs">Optional note to admin</Label>
-                    <Input
-                      value={note}
-                      maxLength={1000}
-                      placeholder="e.g. Customer has re-uploaded a clearer Aadhaar front"
-                      onChange={(e) => setNote(e.target.value)}
-                    />
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs text-muted-foreground">
-                        {customer.has_aadhaar_docs
-                          ? "Ready to submit for admin review."
-                          : "Customer must upload their Aadhaar number and front document first."}
-                      </span>
-                      <Button
-                        size="sm"
-                        disabled={!customer.has_aadhaar_docs || submitting}
-                        onClick={() => onSubmit(note.trim())}
-                      >
-                        {submitting ? (
-                          <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Send className="mr-2 h-3.5 w-3.5" />
-                        )}
-                        Submit for review
-                      </Button>
+                {(customer.kyc_status === "unsubmitted" || customer.kyc_status === "rejected") && (() => {
+                  const blockers = submissionBlockers(customer);
+                  const disabled = blockers.length > 0 || submitting;
+                  return (
+                    <div className="mt-3 space-y-2">
+                      <Label className="text-xs">Optional note to admin</Label>
+                      <Input
+                        value={note}
+                        maxLength={1000}
+                        placeholder="e.g. Customer has re-uploaded a clearer Aadhaar front"
+                        onChange={(e) => setNote(e.target.value)}
+                      />
+
+                      {blockers.length > 0 ? (
+                        <div
+                          role="status"
+                          className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-xs"
+                        >
+                          <p className="mb-1 font-medium text-amber-700 dark:text-amber-400">
+                            Customer needs to complete the following before you can submit:
+                          </p>
+                          <ul className="ml-4 list-disc space-y-0.5 text-muted-foreground">
+                            {blockers.map((b) => (
+                              <li key={b}>{b}</li>
+                            ))}
+                          </ul>
+                          <p className="mt-1 text-muted-foreground">
+                            Ask the customer to open their KYC page and upload the missing items.
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          All required KYC uploads are on file — ready to submit for admin review.
+                        </p>
+                      )}
+
+                      {submitError && (
+                        <Alert variant="destructive" className="py-2">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle className="text-xs">Submission failed</AlertTitle>
+                          <AlertDescription className="text-xs">
+                            <p className="break-words">{submitError}</p>
+                            <button
+                              type="button"
+                              onClick={onDismissError}
+                              className="mt-1 text-xs underline underline-offset-2"
+                            >
+                              Dismiss
+                            </button>
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      <div className="flex items-center justify-end">
+                        <Button
+                          size="sm"
+                          disabled={disabled}
+                          aria-describedby={submitError ? "detail-submit-error" : undefined}
+                          onClick={() => onSubmit(note.trim())}
+                        >
+                          {submitting ? (
+                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Send className="mr-2 h-3.5 w-3.5" />
+                          )}
+                          Submit for review
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </Section>
               <div className="rounded-lg border border-dashed border-border bg-muted/40 p-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
