@@ -168,7 +168,7 @@ async function enrichCommissions(supabase: any, rows: any[]): Promise<Commission
     commission_amount: Number(r.commission_amount),
     promoter_name: pMap.get(r.promoter_id)?.full_name || pMap.get(r.promoter_id)?.email || null,
     customer_name: pMap.get(r.customer_id)?.full_name || pMap.get(r.customer_id)?.email || null,
-    membership_number: mMap.get(r.membership_id)?.membership_number ?? null,
+    membership_number: mMap.get(r.membership_id)?.membership_number ?? undefined,
     receipt_number: r.receipt_id ? rMap.get(r.receipt_id)?.receipt_number ?? null : null,
   })) as CommissionRow[];
 
@@ -232,8 +232,8 @@ export const updateCommissionStatus = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase.rpc("admin_update_commission_status", {
       _id: data.id,
       _status: data.status,
-      _reference: data.reference ?? null,
-      _remarks: data.remarks ?? null,
+      _reference: data.reference ?? undefined,
+      _remarks: data.remarks ?? undefined,
     });
     if (error) throw new Error(error.message);
     return row;
@@ -309,7 +309,7 @@ export const getMyPromoterDashboard = createServerFn({ method: "GET" })
       progressPercent: Math.min(100, Math.max(0, progressPercent)),
       commissionPercent: Number(currentRank?.commission_percent ?? 0),
       monthlyIncentive: Number(currentRank?.monthly_incentive ?? 0),
-      giftName: currentRank?.gift_name ?? null,
+      giftName: currentRank?.gift_name ?? undefined,
       todayEarnings: today,
       monthEarnings: month,
       lifetimeEarnings: lifetime,
@@ -379,8 +379,8 @@ export const updateIncentiveStatus = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase.rpc("admin_update_incentive_status", {
       _id: data.id,
       _status: data.status,
-      _reference: data.reference ?? null,
-      _remarks: data.remarks ?? null,
+      _reference: data.reference ?? undefined,
+      _remarks: data.remarks ?? undefined,
     });
     if (error) throw new Error(error.message);
     return row;
@@ -434,11 +434,11 @@ export const updateGiftStatus = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase.rpc("admin_update_gift", {
       _id: data.id,
       _status: data.status,
-      _courier: data.courier ?? null,
-      _tracking: data.tracking ?? null,
-      _serial: data.serial ?? null,
-      _proof_url: data.proof_url ?? null,
-      _remarks: data.remarks ?? null,
+      _courier: data.courier ?? undefined,
+      _tracking: data.tracking ?? undefined,
+      _serial: data.serial ?? undefined,
+      _proof_url: data.proof_url ?? undefined,
+      _remarks: data.remarks ?? undefined,
     });
     if (error) throw new Error(error.message);
     return row;
