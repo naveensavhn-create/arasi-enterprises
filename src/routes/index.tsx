@@ -267,11 +267,11 @@ function Landing() {
                 className="relative flex h-full flex-col border border-[#C5A059]/20 bg-[#0F172A]/40 p-8 backdrop-blur-sm md:p-10"
               >
                 <span
-                  className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]/80"
+                  className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#C5A059]"
                 >
                   {s.tag}
                 </span>
-                <div className="mt-5 text-[#C5A059]">
+                <div className="mt-5 text-[#C5A059]" aria-hidden>
                   <s.icon className="h-7 w-7" strokeWidth={1.25} />
                 </div>
                 <h3
@@ -280,7 +280,7 @@ function Landing() {
                 >
                   {s.title}
                 </h3>
-                <p className="mt-4 text-sm leading-relaxed text-white/60">
+                <p className="mt-4 text-sm leading-relaxed text-white/80">
                   {s.body}
                 </p>
               </div>
