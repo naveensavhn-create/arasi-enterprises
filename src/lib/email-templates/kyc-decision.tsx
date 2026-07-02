@@ -49,7 +49,9 @@ const KycDecision: React.FC<KycDecisionProps> = ({
   reviewNotes,
   assignedRole,
   actionUrl,
+  brand,
 }) => {
+  const b = resolveBrand(brand);
   const approved = decision === "approved";
   const greeting = recipientName ? `Hi ${recipientName},` : "Hello,";
   const accent = approved ? colors.success : colors.danger;
@@ -58,29 +60,27 @@ const KycDecision: React.FC<KycDecisionProps> = ({
     ? "Your KYC has been approved"
     : "Your KYC needs your attention";
   const intro = approved
-    ? `Great news — your identity documents have been verified and your account with ${brand.name} is now fully activated.`
+    ? `Great news — your identity documents have been verified and your account with ${b.name} is now fully activated.`
     : `We reviewed your identity documents and were unable to approve them at this time. Please review the notes below and resubmit your KYC.`;
 
   const reviewer =
     reviewerName && reviewerEmail
       ? `${reviewerName} (${reviewerEmail})`
-      : reviewerName ?? reviewerEmail ?? "Arasi Compliance Team";
+      : reviewerName ?? reviewerEmail ?? `${b.name} Compliance Team`;
 
   return (
     <Html lang="en" dir="ltr">
       <Head />
       <Preview>
         {approved
-          ? `Your ${brand.name} KYC has been approved.`
-          : `Your ${brand.name} KYC was not approved — action required.`}
+          ? `Your ${b.name} KYC has been approved.`
+          : `Your ${b.name} KYC was not approved — action required.`}
       </Preview>
       <Body style={styles.main}>
         <Container style={styles.container}>
           <Section style={styles.card}>
-            <Section style={styles.header}>
-              <Text style={styles.brandName}>{brand.name}</Text>
-              <Text style={styles.tagline}>{brand.tagline}</Text>
-            </Section>
+            <BrandHeader b={b} />
+
 
             <Text
               style={{
