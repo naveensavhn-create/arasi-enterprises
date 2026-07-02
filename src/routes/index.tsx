@@ -132,19 +132,25 @@ function Landing() {
       </a>
 
 
-      <header className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-8">
-        <div className="[&_*]:!text-white [&_.text-muted-foreground]:!text-[#C5A059]/70">
+      <header className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-4 py-6 sm:gap-6 sm:px-6 sm:py-8">
+        <div className="min-w-0 [&_*]:!text-white [&_.text-muted-foreground]:!text-[#C5A059]/70">
           <Logo />
         </div>
 
         <Link
           to="/auth"
           search={{ portal: "customer" }}
-          className="border-b border-transparent pb-1 text-sm font-medium tracking-wide text-white/80 transition-colors hover:border-[#C5A059] hover:text-[#C5A059]"
+          aria-label="Sign in to your Arasi Enterprises portal"
+          className="group inline-flex shrink-0 items-center gap-2 rounded-full border border-[#C5A059]/60 bg-[#C5A059]/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-[#C5A059] shadow-[0_0_0_0_rgba(197,160,89,0)] transition-all duration-300 hover:border-[#C5A059] hover:bg-[#C5A059] hover:text-[#020617] hover:shadow-[0_8px_28px_-8px_rgba(197,160,89,0.55)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A059] focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617] motion-reduce:transition-none sm:px-5 sm:py-2.5 sm:text-[13px]"
         >
           Sign in
+          <ArrowRight
+            aria-hidden
+            className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
+          />
         </Link>
       </header>
+
 
       <main
         id="main-content"
