@@ -928,6 +928,57 @@ export type Database = {
           },
         ]
       }
+      reminder_templates: {
+        Row: {
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at: string
+          heading: string | null
+          id: string
+          intro: string | null
+          is_active: boolean
+          outro: string | null
+          reminder_kind: string
+          sms_greeting: string | null
+          sms_signature: string | null
+          subject: string | null
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at?: string
+          heading?: string | null
+          id?: string
+          intro?: string | null
+          is_active?: boolean
+          outro?: string | null
+          reminder_kind: string
+          sms_greeting?: string | null
+          sms_signature?: string | null
+          subject?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["reminder_channel"]
+          created_at?: string
+          heading?: string | null
+          id?: string
+          intro?: string | null
+          is_active?: boolean
+          outro?: string | null
+          reminder_kind?: string
+          sms_greeting?: string | null
+          sms_signature?: string | null
+          subject?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       role_email_notifications: {
         Row: {
           audit_id: string | null
@@ -1255,6 +1306,34 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "payment_reminder_jobs"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      get_active_reminder_template: {
+        Args: {
+          _channel: Database["public"]["Enums"]["reminder_channel"]
+          _kind: string
+        }
+        Returns: {
+          channel: Database["public"]["Enums"]["reminder_channel"]
+          created_at: string
+          heading: string | null
+          id: string
+          intro: string | null
+          is_active: boolean
+          outro: string | null
+          reminder_kind: string
+          sms_greeting: string | null
+          sms_signature: string | null
+          subject: string | null
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reminder_templates"
           isOneToOne: true
           isSetofReturn: false
         }

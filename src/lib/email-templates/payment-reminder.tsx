@@ -40,6 +40,11 @@ export interface PaymentReminderProps {
   payUrl?: string;
   dashboardUrl?: string;
 
+  /** Admin-editable overrides (from public.reminder_templates). */
+  headingOverride?: string | null;
+  introOverride?: string | null;
+  outroOverride?: string | null;
+
   brand?: PaymentReminderBrand;
 }
 
@@ -81,6 +86,9 @@ const PaymentReminder: React.FC<PaymentReminderProps> = ({
   dueDate,
   payUrl,
   dashboardUrl,
+  headingOverride,
+  introOverride,
+  outroOverride,
   brand,
 }) => {
   // Resolve brand tokens from site settings, falling back to shared defaults.
@@ -158,14 +166,13 @@ const PaymentReminder: React.FC<PaymentReminderProps> = ({
             </Section>
 
             <Heading as="h1" style={heading}>
-              A gentle reminder about your upcoming payment
+              {headingOverride?.trim() || "A gentle reminder about your upcoming payment"}
             </Heading>
             <Text style={base.p}>{greeting}</Text>
             <Text style={base.p}>
-              This is a friendly reminder that your {planName ? `${planName} ` : ""}
-              membership installment is coming up. No action is needed if you've
-              already paid — otherwise, you can settle it in a couple of taps
-              from your dashboard.
+              {introOverride?.trim()
+                ? introOverride
+                : `This is a friendly reminder that your ${planName ? `${planName} ` : ""}membership installment is coming up. No action is needed if you've already paid — otherwise, you can settle it in a couple of taps from your dashboard.`}
             </Text>
 
             <Section style={base.detailBox}>
@@ -225,9 +232,9 @@ const PaymentReminder: React.FC<PaymentReminderProps> = ({
 
             <Hr style={base.divider} />
             <Text style={base.muted}>
-              Already paid in the last day or two? Please ignore this note — our
-              records update shortly after your bank confirms. For anything
-              else, reply to this email or write to {b.supportEmail}.
+              {outroOverride?.trim()
+                ? outroOverride
+                : `Already paid in the last day or two? Please ignore this note — our records update shortly after your bank confirms. For anything else, reply to this email or write to ${b.supportEmail}.`}
             </Text>
           </Section>
 
