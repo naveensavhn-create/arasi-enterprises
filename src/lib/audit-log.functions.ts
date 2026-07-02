@@ -168,6 +168,9 @@ export const exportAdminAuditLog = createServerFn({ method: "POST" })
     if (data.from) query = query.gte("created_at", data.from);
     if (data.to) query = query.lt("created_at", data.to);
     if (data.reviewedField) query = query.contains("metadata", { reviewed_fields: [data.reviewedField] });
+    if (data.paymentId) query = query.or(`metadata->>payment_id.eq.${data.paymentId},metadata->>razorpay_payment_id.eq.${data.paymentId}`);
+    if (data.customerId) query = query.or(`target_user_id.eq.${data.customerId},metadata->>customer_id.eq.${data.customerId},metadata->>user_id.eq.${data.customerId}`);
+    if (data.promoterId) query = query.or(`metadata->>promoter_id.eq.${data.promoterId},metadata->>promoter_user_id.eq.${data.promoterId}`);
 
     const { data: raw, error } = await query;
     if (error) throw new Error(error.message);
