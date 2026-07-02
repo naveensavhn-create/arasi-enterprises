@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedKycRouteImport } from './routes/_authenticated/kyc'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCommissionStatementRouteImport } from './routes/_authenticated/commission-statement'
 import { Route as AuthenticatedPromoterRouteRouteImport } from './routes/_authenticated/promoter/route'
 import { Route as AuthenticatedCustomerRouteRouteImport } from './routes/_authenticated/customer/route'
 import { Route as AuthenticatedAdminRouteRouteImport } from './routes/_authenticated/admin/route'
@@ -105,6 +106,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCommissionStatementRoute =
+  AuthenticatedCommissionStatementRouteImport.update({
+    id: '/commission-statement',
+    path: '/commission-statement',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPromoterRouteRoute =
   AuthenticatedPromoterRouteRouteImport.update({
     id: '/promoter',
@@ -429,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
+  '/commission-statement': typeof AuthenticatedCommissionStatementRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -490,6 +498,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
+  '/commission-statement': typeof AuthenticatedCommissionStatementRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/kyc': typeof AuthenticatedKycRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -554,6 +563,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteRouteWithChildren
   '/_authenticated/customer': typeof AuthenticatedCustomerRouteRouteWithChildren
   '/_authenticated/promoter': typeof AuthenticatedPromoterRouteRouteWithChildren
+  '/_authenticated/commission-statement': typeof AuthenticatedCommissionStatementRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/kyc': typeof AuthenticatedKycRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -618,6 +628,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/customer'
     | '/promoter'
+    | '/commission-statement'
     | '/dashboard'
     | '/kyc'
     | '/settings'
@@ -679,6 +690,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/customer'
     | '/promoter'
+    | '/commission-statement'
     | '/dashboard'
     | '/kyc'
     | '/settings'
@@ -742,6 +754,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/customer'
     | '/_authenticated/promoter'
+    | '/_authenticated/commission-statement'
     | '/_authenticated/dashboard'
     | '/_authenticated/kyc'
     | '/_authenticated/settings'
@@ -860,6 +873,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/commission-statement': {
+      id: '/_authenticated/commission-statement'
+      path: '/commission-statement'
+      fullPath: '/commission-statement'
+      preLoaderRoute: typeof AuthenticatedCommissionStatementRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/promoter': {
@@ -1377,6 +1397,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRouteRoute: typeof AuthenticatedAdminRouteRouteWithChildren
   AuthenticatedCustomerRouteRoute: typeof AuthenticatedCustomerRouteRouteWithChildren
   AuthenticatedPromoterRouteRoute: typeof AuthenticatedPromoterRouteRouteWithChildren
+  AuthenticatedCommissionStatementRoute: typeof AuthenticatedCommissionStatementRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedKycRoute: typeof AuthenticatedKycRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -1387,6 +1408,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRouteRoute: AuthenticatedAdminRouteRouteWithChildren,
   AuthenticatedCustomerRouteRoute: AuthenticatedCustomerRouteRouteWithChildren,
   AuthenticatedPromoterRouteRoute: AuthenticatedPromoterRouteRouteWithChildren,
+  AuthenticatedCommissionStatementRoute: AuthenticatedCommissionStatementRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedKycRoute: AuthenticatedKycRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
