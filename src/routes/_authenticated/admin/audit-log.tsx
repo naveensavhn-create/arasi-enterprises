@@ -53,6 +53,9 @@ function AuditLogPage() {
   const [actor, setActor] = useState("");
   const [action, setAction] = useState<string>("all");
   const [reviewedField, setReviewedField] = useState<string>("all");
+  const [paymentId, setPaymentId] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [promoterId, setPromoterId] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
@@ -66,12 +69,15 @@ function AuditLogPage() {
       actor,
       actions: action === "all" ? [] : [action],
       reviewedField: reviewedField === "all" ? "" : reviewedField,
+      paymentId,
+      customerId,
+      promoterId,
       from,
       to,
       page,
       pageSize,
     }),
-    [q, actor, action, reviewedField, from, to, page],
+    [q, actor, action, reviewedField, paymentId, customerId, promoterId, from, to, page],
   );
 
   const refetchInterval = useListRefetchInterval();
@@ -88,7 +94,9 @@ function AuditLogPage() {
   const pageCount = Math.max(1, Math.ceil(total / pageSize));
 
   const reset = () => {
-    setQ(""); setActor(""); setAction("all"); setReviewedField("all"); setFrom(""); setTo(""); setPage(1);
+    setQ(""); setActor(""); setAction("all"); setReviewedField("all");
+    setPaymentId(""); setCustomerId(""); setPromoterId("");
+    setFrom(""); setTo(""); setPage(1);
   };
 
   const handleExport = async () => {
@@ -100,6 +108,9 @@ function AuditLogPage() {
           actor,
           actions: action === "all" ? [] : [action],
           reviewedField: reviewedField === "all" ? "" : reviewedField,
+          paymentId,
+          customerId,
+          promoterId,
           from,
           to,
         },
@@ -182,7 +193,19 @@ function AuditLogPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="flex gap-2">
+            <div>
+              <Label htmlFor="paymentId" className="text-xs">Payment ID</Label>
+              <Input id="paymentId" value={paymentId} onChange={(e) => { setPaymentId(e.target.value.trim()); setPage(1); }} placeholder="UUID or Razorpay id" />
+            </div>
+            <div>
+              <Label htmlFor="customerId" className="text-xs">Customer ID</Label>
+              <Input id="customerId" value={customerId} onChange={(e) => { setCustomerId(e.target.value.trim()); setPage(1); }} placeholder="User UUID" />
+            </div>
+            <div>
+              <Label htmlFor="promoterId" className="text-xs">Promoter ID</Label>
+              <Input id="promoterId" value={promoterId} onChange={(e) => { setPromoterId(e.target.value.trim()); setPage(1); }} placeholder="User UUID" />
+            </div>
+            <div className="flex gap-2 md:col-span-3">
               <div className="flex-1">
                 <Label htmlFor="from" className="text-xs">From</Label>
                 <Input id="from" type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(1); }} />

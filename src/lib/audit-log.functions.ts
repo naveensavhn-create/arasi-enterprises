@@ -9,6 +9,9 @@ const filtersSchema = z.object({
   actor: z.string().trim().optional().default(""),
   actions: z.array(z.string()).optional().default([]),
   reviewedField: z.string().trim().optional().default(""),
+  paymentId: z.string().trim().optional().default(""),
+  customerId: z.string().trim().optional().default(""),
+  promoterId: z.string().trim().optional().default(""),
   from: z.string().optional().default(""),
   to: z.string().optional().default(""),
   page: z.number().int().min(1).optional().default(1),
@@ -98,6 +101,9 @@ export const listAdminAuditLog = createServerFn({ method: "POST" })
     if (data.from) query = query.gte("created_at", data.from);
     if (data.to) query = query.lt("created_at", data.to);
     if (data.reviewedField) query = query.contains("metadata", { reviewed_fields: [data.reviewedField] });
+    if (data.paymentId) query = query.or(`metadata->>payment_id.eq.${data.paymentId},metadata->>razorpay_payment_id.eq.${data.paymentId}`);
+    if (data.customerId) query = query.or(`target_user_id.eq.${data.customerId},metadata->>customer_id.eq.${data.customerId},metadata->>user_id.eq.${data.customerId}`);
+    if (data.promoterId) query = query.or(`metadata->>promoter_id.eq.${data.promoterId},metadata->>promoter_user_id.eq.${data.promoterId}`);
 
     const needsQFilter = !!data.q;
     const fromIdx = (data.page - 1) * data.pageSize;
@@ -162,6 +168,9 @@ export const exportAdminAuditLog = createServerFn({ method: "POST" })
     if (data.from) query = query.gte("created_at", data.from);
     if (data.to) query = query.lt("created_at", data.to);
     if (data.reviewedField) query = query.contains("metadata", { reviewed_fields: [data.reviewedField] });
+    if (data.paymentId) query = query.or(`metadata->>payment_id.eq.${data.paymentId},metadata->>razorpay_payment_id.eq.${data.paymentId}`);
+    if (data.customerId) query = query.or(`target_user_id.eq.${data.customerId},metadata->>customer_id.eq.${data.customerId},metadata->>user_id.eq.${data.customerId}`);
+    if (data.promoterId) query = query.or(`metadata->>promoter_id.eq.${data.promoterId},metadata->>promoter_user_id.eq.${data.promoterId}`);
 
     const { data: raw, error } = await query;
     if (error) throw new Error(error.message);
